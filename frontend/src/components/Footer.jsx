@@ -46,7 +46,7 @@ export default function Footer() {
           <p>© {new Date().getFullYear()} LTT Ma getThink Co., Ltd. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/contact-us" className="hover:text-slate-400">ติดต่อเรา</Link>
-            <Link href="/admin" className="hover:text-blue-400">Edge CMS Backoffice</Link>
+            <a href="https://ltt-backend.thunchanok-raj.workers.dev/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400">Edge CMS Backoffice</a>
           </div>
         </div>
       </div>
