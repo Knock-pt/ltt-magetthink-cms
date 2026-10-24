@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "deploy": "next build && wrangler pages deploy out --project-name=ltt-website"
+    "deploy": "next build && wrangler pages deploy out --project-name=ltt-website --branch=main"
   },
   "devDependencies": {
     "wrangler": "^3.111.0"
