@@ -5,3 +5,12 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ltt-cms-db"
+database_id = "25a6adb5-f265-4ca5-9586-029643474fe7"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "ltt-cms-bucket"

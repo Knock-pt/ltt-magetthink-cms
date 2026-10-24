@@ -371,36 +371,6 @@ export default {
         return jsonResponse({ success: true, message: 'คำสั่งล้างแคชส่งไปยังหน้าบ้านเรียบร้อยแล้ว' }, 200, origin);
       }
 
-      // Auto-Migration Endpoint: Automatically executes schema updates on D1
-      if (path === '/api/admin/system/migrate' && (method === 'POST' || method === 'GET')) {
-        const migrationSql = `
-          CREATE TABLE IF NOT EXISTS navigation_menus (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              label TEXT NOT NULL,
-              path TEXT NOT NULL,
-              is_external INTEGER DEFAULT 0,
-              sort_order INTEGER DEFAULT 0,
-              is_active INTEGER DEFAULT 1,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-          CREATE INDEX IF NOT EXISTS idx_nav_menus_active ON navigation_menus (is_active, sort_order);
-          INSERT OR IGNORE INTO navigation_menus (id, label, path, is_external, sort_order, is_active) VALUES
-          (1, 'หน้าแรก', '/', 0, 1, 1),
-          (2, 'บริการของเรา', '/our-service', 0, 2, 1),
-          (3, 'ผลงาน', '/portfolio', 0, 3, 1),
-          (4, 'เกี่ยวกับเรา', '/about-us', 0, 4, 1),
-          (5, 'บทความ & ข่าวสาร', '/blog', 0, 5, 1),
-          (6, 'ติดต่อเรา', '/contact-us', 0, 6, 1);
-        `;
-        if (env.DB && env.DB.exec) {
-          await env.DB.exec(migrationSql);
-          try { await env.DB.exec('ALTER TABLE inquiries ADD COLUMN admin_notes TEXT;'); } catch(e){}
-          try { await env.DB.exec('ALTER TABLE inquiries ADD COLUMN source_page TEXT DEFAULT "contact-us";'); } catch(e){}
-        }
-        return jsonResponse({ success: true, message: 'ฐานข้อมูล D1 ได้รับการ Migrate อัปเดตตารางอัตโนมัติเรียบร้อยแล้ว!' }, 200, origin);
-      }
-
       if (path === '/api/admin/media/upload' && method === 'POST') {
         if (!env.R2_BUCKET) {
           return jsonResponse({ success: false, error: 'ยังไม่ได้ผูก R2_BUCKET ในหน้า Settings ของ Worker' }, 400, origin);
