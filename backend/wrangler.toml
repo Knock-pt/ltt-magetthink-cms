@@ -1,0 +1,24 @@
+name = "ltt-cms-backend"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "ltt-cms-db"
+database_id = "ltt-cms-d1-prod"
+
+# Cloudflare R2 Media Storage binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "ltt-cms-media"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+FRONTEND_ORIGIN = "https://www.lttmagetthink.co"
+ADMIN_ORIGIN = "https://cms.lttmagetthink.co"
+CF_ACCESS_TEAM_DOMAIN = "https://lttmagetthink.cloudflareaccess.com"
+CF_ACCESS_POLICY_AUD = "YOUR_CLOUDFLARE_ACCESS_AUDIENCE_TAG"
+CACHE_PURGE_WEBHOOK = "https://www.lttmagetthink.co/api/revalidate"
