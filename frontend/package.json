@@ -4,11 +4,22 @@
   "private": true,
   "description": "LTT Ma getThink Frontend Website (Inspired by lttmagetthink.co) on Cloudflare Pages",
   "scripts": {
-    "dev": "npx serve public -l 3000",
-    "build": "echo 'Static pages build completed'",
-    "deploy": "wrangler pages deploy public --project-name=ltt-website"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "deploy": "next build && wrangler pages deploy out --project-name=ltt-website"
   },
   "devDependencies": {
     "wrangler": "^3.111.0"
+  },
+  "dependencies": {
+    "@cloudflare/next-on-pages": "^1.13.7",
+    "autoprefixer": "^10.4.20",
+    "lucide-react": "^0.474.0",
+    "next": "^14.2.23",
+    "postcss": "^8.4.49",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.17"
   }
 }

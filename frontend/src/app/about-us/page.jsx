@@ -1,0 +1,49 @@
+'use client';
+
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import { Target, Users, Award, ShieldCheck } from 'lucide-react';
+
+export default function AboutPage() {
+  return (
+    <div className="flex-1 flex flex-col">
+      <Navbar />
+
+      <section className="py-20 bg-slate-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">ABOUT LTT MA GETTHINK</span>
+            <h1 className="text-3xl sm:text-5xl font-extrabold text-white mt-3">เกี่ยวกับเรา</h1>
+            <p className="text-sm text-slate-400 mt-4 leading-relaxed">
+              เราคือทีมผู้เชี่ยวชาญด้านการตลาดดิจิทัลและโปรดักชันที่พร้อมเป็นพาร์ทเนอร์เคียงข้างการเติบโตของแบรนด์คุณ
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div className="glass-card p-8 rounded-3xl">
+              <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-4">
+                <Target className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">วิสัยทัศน์ (Our Vision)</h3>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                มุ่งมั่นที่จะเป็น One-Stop Service Creative Marketing Agency ชั้นนำของประเทศไทย ที่ผสมผสานศาสตร์แห่งภาพถ่ายสถาปัตยกรรมระดับสูงเข้ากับการวางกลยุทธ์การตลาดที่สร้างยอดขายและสร้างมูลค่าแบรนด์อย่างยั่งยืน
+              </p>
+            </div>
+
+            <div className="glass-card p-8 rounded-3xl">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
+                <Award className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">มาตรฐานการทำงาน (Our Standards)</h3>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                ทุกชิ้นงานผ่านการคัดสรรอุปกรณ์โปรดักชันคุณภาพสูง ทีมงานที่มีประสบการณ์จริงในธุรกิจโรงแรมและการบริการ พร้อมกระบวนการส่งมอบงานที่รวดเร็ว ตรงเวลา และตรวจสอบคุณภาพทุกขั้นตอน
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}
