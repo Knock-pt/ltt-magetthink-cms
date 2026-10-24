@@ -44,3 +44,10 @@ INSERT OR REPLACE INTO client_logos (id, name, logo_url, website_url, sort_order
 INSERT OR REPLACE INTO inquiries (id, full_name, email, phone, company, service_interested, budget_range, message, status) VALUES
 (1, 'คุณกิตติศักดิ์ อัศวเดช', 'kittisak@resortandspa.com', '081-234-5678', 'Andaman Luxury Villas', 'Commercial Photography & Production', '50,000 - 100,000 THB', 'สนใจทีมงานเข้าไปถ่ายภาพรีสอร์ทเปิดใหม่ที่ภูเก็ต ทั้งหมด 12 พูลวิลล่า และต้องการวิดีโอสั้นสำหรับทำแคมเปญช่วงต้นเดือนหน้าครับ', 'new'),
 (2, 'คุณพิมลวรรณ สุขสมบูรณ์', 'pim@craftbakery.co', '089-876-5432', 'The Artisans Bakery', 'Digital Marketing & Social Media', '30,000 - 50,000 THB/เดือน', 'ต้องการให้ดูแลเพจ Facebook และทำคอนเทนต์ TikTok รายเดือนเพื่อโปรโมทสาขาใหม่ที่อารีย์ค่ะ', 'contacted');
+INSERT OR REPLACE INTO navigation_menus (id, label, path, is_external, sort_order, is_active) VALUES
+(1, 'หน้าแรก', '/', 0, 1, 1),
+(2, 'บริการของเรา', '/our-service', 0, 2, 1),
+(3, 'ผลงาน', '/portfolio', 0, 3, 1),
+(4, 'เกี่ยวกับเรา', '/about-us', 0, 4, 1),
+(5, 'บทความ & ข่าวสาร', '/blog', 0, 5, 1),
+(6, 'ติดต่อเรา', '/contact-us', 0, 6, 1);

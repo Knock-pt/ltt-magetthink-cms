@@ -18,10 +18,10 @@
   <style>
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', sans-serif; }
     .hero-glow {
-      background: radial-gradient(circle at 50% 20%, rgba(37, 99, 235, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      background: radial-gradient(circle at 50% 20%, rgba(37, 99, 235, 0.18) 0%, rgba(0, 0, 0, 0) 70%);
     }
     .glass-nav {
-      background: rgba(10, 10, 10, 0.75);
+      background: rgba(10, 10, 10, 0.85);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -35,7 +35,7 @@
       transform: translateY(-4px);
     }
     .badge-gradient {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%);
       border: 1px solid rgba(99, 102, 241, 0.3);
     }
     [x-cloak] { display: none !important; }
@@ -44,13 +44,13 @@
   <!-- Alpine.js -->
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
 </head>
-<body x-data="lttWebsite()" x-init="init()" class="relative selection:bg-blue-600 selection:text-white">
+<body x-data="lttWebsite()" x-init="init()" class="relative selection:bg-blue-600 selection:text-white min-h-screen flex flex-col justify-between">
 
-  <!-- ================= 1. HEADER NAVIGATION ================= -->
+  <!-- ================= 1. HEADER NAVIGATION (Dynamic from CMS) ================= -->
   <header class="fixed top-0 left-0 w-full z-50 glass-nav transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
       <!-- Brand Logo -->
-      <a href="#" class="flex items-center gap-3 group">
+      <a href="/" @click.prevent="navigate('/')" class="flex items-center gap-3 group">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-extrabold text-white text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition">
           L
         </div>
@@ -60,18 +60,18 @@
         </div>
       </a>
 
-      <!-- Desktop Nav -->
-      <nav class="hidden md:flex items-center gap-8 text-xs font-semibold tracking-wide text-slate-300">
-        <a href="#services" class="hover:text-blue-400 transition">บริการของเรา</a>
-        <a href="#portfolio" class="hover:text-blue-400 transition">ผลงาน</a>
-        <a href="#about" class="hover:text-blue-400 transition">เกี่ยวกับเรา</a>
-        <a href="#blog" class="hover:text-blue-400 transition">บทความ & อีเวนต์</a>
-        <a href="#contact" class="hover:text-blue-400 transition">ติดต่อเรา</a>
+      <!-- Desktop Nav: Rendered Dynamically from /api/public/navigation -->
+      <nav class="hidden md:flex items-center gap-8 text-xs font-semibold tracking-wide">
+        <template x-for="item in navMenus" :key="item.id">
+          <a :href="item.path" @click.prevent="navigate(item.path, item.is_external)"
+             :class="currentPath === item.path ? 'text-blue-400 font-bold border-b-2 border-blue-400 pb-1' : 'text-slate-300 hover:text-white transition'"
+             x-text="item.label"></a>
+        </template>
       </nav>
 
       <!-- Action Button -->
       <div class="flex items-center gap-4">
-        <a href="#contact" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black hover:bg-slate-200 text-xs font-bold transition shadow-lg shadow-white/10">
+        <a href="/contact-us" @click.prevent="navigate('/contact-us')" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black hover:bg-slate-200 text-xs font-bold transition shadow-lg shadow-white/10">
           <span>ปรึกษาทีมงาน</span>
           <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
         </a>
@@ -79,353 +79,451 @@
     </div>
   </header>
 
-  <!-- ================= 2. HERO SECTION ================= -->
-  <section class="relative pt-36 pb-24 md:pt-48 md:pb-32 overflow-hidden hero-glow">
-    <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
-      <!-- Badge -->
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full badge-gradient text-[11px] font-bold text-blue-400 mb-8 tracking-widest uppercase shadow-inner">
-        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-        <span x-text="siteSettings.hero_badge || 'ONE-STOP SERVICE MARKETING & PRODUCTION AGENCY'"></span>
-      </div>
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <div class="flex-grow">
 
-      <!-- Headline -->
-      <h1 class="text-3xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight md:leading-[1.15]" x-text="siteSettings.hero_headline || 'ยกระดับแบรนด์ของคุณด้วยการตลาดและมีเดียโปรดักชันครบวงจร'"></h1>
+    <!-- ================= PAGE 1: HOME (Path: /) ================= -->
+    <div x-show="currentPath === '/'" x-cloak>
+      <!-- Hero Section -->
+      <section class="relative pt-36 pb-24 md:pt-48 md:pb-32 overflow-hidden hero-glow">
+        <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full badge-gradient text-[11px] font-bold text-blue-400 mb-8 tracking-widest uppercase shadow-inner">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span x-text="siteSettings.hero_badge || 'ONE-STOP SERVICE MARKETING & PRODUCTION AGENCY'"></span>
+          </div>
 
-      <!-- Subheadline -->
-      <p class="mt-6 text-sm md:text-lg text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed" x-text="siteSettings.hero_subheadline || 'ดูแลแบรนด์แบบฟูลทีม ตั้งแต่วางแผนกลยุทธ์ ถ่ายภาพ โปรดักชันวิดีโอ ไปจนถึงอินฟลูเอนเซอร์มาร์เก็ตติง'"></p>
+          <h1 class="text-3xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight md:leading-[1.15]" x-text="siteSettings.hero_headline || 'ยกระดับแบรนด์ของคุณด้วยการตลาดและมีเดียโปรดักชันครบวงจร'"></h1>
+          <p class="mt-6 text-sm md:text-lg text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed" x-text="siteSettings.hero_subheadline || 'ดูแลแบรนด์แบบฟูลทีม ตั้งแต่วางแผนกลยุทธ์ ถ่ายภาพ โปรดักชันวิดีโอ ไปจนถึงอินฟลูเอนเซอร์มาร์เก็ตติง'"></p>
 
-      <!-- CTAs -->
-      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="#portfolio" class="w-full sm:w-auto px-8 py-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider uppercase transition shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2">
-          <span>สำรวจผลงานของเรา</span>
-          <i data-lucide="arrow-down" class="w-4 h-4"></i>
-        </a>
-        <a href="#contact" class="w-full sm:w-auto px-8 py-4 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs tracking-wider uppercase border border-slate-700/80 transition flex items-center justify-center gap-2">
-          <span>ขอใบเสนอราคา</span>
-          <i data-lucide="message-square" class="w-4 h-4"></i>
-        </a>
-      </div>
+          <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="/portfolio" @click.prevent="navigate('/portfolio')" class="w-full sm:w-auto px-8 py-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider uppercase transition shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2">
+              <span>สำรวจผลงานของเรา</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+            <a href="/contact-us" @click.prevent="navigate('/contact-us')" class="w-full sm:w-auto px-8 py-4 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs tracking-wider uppercase border border-slate-700/80 transition flex items-center justify-center gap-2">
+              <span>ขอใบเสนอราคา</span>
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </a>
+          </div>
 
-      <!-- Stat Badges Row -->
-      <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto pt-10 border-t border-slate-800/80">
-        <div>
-          <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_projects || '150+'"></div>
-          <div class="text-xs text-slate-400 mt-1 font-medium">โปรเจกต์ที่สำเร็จ</div>
-        </div>
-        <div>
-          <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_brands || '80+'"></div>
-          <div class="text-xs text-slate-400 mt-1 font-medium">แบรนด์พาร์ทเนอร์</div>
-        </div>
-        <div>
-          <div class="text-3xl md:text-4xl font-extrabold text-blue-400" x-text="siteSettings.stat_views || '25M+'"></div>
-          <div class="text-xs text-slate-400 mt-1 font-medium">ยอดวิวมัลติมีเดียรวม</div>
-        </div>
-        <div>
-          <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_retention || '96%'"></div>
-          <div class="text-xs text-slate-400 mt-1 font-medium">ความพึงพอใจลูกค้า</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= 3. SERVICES SECTION ================= -->
-  <section id="services" class="py-24 bg-slate-950/60 border-t border-slate-900">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="text-center max-w-2xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Our Services</span>
-        <h2 class="text-2xl md:text-4xl font-extrabold text-white">บริการครบวงจรเพื่อการเติบโตของแบรนด์</h2>
-        <p class="text-xs md:text-sm text-slate-400 mt-3">ดูแลตั้งแต่ต้นน้ำยันปลายน้ำ ตอบโจทย์ทั้งการสร้างภาพลักษณ์และยอดขาย</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <template x-for="service in services" :key="service.id">
-          <div class="card-border rounded-3xl p-8 md:p-10 flex flex-col justify-between">
+          <!-- Counter Stats -->
+          <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto pt-10 border-t border-slate-800/80">
             <div>
-              <div class="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6">
-                <i data-lucide="sparkles" class="w-6 h-6"></i>
-              </div>
-              <h3 class="text-xl font-bold text-white mb-2" x-text="service.title"></h3>
-              <p class="text-xs text-blue-400 font-medium mb-4" x-text="service.subtitle"></p>
-              <p class="text-xs md:text-sm text-slate-400 leading-relaxed" x-text="service.description"></p>
+              <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_projects || '150+'"></div>
+              <div class="text-xs text-slate-400 mt-1 font-medium">โปรเจกต์ที่สำเร็จ</div>
             </div>
+            <div>
+              <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_brands || '80+'"></div>
+              <div class="text-xs text-slate-400 mt-1 font-medium">แบรนด์พาร์ทเนอร์</div>
+            </div>
+            <div>
+              <div class="text-3xl md:text-4xl font-extrabold text-blue-400" x-text="siteSettings.stat_views || '25M+'"></div>
+              <div class="text-xs text-slate-400 mt-1 font-medium">ยอดวิวมัลติมีเดียรวม</div>
+            </div>
+            <div>
+              <div class="text-3xl md:text-4xl font-extrabold text-white" x-text="siteSettings.stat_retention || '96%'"></div>
+              <div class="text-xs text-slate-400 mt-1 font-medium">ความพึงพอใจลูกค้า</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <!-- Bullet points -->
-            <div class="mt-8 pt-6 border-t border-slate-800/80 space-y-2">
-              <template x-for="point in service.bullet_points" :key="point">
-                <div class="flex items-center gap-3 text-xs text-slate-300">
-                  <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                  <span x-text="point"></span>
+      <!-- Services Overview -->
+      <section class="py-24 bg-slate-950/60 border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-6">
+          <div class="text-center max-w-2xl mx-auto mb-16">
+            <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Our Services</span>
+            <h2 class="text-2xl md:text-4xl font-extrabold text-white">บริการครบวงจรเพื่อการเติบโตของแบรนด์</h2>
+            <p class="text-xs md:text-sm text-slate-400 mt-3">ดูแลตั้งแต่ต้นน้ำยันปลายน้ำ ตอบโจทย์ทั้งการสร้างภาพลักษณ์และยอดขาย</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <template x-for="service in services.slice(0, 4)" :key="service.id">
+              <div class="card-border rounded-3xl p-8 flex flex-col justify-between">
+                <div>
+                  <div class="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                  </div>
+                  <h3 class="text-xl font-bold text-white mb-2" x-text="service.title"></h3>
+                  <p class="text-xs text-blue-400 font-medium mb-4" x-text="service.subtitle"></p>
+                  <p class="text-xs md:text-sm text-slate-400 leading-relaxed" x-text="service.description"></p>
                 </div>
-              </template>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= 4. PORTFOLIO SHOWCASE ================= -->
-  <section id="portfolio" class="py-24 bg-black">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-        <div>
-          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Selected Works</span>
-          <h2 class="text-2xl md:text-4xl font-extrabold text-white">ผลงานและกรณีศึกษา</h2>
-          <p class="text-xs md:text-sm text-slate-400 mt-2">สัมผัสงานภาพถ่ายและโปรดักชันมีเดียของโรงแรม รีสอร์ท และแบรนด์ชั้นนำ</p>
-        </div>
-
-        <!-- Category Filters -->
-        <div class="flex flex-wrap gap-2">
-          <button @click="activeCategory = 'all'" :class="activeCategory === 'all' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-4 py-2 rounded-full text-xs font-bold transition">
-            ทั้งหมด
-          </button>
-          <button @click="activeCategory = 'hotels-resorts'" :class="activeCategory === 'hotels-resorts' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-4 py-2 rounded-full text-xs font-bold transition">
-            โรงแรม & รีสอร์ท
-          </button>
-          <button @click="activeCategory = 'real-estate'" :class="activeCategory === 'real-estate' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-4 py-2 rounded-full text-xs font-bold transition">
-            อสังหาริมทรัพย์
-          </button>
-          <button @click="activeCategory = 'food-beverage'" :class="activeCategory === 'food-beverage' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-4 py-2 rounded-full text-xs font-bold transition">
-            อาหาร & เครื่องดื่ม
-          </button>
-        </div>
-      </div>
-
-      <!-- Portfolio Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <template x-for="item in filteredPortfolios" :key="item.id">
-          <div @click="openModal(item)" class="card-border rounded-3xl overflow-hidden group cursor-pointer flex flex-col">
-            <!-- Cover image -->
-            <div class="relative h-64 w-full bg-slate-900 overflow-hidden">
-              <img :src="item.cover_image" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-white uppercase tracking-wider" x-text="item.category_slug"></span>
-            </div>
-
-            <!-- Content -->
-            <div class="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <span class="text-xs font-semibold text-blue-400" x-text="item.client_name"></span>
-                <h3 class="text-base font-bold text-white mt-1 group-hover:text-blue-300 transition" x-text="item.title"></h3>
-                <p class="text-xs text-slate-400 mt-2 line-clamp-2" x-text="item.summary"></p>
+                <div class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
+                  <a href="/our-service" @click.prevent="navigate('/our-service')" class="text-xs font-bold text-white hover:text-blue-400 flex items-center gap-2">
+                    <span>ดูรายละเอียดบริการ</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                  </a>
+                </div>
               </div>
+            </template>
+          </div>
+        </div>
+      </section>
 
-              <div class="mt-6 flex items-center justify-between text-xs font-bold text-white group-hover:text-blue-400 transition">
-                <span>ดูรายละเอียดผลงาน</span>
-                <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition"></i>
-              </div>
+      <!-- Featured Works Highlight -->
+      <section class="py-24 bg-black">
+        <div class="max-w-7xl mx-auto px-6">
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Selected Works</span>
+              <h2 class="text-2xl md:text-4xl font-extrabold text-white">ผลงานและกรณีศึกษาล่าสุด</h2>
             </div>
+            <a href="/portfolio" @click.prevent="navigate('/portfolio')" class="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-2">
+              <span>ดูผลงานทั้งหมด &rarr;</span>
+            </a>
           </div>
-        </template>
-      </div>
-    </div>
-  </section>
 
-  <!-- ================= 5. CLIENT LOGOS CAROUSEL ================= -->
-  <section class="py-16 bg-slate-950 border-y border-slate-900">
-    <div class="max-w-7xl mx-auto px-6 text-center">
-      <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">แบรนด์และองค์กรชั้นนำที่ไว้วางใจ LTT Ma getThink</p>
-      
-      <div class="flex flex-wrap items-center justify-center gap-10 md:gap-16 opacity-70">
-        <template x-for="logo in clientLogos" :key="logo.id">
-          <div class="flex items-center gap-2 grayscale hover:grayscale-0 hover:opacity-100 transition duration-300">
-            <span class="text-sm font-bold tracking-wider text-slate-300" x-text="logo.name"></span>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <template x-for="item in portfolios.slice(0, 3)" :key="item.id">
+              <div @click="openModal(item)" class="card-border rounded-3xl overflow-hidden group cursor-pointer flex flex-col">
+                <div class="relative h-64 w-full bg-slate-900 overflow-hidden">
+                  <img :src="item.cover_image" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="">
+                  <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-white uppercase tracking-wider" x-text="item.category_slug"></span>
+                </div>
+                <div class="p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span class="text-xs font-semibold text-blue-400" x-text="item.client_name"></span>
+                    <h3 class="text-base font-bold text-white mt-1 group-hover:text-blue-300 transition" x-text="item.title"></h3>
+                    <p class="text-xs text-slate-400 mt-2 line-clamp-2" x-text="item.summary"></p>
+                  </div>
+                  <div class="mt-6 flex items-center justify-between text-xs font-bold text-white group-hover:text-blue-400 transition">
+                    <span>ดูรายละเอียดผลงาน</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
-        </template>
-      </div>
-    </div>
-  </section>
+        </div>
+      </section>
 
-  <!-- ================= 6. ABOUT US & VALUE ================= -->
-  <section id="about" class="py-24 bg-black">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        <div>
-          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">About LTT Ma getThink</span>
-          <h2 class="text-2xl md:text-4xl font-extrabold text-white leading-tight">ทำหน้าที่เสมือนเป็น "ทีมการตลาดและโปรดักชันส่วนตัว" ให้กับธุรกิจคุณ</h2>
+      <!-- Client Logos -->
+      <section class="py-16 bg-slate-950 border-y border-slate-900">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">แบรนด์และองค์กรชั้นนำที่ไว้วางใจ LTT Ma getThink</p>
+          <div class="flex flex-wrap items-center justify-center gap-10 md:gap-16 opacity-70">
+            <template x-for="logo in clientLogos" :key="logo.id">
+              <span class="text-sm font-bold tracking-wider text-slate-300" x-text="logo.name"></span>
+            </template>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= PAGE 2: OUR SERVICES (Path: /our-service) ================= -->
+    <div x-show="currentPath === '/our-service'" x-cloak class="pt-32 pb-24">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Our Services & Deliverables</span>
+          <h1 class="text-3xl md:text-5xl font-extrabold text-white">บริการครบวงจรเพื่อธุรกิจและแบรนด์</h1>
           <p class="text-xs md:text-sm text-slate-400 mt-4 leading-relaxed">
-            บริษัท แอล ที ที มา เกท ธิงค์ จำกัด ก่อตั้งขึ้นด้วยความตั้งใจที่จะแก้ปัญหาความกระจัดกระจายของการจ้างงานเอเจนซี่ เราผสานทั้งการวางแผนกลยุทธ์ ฝ่ายออกแบบมีเดีย ช่างภาพมืออาชีพ และทีมตัดต่อวิดีโอเข้าไว้ด้วยกันในที่เดียว เพื่อให้เนื้อหาทุกชิ้นมีทิศทางเดียวกันและสื่อสารไปยังกลุ่มเป้าหมายได้อย่างแม่นยำ
+            เราให้บริการดูแลการตลาดและการผลิตสื่อแบบ Full-Funnel ไม่ว่าคุณจะเป็นโรงแรม รีสอร์ท อสังหาริมทรัพย์ หรือร้านอาหาร
+          </p>
+        </div>
+
+        <div class="space-y-12">
+          <template x-for="service in services" :key="service.id">
+            <div class="card-border rounded-3xl p-8 md:p-12 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+              <div class="md:col-span-2 space-y-4">
+                <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20" x-text="service.slug"></span>
+                <h2 class="text-2xl font-bold text-white" x-text="service.title"></h2>
+                <p class="text-xs font-medium text-blue-400" x-text="service.subtitle"></p>
+                <p class="text-xs md:text-sm text-slate-300 leading-relaxed" x-text="service.description"></p>
+
+                <div class="pt-4 space-y-2">
+                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">ขอบเขตงานที่ส่งมอบ (Scope of Deliverables):</h4>
+                  <template x-for="pt in service.bullet_points" :key="pt">
+                    <div class="flex items-center gap-3 text-xs text-slate-300">
+                      <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                      <span x-text="pt"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="flex flex-col justify-center items-center p-6 bg-slate-900/60 rounded-2xl border border-slate-800 text-center space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-blue-600/10 text-blue-400 flex items-center justify-center font-bold">
+                  <i data-lucide="sparkles" class="w-8 h-8"></i>
+                </div>
+                <div>
+                  <h5 class="text-sm font-bold text-white">สนใจบริการนี้?</h5>
+                  <p class="text-[11px] text-slate-400 mt-1">รับคำปรึกษาและประเมินงบประมาณฟรี</p>
+                </div>
+                <a href="/contact-us" @click.prevent="navigate('/contact-us')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition">
+                  ติดต่อขอรับใบเสนอราคา
+                </a>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 3: PORTFOLIO (Path: /portfolio) ================= -->
+    <div x-show="currentPath === '/portfolio'" x-cloak class="pt-32 pb-24">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Showcase & Case Studies</span>
+          <h1 class="text-3xl md:text-5xl font-extrabold text-white">ผลงานและกรณีศึกษาของเรา</h1>
+          <p class="text-xs md:text-sm text-slate-400 mt-4 leading-relaxed">
+            สัมผัสประสบการณ์งานโปรดักชันถ่ายภาพสถาปัตยกรรม วิดีโอสั้น และแคมเปญการตลาดของแบรนด์ชั้นนำ
           </p>
 
-          <div class="mt-8 space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-400 flex items-center justify-center shrink-0 mt-1 font-bold">1</div>
-              <div>
-                <h4 class="text-sm font-bold text-white">ความเชี่ยวชาญเฉพาะด้านท่องเที่ยวและบริการ</h4>
-                <p class="text-xs text-slate-400 mt-0.5">เข้าใจจิตวิทยาของผู้เข้าพักโรงแรม รีสอร์ท และนักชิมคาเฟ่ ถ่ายทอดมุมมองที่ดึงดูดใจ</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-400 flex items-center justify-center shrink-0 mt-1 font-bold">2</div>
-              <div>
-                <h4 class="text-sm font-bold text-white">โปรดักชันความละเอียดสูงระดับ Commercial</h4>
-                <p class="text-xs text-slate-400 mt-0.5">ใช้อุปกรณ์ระดับ Cinema และการจัดแสงสถาปัตยกรรมที่ได้มาตรฐานสากล</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-lg bg-blue-600/10 text-blue-400 flex items-center justify-center shrink-0 mt-1 font-bold">3</div>
-              <div>
-                <h4 class="text-sm font-bold text-white">วัดผลได้ด้วย Data และ Engagement จริง</h4>
-                <p class="text-xs text-slate-400 mt-0.5">ทุกแคมเปญมีรายงานสรุป Performance พร้อมคำแนะนำเพื่อต่อยอดธุรกิจอย่างยั่งยืน</p>
-              </div>
-            </div>
+          <!-- Category Filter Tabs -->
+          <div class="flex flex-wrap items-center justify-center gap-2 mt-8">
+            <button @click="activeCategory = 'all'" :class="activeCategory === 'all' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-5 py-2.5 rounded-full text-xs font-bold transition">ทั้งหมด</button>
+            <button @click="activeCategory = 'hotels-resorts'" :class="activeCategory === 'hotels-resorts' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-5 py-2.5 rounded-full text-xs font-bold transition">โรงแรม & รีสอร์ท</button>
+            <button @click="activeCategory = 'real-estate'" :class="activeCategory === 'real-estate' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-5 py-2.5 rounded-full text-xs font-bold transition">อสังหาริมทรัพย์</button>
+            <button @click="activeCategory = 'food-beverage'" :class="activeCategory === 'food-beverage' ? 'bg-white text-black' : 'bg-slate-900 text-slate-400 hover:text-white'" class="px-5 py-2.5 rounded-full text-xs font-bold transition">อาหาร & เครื่องดื่ม</button>
           </div>
         </div>
 
-        <div class="relative">
+        <!-- Portfolio Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <template x-for="item in filteredPortfolios" :key="item.id">
+            <div @click="openModal(item)" class="card-border rounded-3xl overflow-hidden group cursor-pointer flex flex-col">
+              <div class="relative h-64 w-full bg-slate-900 overflow-hidden">
+                <img :src="item.cover_image" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="">
+                <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] font-bold text-white uppercase tracking-wider" x-text="item.category_slug"></span>
+              </div>
+              <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <span class="text-xs font-semibold text-blue-400" x-text="item.client_name"></span>
+                  <h3 class="text-base font-bold text-white mt-1 group-hover:text-blue-300 transition" x-text="item.title"></h3>
+                  <p class="text-xs text-slate-400 mt-2 line-clamp-2" x-text="item.summary"></p>
+                </div>
+                <div class="mt-6 flex items-center justify-between text-xs font-bold text-white group-hover:text-blue-400 transition">
+                  <span>ดูรายละเอียดผลงาน</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 4: ABOUT US (Path: /about-us) ================= -->
+    <div x-show="currentPath === '/about-us'" x-cloak class="pt-32 pb-24">
+      <div class="max-w-7xl mx-auto px-6 space-y-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          <div>
+            <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">About LTT Ma getThink</span>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-white leading-tight">ทำหน้าที่เสมือนเป็น "ทีมการตลาดและโปรดักชันส่วนตัว"</h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-6 leading-relaxed">
+              บริษัท แอล ที ที มา เกท ธิงค์ จำกัด ก่อตั้งขึ้นเพื่อเป็น One-Stop Solution ให้กับแบรนด์ต่างๆ เราผสานฝ่ายวางแผนกลยุทธ์ ช่างภาพมืออาชีพ ฝ่ายตัดต่อ และการยิงโฆษณาเข้าไว้ด้วยกันในที่เดียว เพื่อสร้างสรรค์ผลงานที่ตรงเป้าหมายและขับเคลื่อนยอดขายจริง
+            </p>
+
+            <div class="mt-8 space-y-4">
+              <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="eye" class="w-4 h-4 text-blue-400"></i>
+                  <span>วิสัยทัศน์ (Vision)</span>
+                </h4>
+                <p class="text-xs text-slate-400 mt-1">ยกระดับแบรนด์ไทยและธุรกิจบริการสู่มาตรฐานสากลด้วยคอนเทนต์และภาพถ่ายเชิงสถาปัตยกรรมระดับพรีเมียม</p>
+              </div>
+              <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+                  <span>พันธกิจ (Mission)</span>
+                </h4>
+                <p class="text-xs text-slate-400 mt-1">ส่งมอบคุณค่าที่วัดผลได้จริงผ่านงานโปรดักชันที่สวยสะกดสายตาและแผนการตลาดที่ขับเคลื่อนด้วย Data</p>
+              </div>
+            </div>
+          </div>
+
           <div class="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
             <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover" alt="LTT Team">
           </div>
         </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ================= 7. BLOG & EVENTS ================= -->
-  <section id="blog" class="py-24 bg-slate-950/60 border-t border-slate-900">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="text-center max-w-2xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Insights & Events</span>
-        <h2 class="text-2xl md:text-4xl font-extrabold text-white">อัปเดตเทรนด์การตลาดและข่าวสาร</h2>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <template x-for="art in articles" :key="art.id">
-          <article class="card-border rounded-3xl p-6 flex flex-col md:flex-row gap-6">
-            <img :src="art.cover_image" class="w-full md:w-48 h-40 object-cover rounded-2xl" alt="">
-            <div class="flex-1 flex flex-col justify-between">
-              <div>
-                <div class="text-[11px] text-blue-400 font-semibold mb-1" x-text="formatDate(art.published_at)"></div>
-                <h3 class="text-base font-bold text-white mb-2" x-text="art.title"></h3>
-                <p class="text-xs text-slate-400 line-clamp-2" x-text="art.summary"></p>
-              </div>
-              <div class="mt-4 text-xs font-bold text-white flex items-center gap-2">
-                <span>อ่านบทความเต็ม</span>
-                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-              </div>
-            </div>
-          </article>
-        </template>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= 8. CONTACT US & LEAD CAPTURE ================= -->
-  <section id="contact" class="py-24 bg-black border-t border-slate-900">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
-        <div>
-          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Get in Touch</span>
-          <h2 class="text-2xl md:text-4xl font-extrabold text-white">พร้อมยกระดับแบรนด์ของคุณแล้วหรือยัง?</h2>
-          <p class="text-xs md:text-sm text-slate-400 mt-4 leading-relaxed">
-            ปรึกษาแนวทางการตลาด ขอรับใบเสนอราคา หรือสอบถามคิวงานโปรดักชันถ่ายภาพ สามารถกรอกฟอร์มหรือติดต่อทีมงานโดยตรงได้ตลอดเวลาทำการครับ
-          </p>
-
-          <div class="mt-10 space-y-6">
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-blue-400">
-                <i data-lucide="phone" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <span class="text-[11px] text-slate-400 block">เบอร์โทรศัพท์</span>
-                <a :href="'tel:' + siteSettings.phone" class="text-sm font-bold text-white hover:text-blue-400" x-text="siteSettings.phone || '096-042-9083'"></a>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400">
-                <i data-lucide="message-circle" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <span class="text-[11px] text-slate-400 block">LINE Official Account</span>
-                <span class="text-sm font-bold text-white" x-text="siteSettings.line_oa || '@lttmagetthink'"></span>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-indigo-400">
-                <i data-lucide="mail" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <span class="text-[11px] text-slate-400 block">อีเมลสำหรับธุรกิจ</span>
-                <a :href="'mailto:' + siteSettings.email" class="text-sm font-bold text-white hover:text-blue-400" x-text="siteSettings.email || 'contact@lttmagetthink.co'"></a>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 shrink-0">
-                <i data-lucide="map-pin" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <span class="text-[11px] text-slate-400 block">ที่อยู่สำนักงาน</span>
-                <p class="text-xs text-slate-300 leading-relaxed" x-text="siteSettings.address || '65/73 หมู่ 6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150'"></p>
-              </div>
-            </div>
+        <!-- Core Values -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="card-border rounded-3xl p-8 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-400 flex items-center justify-center font-bold">1</div>
+            <h3 class="text-base font-bold text-white">Cinema-Grade Quality</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">ใช้อุปกรณ์กล้องและเลนส์ระดับภาพยนตร์ จัดแสงตามหลักสถาปัตยกรรมที่ถูกต้อง</p>
+          </div>
+          <div class="card-border rounded-3xl p-8 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-400 flex items-center justify-center font-bold">2</div>
+            <h3 class="text-base font-bold text-white">Industry Specialization</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">เชี่ยวชาญเฉพาะทางในกลุ่มธุรกิจโรงแรม รีสอร์ท อสังหาฯ และคาเฟ่ เข้าใจพฤติกรรมลูกค้าลึกซึ้ง</p>
+          </div>
+          <div class="card-border rounded-3xl p-8 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-400 flex items-center justify-center font-bold">3</div>
+            <h3 class="text-base font-bold text-white">Full-Funnel Alignment</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">มีเดียทุกชิ้นถูกออกแบบมาเพื่อรองรับการยิงโฆษณาและปิดการขายได้อย่างไร้รอยต่อ</p>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Contact Form Card -->
-        <div class="card-border rounded-3xl p-8 md:p-10">
-          <h3 class="text-lg font-bold text-white mb-6">กรอกข้อมูลเพื่อให้ทีมงานติดต่อกลับ</h3>
-          
-          <form @submit.prevent="submitInquiry()" class="space-y-4">
-            <div>
-              <label class="text-[11px] font-semibold text-slate-400 block mb-1">ชื่อ-นามสกุล ผู้ติดต่อ *</label>
-              <input type="text" x-model="formData.full_name" required placeholder="เช่น คุณสมชาย มีสุข" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
-            </div>
+    <!-- ================= PAGE 5: BLOG (Path: /blog) ================= -->
+    <div x-show="currentPath === '/blog'" x-cloak class="pt-32 pb-24">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Insights & Events</span>
+          <h1 class="text-3xl md:text-5xl font-extrabold text-white">บทความและอัปเดตเทรนด์การตลาด</h1>
+          <p class="text-xs md:text-sm text-slate-400 mt-4 leading-relaxed">
+            ติดตามเทรนด์วิดีโอสั้น อัลกอริทึมโซเชียลมีเดีย และกลยุทธ์การถ่ายภาพโรงแรมปี 2026
+          </p>
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="text-[11px] font-semibold text-slate-400 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
-                <input type="tel" x-model="formData.phone" required placeholder="08x-xxx-xxxx" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <template x-for="art in articles" :key="art.id">
+            <article class="card-border rounded-3xl p-6 flex flex-col md:flex-row gap-6">
+              <img :src="art.cover_image" class="w-full md:w-48 h-44 object-cover rounded-2xl" alt="">
+              <div class="flex-1 flex flex-col justify-between">
+                <div>
+                  <div class="text-[11px] text-blue-400 font-semibold mb-1" x-text="formatDate(art.published_at)"></div>
+                  <h3 class="text-base font-bold text-white mb-2" x-text="art.title"></h3>
+                  <p class="text-xs text-slate-400 line-clamp-2" x-text="art.summary"></p>
+                </div>
+                <div class="mt-4 text-xs font-bold text-white flex items-center gap-2">
+                  <span>อ่านบทความเต็ม</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </div>
               </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-400 block mb-1">อีเมล *</label>
-                <input type="email" x-model="formData.email" required placeholder="name@company.com" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
-              </div>
-            </div>
-
-            <div>
-              <label class="text-[11px] font-semibold text-slate-400 block mb-1">ชื่อแบรนด์ / บริษัท / โรงแรม</label>
-              <input type="text" x-model="formData.company" placeholder="เช่น Cross Pattaya Resort" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="text-[11px] font-semibold text-slate-400 block mb-1">บริการที่สนใจ</label>
-                <select x-model="formData.service_interested" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
-                  <option value="Commercial Photography & Production">ถ่ายภาพโรงแรม/สถาปัตยกรรม</option>
-                  <option value="Digital Marketing & Social Media">ดูแลเพจ & การตลาดออนไลน์</option>
-                  <option value="Creative Content & Short Video">ตัดต่อวิดีโอสั้น Reels/TikTok</option>
-                  <option value="Influencer & KOL Marketing">อินฟลูเอนเซอร์ & รีวิว</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-[11px] font-semibold text-slate-400 block mb-1">งบประมาณโดยประมาณ</label>
-                <select x-model="formData.budget_range" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
-                  <option value="30,000 - 50,000 THB">30,000 - 50,000 บาท</option>
-                  <option value="50,000 - 100,000 THB">50,000 - 100,000 บาท</option>
-                  <option value="100,000+ THB">100,000 บาทขึ้นไป</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="text-[11px] font-semibold text-slate-400 block mb-1">รายละเอียดความต้องการ *</label>
-              <textarea x-model="formData.message" required rows="3" placeholder="ระบุประเภทสถานที่, จำนวนห้อง หรือช่วงเวลาที่ต้องการใช้งาน..." class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500"></textarea>
-            </div>
-
-            <button type="submit" :disabled="isSubmitting" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider uppercase transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
-              <span x-text="isSubmitting ? 'กำลังส่งข้อมูล...' : 'ส่งข้อมูลติดต่อทีมงาน'"></span>
-              <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
-          </form>
+            </article>
+          </template>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- ================= 9. FOOTER ================= -->
+    <!-- ================= PAGE 6: CONTACT US (Path: /contact-us) ================= -->
+    <div x-show="currentPath === '/contact-us'" x-cloak class="pt-32 pb-24">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-xs font-bold text-blue-500 uppercase tracking-widest block mb-2">Get In Touch</span>
+          <h1 class="text-3xl md:text-5xl font-extrabold text-white">ติดต่อทีมงาน LTT Ma getThink</h1>
+          <p class="text-xs md:text-sm text-slate-400 mt-4 leading-relaxed">
+            กรอกแบบฟอร์มด้านล่างเพื่อขอรับใบเสนอราคา ปรึกษาแคมเปญ หรือนัดหมายคิวงานถ่ายทำ
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+          <!-- Contact Info -->
+          <div class="space-y-8">
+            <div class="card-border rounded-3xl p-8 space-y-6">
+              <h3 class="text-lg font-bold text-white">ช่องทางการติดต่อด่วน</h3>
+
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-blue-400">
+                  <i data-lucide="phone" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block">เบอร์โทรศัพท์</span>
+                  <a :href="'tel:' + siteSettings.phone" class="text-sm font-bold text-white hover:text-blue-400" x-text="siteSettings.phone || '096-042-9083'"></a>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400">
+                  <i data-lucide="message-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block">LINE Official Account</span>
+                  <span class="text-sm font-bold text-white" x-text="siteSettings.line_oa || '@lttmagetthink'"></span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-indigo-400">
+                  <i data-lucide="mail" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block">อีเมลสำหรับธุรกิจ</span>
+                  <a :href="'mailto:' + siteSettings.email" class="text-sm font-bold text-white hover:text-blue-400" x-text="siteSettings.email || 'contact@lttmagetthink.co'"></a>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                  <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block">ที่อยู่สำนักงาน</span>
+                  <p class="text-xs text-slate-300 leading-relaxed" x-text="siteSettings.address || '65/73 หมู่ 6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150'"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Business Hours & FAQ -->
+            <div class="p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-2 text-xs text-slate-400">
+              <div class="flex items-center gap-2 font-bold text-white mb-2">
+                <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+                <span>เวลาทำการ: จันทร์ - ศุกร์ (09:00 - 18:00 น.)</span>
+              </div>
+              <p>• เจ้าหน้าที่จะติดต่อกลับเพื่อสอบถามรายละเอียดและส่งใบเสนอราคาภายใน 24 ชั่วโมงทำการ</p>
+              <p>• กรณีงานด่วนสามารถติดต่อผ่าน LINE Official: @lttmagetthink ได้ตลอดเวลาครับ</p>
+            </div>
+          </div>
+
+          <!-- Customer Lead Form -->
+          <div class="card-border rounded-3xl p-8 md:p-10">
+            <h3 class="text-lg font-bold text-white mb-2">กรอกข้อมูลเพื่อให้ทีมงานติดต่อกลับ</h3>
+            <p class="text-xs text-slate-400 mb-6">ระบุรายละเอียดความต้องการเพื่อความรวดเร็วในการประเมินราคา</p>
+
+            <form @submit.prevent="submitInquiry('contact-us')" class="space-y-4">
+              <div>
+                <label class="text-[11px] font-semibold text-slate-400 block mb-1">ชื่อ-นามสกุล ผู้ติดต่อ *</label>
+                <input type="text" x-model="formData.full_name" required placeholder="เช่น คุณสมชาย มีสุข" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-400 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+                  <input type="tel" x-model="formData.phone" required placeholder="08x-xxx-xxxx" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-400 block mb-1">อีเมล *</label>
+                  <input type="email" x-model="formData.email" required placeholder="name@company.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[11px] font-semibold text-slate-400 block mb-1">ชื่อแบรนด์ / โรงแรม / บริษัท</label>
+                <input type="text" x-model="formData.company" placeholder="เช่น Cross Pattaya Resort" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500">
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-400 block mb-1">บริการที่สนใจ</label>
+                  <select x-model="formData.service_interested" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="Commercial Photography & Production">ถ่ายภาพโรงแรม/สถาปัตยกรรม</option>
+                    <option value="Digital Marketing & Social Media">ดูแลเพจ & การตลาดออนไลน์</option>
+                    <option value="Creative Content & Short Video">ตัดต่อวิดีโอสั้น Reels/TikTok</option>
+                    <option value="Influencer & KOL Marketing">อินฟลูเอนเซอร์ & รีวิว</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[11px] font-semibold text-slate-400 block mb-1">งบประมาณโดยประมาณ</label>
+                  <select x-model="formData.budget_range" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="30,000 - 50,000 THB">30,000 - 50,000 บาท</option>
+                    <option value="50,000 - 100,000 THB">50,000 - 100,000 บาท</option>
+                    <option value="100,000+ THB">100,000 บาทขึ้นไป</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[11px] font-semibold text-slate-400 block mb-1">รายละเอียดความต้องการ *</label>
+                <textarea x-model="formData.message" required rows="3" placeholder="ระบุประเภทสถานที่, จำนวนห้อง หรือช่วงเวลาที่ต้องการใช้งาน..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500"></textarea>
+              </div>
+
+              <button type="submit" :disabled="isSubmitting" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider uppercase transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                <span x-text="isSubmitting ? 'กำลังส่งข้อมูล...' : 'ส่งข้อมูลติดต่อทีมงาน'"></span>
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= FOOTER ================= -->
   <footer class="py-12 bg-black border-t border-slate-900 text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-3">
@@ -445,7 +543,7 @@
     </div>
   </footer>
 
-  <!-- ================= 10. PORTFOLIO CASE STUDY MODAL ================= -->
+  <!-- ================= CASE STUDY DETAIL MODAL ================= -->
   <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
     <div @click.away="modalOpen = false" class="bg-slate-950 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6">
       <div class="flex items-center justify-between">
@@ -477,11 +575,13 @@
   <script>
     function lttWebsite() {
       return {
+        currentPath: window.location.pathname || '/',
         activeCategory: 'all',
         modalOpen: false,
         activeItem: {},
         isSubmitting: false,
         siteSettings: {},
+        navMenus: [],
         services: [],
         portfolios: [],
         articles: [],
@@ -497,19 +597,37 @@
         },
 
         async init() {
+          // Listen to browser Back/Forward buttons
+          window.addEventListener('popstate', () => {
+            this.currentPath = window.location.pathname || '/';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.$nextTick(() => { lucide.createIcons(); });
+          });
+
           await this.loadData();
           this.$nextTick(() => { lucide.createIcons(); });
         },
 
+        navigate(path, isExternal) {
+          if (isExternal) {
+            window.open(path, '_blank');
+            return;
+          }
+          window.history.pushState({}, '', path);
+          this.currentPath = path;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.$nextTick(() => { lucide.createIcons(); });
+        },
+
         async loadData() {
-          // Connect to backend API with fallback
           const apiBase = window.location.port === '3000' 
             ? 'http://localhost:8787/api/public' 
             : 'https://ltt-backend.thunchanok-raj.workers.dev/api/public';
           
           try {
-            const [settingsRes, svcRes, portRes, artRes, clientRes] = await Promise.all([
+            const [settingsRes, navRes, svcRes, portRes, artRes, clientRes] = await Promise.all([
               fetch(apiBase + '/site-settings').catch(() => null),
+              fetch(apiBase + '/navigation').catch(() => null),
               fetch(apiBase + '/services').catch(() => null),
               fetch(apiBase + '/portfolios').catch(() => null),
               fetch(apiBase + '/articles').catch(() => null),
@@ -519,6 +637,10 @@
             if (settingsRes && settingsRes.ok) {
               const d = await settingsRes.json();
               if (d.success) this.siteSettings = d.data;
+            }
+            if (navRes && navRes.ok) {
+              const d = await navRes.json();
+              if (d.success && d.data.length > 0) this.navMenus = d.data;
             }
             if (svcRes && svcRes.ok) {
               const d = await svcRes.json();
@@ -537,15 +659,27 @@
               if (d.success) this.clientLogos = d.data;
             }
           } catch (e) {
-            console.warn('Backend API connecting error:', e);
+            console.warn('Backend API connecting warning:', e);
           }
 
-          // Fallback initial data if API not yet populated
+          // Fallback Default Nav Menus if API not yet populated
+          if (!this.navMenus.length) {
+            this.navMenus = [
+              { id: 1, label: 'หน้าแรก', path: '/' },
+              { id: 2, label: 'บริการของเรา', path: '/our-service' },
+              { id: 3, label: 'ผลงาน', path: '/portfolio' },
+              { id: 4, label: 'เกี่ยวกับเรา', path: '/about-us' },
+              { id: 5, label: 'บทความ & ข่าวสาร', path: '/blog' },
+              { id: 6, label: 'ติดต่อเรา', path: '/contact-us' }
+            ];
+          }
+
           if (!this.services.length) {
             this.services = [
               {
                 id: 1,
                 title: 'Digital Marketing & Social Media',
+                slug: 'digital-marketing',
                 subtitle: 'วางแผนกลยุทธ์และบริหารช่องทางโซเชียลแบบครบวงจร',
                 description: 'ดูแลเพจธุรกิจของคุณเสมือนเป็นทีมการตลาดส่วนตัว วางแผนกลยุทธ์คอนเทนต์รายเดือน ยิงแอดโฆษณา และบริหารจัดการ Facebook, Instagram, TikTok, LINE OA',
                 bullet_points: ['Monthly Content Calendar', 'Ad Strategy & Optimization', 'Account Management', 'Performance Reports']
@@ -553,13 +687,15 @@
               {
                 id: 2,
                 title: 'Commercial Photography & Production',
+                slug: 'photography-production',
                 subtitle: 'บริการถ่ายภาพสินค้า อาหาร และสถาปัตยกรรมระดับพรีเมียม',
-                description: 'ทีมช่างภาพและโปรดักชันมืออาชีพ ถ่ายทอดเอกลักษณ์ของแบรนด์ ทั้งภาพสินค้า อาหาร และงานภาพสถาปัตยกรรมภายใน/ภายนอก (Interior & Exterior) สำหรับโรงแรม รีสอร์ท',
+                description: 'ทีมช่างภาพและโปรดักชันมืออาชีพ ถ่ายทอดเอกลักษณ์ของแบรนด์ ทั้งภาพสินค้า อาหาร และงานภาพสถาปัตยกรรมภายใน/ภายนอก สำหรับโรงแรม รีสอร์ท',
                 bullet_points: ['Hotel & Resort Architecture', 'Interior & Exterior Shoots', 'Food & Beverage Styling', 'Catalog & Studio Shoots']
               },
               {
                 id: 3,
                 title: 'Creative Content & Short Video',
+                slug: 'creative-video',
                 subtitle: 'ออกแบบกราฟิก ตัดต่อวิดีโอสั้น Viral Reels & Shorts',
                 description: 'ผลิตสื่อมีเดียที่ดึงดูดสายตาและสร้างยอด Engagement ออกแบบอาร์ตเวิร์กกราฟิกที่ตรงกับ Brand CI รวมถึงการตัดต่อวิดีโอสั้นพร้อม Script และ Storyboard',
                 bullet_points: ['Viral Reels / TikTok Production', 'Brand Key Visuals', 'Creative Scriptwriting', 'Motion Graphics']
@@ -567,6 +703,7 @@
               {
                 id: 4,
                 title: 'Influencer & KOL Marketing',
+                slug: 'kol-marketing',
                 subtitle: 'คัดเลือกและประสานงานอินฟลูเอนเซอร์ที่ตรงกลุ่มเป้าหมาย',
                 description: 'เชื่อมโยงแบรนด์ของคุณกับ Creators, Influencers และ KOLs ที่มีอิทธิพลตรงกลุ่ม คัดสรรด้วย Data เพื่อสร้างการรับรู้ รีวิวเชิงลึก และผลักดันยอดขาย',
                 bullet_points: ['Data-Driven KOL Matching', 'Briefing & Quality Check', 'Performance Tracking', 'Cross-Posting']
@@ -602,24 +739,6 @@
                 cover_image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
                 summary: 'บริการถ่ายภาพโรงแรมติดชายหาดหาดละไมและจัดทำแคมเปญอินฟลูเอนเซอร์ช่วง High Season',
                 details: 'ยกระดับภาพลักษณ์บูทีครีสอร์ทริมทะเลเกาะสมุย เน้นเฉดสีธรรมชาติ แสงแดดเขตร้อน และการพักผ่อนเพื่อสุขภาพ'
-              },
-              {
-                id: 4,
-                title: 'Rachabura Hotel — Riverside Industrial Chic',
-                client_name: 'Rachabura Hotel',
-                category_slug: 'hotels-resorts',
-                cover_image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
-                summary: 'งานภาพถ่ายดีไซน์อิฐแดงและสถาปัตยกรรมร่วมสมัยริมแม่น้ำแม่กลอง จังหวัดราชบุรี',
-                details: 'ชูจุดเด่นสถาปัตยกรรมที่มีเอกลักษณ์ ผสมผสานความดิบของอิฐและสายน้ำ เพื่อดึงดูดกลุ่มนักท่องเที่ยวสายถ่ายภาพและคาเฟ่ฮอปเปอร์'
-              },
-              {
-                id: 5,
-                title: 'Suncave Cafe & Roastery — Signature Menu & Social Launch',
-                client_name: 'Suncave Cafe',
-                category_slug: 'food-beverage',
-                cover_image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
-                summary: 'การถ่ายภาพอาหารและเครื่องดื่ม Specialty Coffee พร้อมแคมเปญเปิดตัวบน TikTok',
-                details: 'สร้าง Storytelling ผ่านภาพเมล็ดกาแฟคั่วพิเศษ กลิ่นหอม และเบเกอรีอบสดใหม่ ดันยอด Engagement สูงสุดในสัปดาห์แรกของการเปิดร้าน'
               }
             ];
           }
@@ -665,17 +784,18 @@
           this.$nextTick(() => { lucide.createIcons(); });
         },
 
-        async submitInquiry() {
+        async submitInquiry(sourcePage = 'contact-us') {
           this.isSubmitting = true;
           const apiBase = window.location.port === '3000' 
             ? 'http://localhost:8787/api/public' 
             : 'https://ltt-backend.thunchanok-raj.workers.dev/api/public';
 
           try {
+            const payload = { ...this.formData, source_page: sourcePage };
             const res = await fetch(apiBase + '/inquiries', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.formData)
+              body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (data.success) {
@@ -703,7 +823,7 @@
           if (!dateStr) return '';
           return new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
         }
-      }
+      };
     }
   </script>
 </body>

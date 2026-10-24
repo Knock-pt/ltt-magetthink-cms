@@ -1,6 +1,7 @@
 {
   "name": "ltt-cms-backend",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "description": "LTT Ma getThink Backend CMS on Cloudflare Worker & D1",
   "main": "src/index.ts",

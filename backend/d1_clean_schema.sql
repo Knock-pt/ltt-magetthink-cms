@@ -72,6 +72,8 @@ service_interested TEXT,
 budget_range TEXT,
 message TEXT NOT NULL,
 status TEXT DEFAULT 'new',
+    admin_notes TEXT,
+    source_page TEXT DEFAULT 'contact-us',
 ip_address TEXT,
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -93,3 +95,14 @@ CREATE INDEX IF NOT EXISTS idx_portfolios_category ON portfolios (category_slug)
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles (status, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_client_logos_active ON client_logos (is_active, sort_order);
+CREATE TABLE IF NOT EXISTS navigation_menus (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    path TEXT NOT NULL,
+    is_external INTEGER DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_nav_menus_active ON navigation_menus (is_active, sort_order);

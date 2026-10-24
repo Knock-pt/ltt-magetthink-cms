@@ -98,6 +98,11 @@ export default {
       // -------------------------------------------------------------
       // 2. Public APIs (For Frontend)
       // -------------------------------------------------------------
+      if (path === '/api/public/navigation' && method === 'GET') {
+        const { results } = await env.DB.prepare('SELECT * FROM navigation_menus WHERE is_active = 1 ORDER BY sort_order ASC, id ASC').all();
+        return jsonResponse({ success: true, data: results || [] }, 200, origin);
+      }
+
       if (path === '/api/public/site-settings' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT key, value FROM site_settings').all();
         const settings = {};
@@ -161,6 +166,7 @@ export default {
         const service_interested = sanitizeInput(body.service_interested);
         const budget_range = sanitizeInput(body.budget_range);
         const message = sanitizeInput(body.message);
+        const source_page = sanitizeInput(body.source_page) || 'contact-us';
         const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
         if (!full_name || !email || !phone || !message) {
@@ -168,9 +174,9 @@ export default {
         }
 
         await env.DB.prepare(
-          `INSERT INTO inquiries (full_name, email, phone, company, service_interested, budget_range, message, ip_address)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(full_name, email, phone, company, service_interested, budget_range, message, ip).run();
+          `INSERT INTO inquiries (full_name, email, phone, company, service_interested, budget_range, message, source_page, ip_address)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(full_name, email, phone, company, service_interested, budget_range, message, source_page, ip).run();
 
         return jsonResponse({ success: true, message: 'ส่งข้อมูลเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุดครับ' }, 200, origin);
       }
@@ -178,6 +184,59 @@ export default {
       // -------------------------------------------------------------
       // 3. Admin APIs (Backoffice)
       // -------------------------------------------------------------
+      if (path === '/api/admin/navigation' && method === 'GET') {
+        const { results } = await env.DB.prepare('SELECT * FROM navigation_menus ORDER BY sort_order ASC, id ASC').all();
+        return jsonResponse({ success: true, data: results || [] }, 200, origin);
+      }
+
+      if (path === '/api/admin/navigation' && method === 'POST') {
+        const b = await request.json();
+        const label = sanitizeInput(b.label);
+        const p = sanitizeInput(b.path);
+        const is_external = b.is_external ? 1 : 0;
+        const sort_order = Number(b.sort_order) || 0;
+        const is_active = b.is_active !== undefined ? (b.is_active ? 1 : 0) : 1;
+
+        if (!label || !p) {
+          return jsonResponse({ success: false, error: 'กรุณากรอกชื่อเมนูและ Path' }, 400, origin);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO navigation_menus (label, path, is_external, sort_order, is_active) VALUES (?, ?, ?, ?, ?)'
+        ).bind(label, p, is_external, sort_order, is_active).run();
+
+        return jsonResponse({ success: true, message: 'เพิ่มเมนูหลักเรียบร้อยแล้ว' }, 200, origin);
+      }
+
+      if (path.startsWith('/api/admin/navigation/') && method === 'PUT') {
+        const id = path.replace('/api/admin/navigation/', '');
+        const b = await request.json();
+        const label = sanitizeInput(b.label);
+        const p = sanitizeInput(b.path);
+        const is_external = b.is_external ? 1 : 0;
+        const sort_order = Number(b.sort_order) || 0;
+        const is_active = b.is_active ? 1 : 0;
+
+        await env.DB.prepare(
+          'UPDATE navigation_menus SET label = ?, path = ?, is_external = ?, sort_order = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).bind(label, p, is_external, sort_order, is_active, id).run();
+
+        return jsonResponse({ success: true, message: 'อัปเดตเมนูเรียบร้อยแล้ว' }, 200, origin);
+      }
+
+      if (path.startsWith('/api/admin/navigation/') && method === 'DELETE') {
+        const id = path.replace('/api/admin/navigation/', '');
+        await env.DB.prepare('DELETE FROM navigation_menus WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true, message: 'ลบเมนูเรียบร้อยแล้ว' }, 200, origin);
+      }
+
+      if (path.match(/\/api\/admin\/inquiries\/\d+\/notes/) && method === 'PATCH') {
+        const id = path.split('/')[4];
+        const { notes } = await request.json();
+        await env.DB.prepare('UPDATE inquiries SET admin_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sanitizeInput(notes), id).run();
+        return jsonResponse({ success: true, message: 'บันทึกโน้ตสำเร็จ' }, 200, origin);
+      }
+
       if (path === '/api/admin/dashboard/stats' && method === 'GET') {
         const totalInquiries = await env.DB.prepare('SELECT COUNT(*) as count FROM inquiries').first();
         const newInquiries = await env.DB.prepare('SELECT COUNT(*) as count FROM inquiries WHERE status = "new"').first();
@@ -376,6 +435,9 @@ function getAdminHtml(userEmail) {
       <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard ภาพรวม</span>
       </button>
+            <button @click="currentTab = 'navigation'" :class="currentTab === 'navigation' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+        <i data-lucide="compass" class="w-4 h-4"></i><span>Navigation เมนูหลัก</span>
+      </button>
       <button @click="currentTab = 'portfolios'" :class="currentTab === 'portfolios' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="briefcase" class="w-4 h-4"></i><span>Portfolios ผลงาน</span>
       </button>
@@ -544,21 +606,91 @@ function getAdminHtml(userEmail) {
         </div>
         <div class="glass-card rounded-2xl overflow-hidden">
           <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40"><tr><th class="p-4">ลูกค้า</th><th class="p-4">เบอร์/อีเมล</th><th class="p-4">ข้อความ</th><th class="p-4">สถานะ</th><th class="p-4 text-right">เปลี่ยนสถานะ</th></tr></thead>
+            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+              <tr>
+                <th class="p-4">ลูกค้า</th>
+                <th class="p-4">เบอร์/อีเมล</th>
+                <th class="p-4">ข้อความ & โน้ตภายใน</th>
+                <th class="p-4">ต้นทาง</th>
+                <th class="p-4">สถานะ</th>
+                <th class="p-4 text-right">การจัดการ</th>
+              </tr>
+            </thead>
             <tbody class="divide-y divide-slate-800/60">
               <template x-for="inq in inquiries" :key="inq.id">
                 <tr>
                   <td class="p-4 font-semibold text-white" x-text="inq.full_name"></td>
-                  <td class="p-4 text-slate-300"><div x-text="inq.email"></div><div class="text-[11px] text-blue-400" x-text="inq.phone"></div></td>
-                  <td class="p-4 text-slate-300 max-w-xs" x-text="inq.message"></td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-400" x-text="inq.status"></span></td>
-                  <td class="p-4 text-right">
+                  <td class="p-4 text-slate-300">
+                    <div x-text="inq.email"></div>
+                    <div class="text-[11px] text-blue-400" x-text="inq.phone"></div>
+                  </td>
+                  <td class="p-4 text-slate-300 max-w-xs">
+                    <div class="line-clamp-2" x-text="inq.message"></div>
+                    <div x-show="inq.admin_notes" class="mt-1 p-1.5 rounded bg-blue-950/60 border border-blue-800/40 text-[11px] text-blue-300 font-medium">
+                      📌 โน้ต: <span x-text="inq.admin_notes"></span>
+                    </div>
+                  </td>
+                  <td class="p-4 text-slate-400 font-mono text-[11px]" x-text="inq.source_page || 'contact-us'"></td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                      :class="inq.status === 'new' ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'"
+                      x-text="inq.status"></span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button @click="editInquiryNote(inq)" title="จดโน้ตภายใน" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">📝 โน้ต</button>
                     <select @change="updateStatus(inq.id, $event.target.value)" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200">
                       <option value="new" :selected="inq.status === 'new'">New</option>
                       <option value="in_progress" :selected="inq.status === 'in_progress'">In Progress</option>
                       <option value="contacted" :selected="inq.status === 'contacted'">Contacted</option>
                       <option value="closed" :selected="inq.status === 'closed'">Closed</option>
                     </select>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+            <!-- NAVIGATION MENUS -->
+      <section x-show="currentTab === 'navigation'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white">จัดการเมนูหลักของเว็บไซต์ (Navigation Menus)</h3>
+            <p class="text-xs text-slate-400">เพิ่ม ลบ แก้ไข และจัดเรียงเมนูบนแถบ Navigation หน้าบ้าน</p>
+          </div>
+          <button @click="openCreateNavMenu()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i><span>เพิ่มเมนูหลักใหม่</span>
+          </button>
+        </div>
+
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+              <tr>
+                <th class="p-4 font-semibold">ลำดับ</th>
+                <th class="p-4 font-semibold">ชื่อเมนู (Label)</th>
+                <th class="p-4 font-semibold">URL Path (เช่น /our-service)</th>
+                <th class="p-4 font-semibold">ประเภท</th>
+                <th class="p-4 font-semibold">สถานะ</th>
+                <th class="p-4 font-semibold text-right">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <template x-for="item in navMenus" :key="item.id">
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-4 text-slate-400 font-semibold" x-text="item.sort_order"></td>
+                  <td class="p-4 font-bold text-white" x-text="item.label"></td>
+                  <td class="p-4 text-blue-400 font-mono text-[11px]" x-text="item.path"></td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_external ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'" x-text="item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)'"></span>
+                  </td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'" x-text="item.is_active ? 'เปิดใช้งาน' : 'ปิด'"></span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button @click="editNavMenu(item)" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    <button @click="deleteNavMenu(item.id)" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                   </td>
                 </tr>
               </template>
@@ -589,21 +721,23 @@ function getAdminHtml(userEmail) {
         currentTab: 'dashboard',
         isPurging: false,
         stats: { total_inquiries: 0, new_inquiries: 0, total_portfolios: 0, total_services: 0, total_articles: 0, recent_inquiries: [] },
-        portfolios: [], services: [], articles: [], clientLogos: [], inquiries: [], settingsMap: {},
+        portfolios: [], services: [], articles: [], clientLogos: [], inquiries: [], navMenus: [], settingsMap: {},
         async init() {
           await this.loadAll();
           this.$nextTick(() => { lucide.createIcons(); });
         },
         async loadAll() {
-          const [s, p, sv, a, cl, inq, set] = await Promise.all([
+          const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([
             fetch('/api/admin/dashboard/stats').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/portfolios').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/services').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/articles').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/client-logos').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/inquiries').then(r=>r.json()).catch(()=>({})),
+            fetch('/api/admin/navigation').then(r=>r.json()).catch(()=>({})),
             fetch('/api/admin/site-settings').then(r=>r.json()).catch(()=>({}))
           ]);
+          if (nav && nav.data) this.navMenus = nav.data;
           if (s.data) this.stats = s.data;
           if (p.data) this.portfolios = p.data;
           if (sv.data) this.services = sv.data;
@@ -655,6 +789,45 @@ function getAdminHtml(userEmail) {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ title, client_name: client, category_slug: category, cover_image: cover, summary: 'โปรดักชันภาพถ่ายระดับพรีเมียม', featured: 1 })
+          });
+          await this.loadAll();
+        },
+                async openCreateNavMenu() {
+          const label = prompt('ชื่อเมนู (เช่น บริการของเรา, ผลงาน, หรือเมนูใหม่):');
+          if (!label) return;
+          const p = prompt('URL Path (เช่น /our-service, /special-deal หรือ https://...):', '/');
+          const sort = prompt('ลำดับการแสดงผล (ตัวเลข):', '1');
+          await fetch('/api/admin/navigation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ label, path: p, sort_order: Number(sort)||1, is_active: 1 })
+          });
+          await this.loadAll();
+        },
+        async editNavMenu(item) {
+          const label = prompt('ชื่อเมนู:', item.label);
+          if (!label) return;
+          const p = prompt('URL Path:', item.path);
+          const sort = prompt('ลำดับ:', item.sort_order);
+          await fetch('/api/admin/navigation/' + item.id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ label, path: p, sort_order: Number(sort)||1, is_active: item.is_active })
+          });
+          await this.loadAll();
+        },
+        async deleteNavMenu(id) {
+          if (!confirm('ยืนยันลบเมนูนี้?')) return;
+          await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
+          await this.loadAll();
+        },
+        async editInquiryNote(inq) {
+          const note = prompt('บันทึกโน้ตภายในสำหรับลูกค้าท่านนี้:', inq.admin_notes || '');
+          if (note === null) return;
+          await fetch('/api/admin/inquiries/' + inq.id + '/notes', {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ notes: note })
           });
           await this.loadAll();
         },
