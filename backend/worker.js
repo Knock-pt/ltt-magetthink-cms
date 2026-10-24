@@ -12,7 +12,7 @@ function setSecurityHeaders(response, origin) {
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set(
     'Content-Security-Policy',
-    "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https:;"
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https:;"
   );
 
   // CORS
@@ -319,6 +319,18 @@ export default {
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
       }
 
+      if (path === '/api/admin/client-logos' && method === 'POST') {
+        const body = await request.json();
+        const name = sanitizeInput(body.name);
+        const logo_url = sanitizeInput(body.logo_url);
+        const website_url = sanitizeInput(body.website_url);
+        const sort_order = Number(body.sort_order) || 0;
+        await env.DB.prepare(
+          'INSERT INTO client_logos (name, logo_url, website_url, sort_order, is_active) VALUES (?, ?, ?, ?, 1)'
+        ).bind(name, logo_url, website_url, sort_order).run();
+        return jsonResponse({ success: true, message: 'เพิ่มโลโก้ลูกค้าเรียบร้อย' }, 201, origin);
+      }
+
       if (path.startsWith('/api/admin/client-logos/') && method === 'DELETE') {
         const id = path.replace('/api/admin/client-logos/', '');
         await env.DB.prepare('DELETE FROM client_logos WHERE id = ?').bind(id).run();
@@ -419,6 +431,234 @@ function getAdminHtml(userEmail) {
     .active-nav { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }
     [x-cloak] { display: none !important; }
   </style>
+
+  <script>
+    // Initialize adminApp on window so Alpine can find it without eval delays
+    window.adminApp = function() {
+      return {
+        currentTab: 'dashboard',
+        isPurging: false,
+        stats: { total_inquiries: 0, new_inquiries: 0, total_portfolios: 0, total_services: 0, total_articles: 0, recent_inquiries: [] },
+        portfolios: [],
+        services: [],
+        articles: [],
+        clientLogos: [],
+        inquiries: [],
+        navMenus: [],
+        settingsMap: {},
+
+        // Modals state
+        navModalOpen: false,
+        navForm: { id: null, label: '', path: '', is_external: 0, sort_order: 1, is_active: 1 },
+
+        portfolioModalOpen: false,
+        portfolioForm: { id: null, title: '', client_name: '', category_slug: 'hotels-resorts', cover_image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80', summary: '', featured: 1 },
+
+        clientModalOpen: false,
+        clientForm: { name: '', logo_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80', website_url: '', sort_order: 1 },
+
+        noteModalOpen: false,
+        noteForm: { id: null, customerName: '', notes: '' },
+
+        async init() {
+          await this.loadAll();
+          this.refreshIcons();
+        },
+
+        switchTab(tab) {
+          this.currentTab = tab;
+          this.refreshIcons();
+        },
+
+        refreshIcons() {
+          this.$nextTick(() => {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          });
+        },
+
+        async loadAll() {
+          try {
+            const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([
+              fetch('/api/admin/dashboard/stats').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/portfolios').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/services').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/articles').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/client-logos').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/inquiries').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/navigation').then(r=>r.json()).catch(()=>({})),
+              fetch('/api/admin/site-settings').then(r=>r.json()).catch(()=>({}))
+            ]);
+            if (nav && nav.data) this.navMenus = nav.data;
+            if (s && s.data) this.stats = s.data;
+            if (p && p.data) this.portfolios = p.data;
+            if (sv && sv.data) this.services = sv.data;
+            if (a && a.data) this.articles = a.data;
+            if (cl && cl.data) this.clientLogos = cl.data;
+            if (inq && inq.data) this.inquiries = inq.data;
+            if (set && set.data) {
+              const m = {};
+              set.data.forEach(item => { m[item.key] = item.value; });
+              this.settingsMap = m;
+            }
+          } catch(e) {
+            console.error('Error loading data:', e);
+          }
+          this.refreshIcons();
+        },
+
+        // Navigation Menu Actions
+        openCreateNavMenu() {
+          this.navForm = { id: null, label: '', path: '/', is_external: 0, sort_order: (this.navMenus.length + 1), is_active: 1 };
+          this.navModalOpen = true;
+        },
+        openEditNavMenu(item) {
+          this.navForm = { id: item.id, label: item.label, path: item.path, is_external: item.is_external || 0, sort_order: item.sort_order || 1, is_active: item.is_active ?? 1 };
+          this.navModalOpen = true;
+        },
+        async submitNavMenu() {
+          if (!this.navForm.label || !this.navForm.path) {
+            alert('กรุณากรอกชื่อเมนูและ URL Path');
+            return;
+          }
+          const isEdit = !!this.navForm.id;
+          const url = isEdit ? '/api/admin/navigation/' + this.navForm.id : '/api/admin/navigation';
+          const method = isEdit ? 'PUT' : 'POST';
+          await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(this.navForm)
+          });
+          this.navModalOpen = false;
+          await this.loadAll();
+        },
+        async deleteNavMenu(id) {
+          if (!confirm('ยืนยันลบเมนูนี้ออกจากแถบ Navigation?')) return;
+          await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
+          await this.loadAll();
+        },
+
+        // Portfolios Actions
+        openCreatePortfolio() {
+          this.portfolioForm = {
+            id: null,
+            title: '',
+            client_name: '',
+            category_slug: 'hotels-resorts',
+            cover_image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+            summary: '',
+            featured: 1
+          };
+          this.portfolioModalOpen = true;
+        },
+        async submitPortfolio() {
+          if (!this.portfolioForm.title || !this.portfolioForm.client_name) {
+            alert('กรุณากรอกชื่อผลงานและชื่อลูกค้า');
+            return;
+          }
+          await fetch('/api/admin/portfolios', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(this.portfolioForm)
+          });
+          this.portfolioModalOpen = false;
+          await this.loadAll();
+        },
+        async deletePortfolio(id) {
+          if (!confirm('ยืนยันลบผลงานนี้?')) return;
+          await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
+          await this.loadAll();
+        },
+
+        // Client Logos
+        openCreateClientLogo() {
+          this.clientForm = { name: '', logo_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80', website_url: '', sort_order: (this.clientLogos.length + 1) };
+          this.clientModalOpen = true;
+        },
+        async submitClientLogo() {
+          if (!this.clientForm.name) {
+            alert('กรุณากรอกชื่อลูกค้า');
+            return;
+          }
+          await fetch('/api/admin/client-logos', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(this.clientForm)
+          });
+          this.clientModalOpen = false;
+          await this.loadAll();
+        },
+        async deleteClientLogo(id) {
+          if (!confirm('ยืนยันลบลูกค้ารายนี้?')) return;
+          await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
+          await this.loadAll();
+        },
+
+        // Inquiries & Notes
+        openEditNote(inq) {
+          this.noteForm = { id: inq.id, customerName: inq.full_name, notes: inq.admin_notes || '' };
+          this.noteModalOpen = true;
+        },
+        async submitNote() {
+          await fetch('/api/admin/inquiries/' + this.noteForm.id + '/notes', {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ notes: this.noteForm.notes })
+          });
+          this.noteModalOpen = false;
+          await this.loadAll();
+        },
+        async updateStatus(id, st) {
+          await fetch('/api/admin/inquiries/' + id + '/status', {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: st })
+          });
+          await this.loadAll();
+        },
+
+        // Services & Settings
+        async saveService(svc) {
+          await fetch('/api/admin/services/' + svc.id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(svc)
+          });
+          alert('บันทึกข้อมูลบริการเรียบร้อย');
+        },
+        async saveSettings() {
+          const list = Object.keys(this.settingsMap).map(k => ({ key: k, value: this.settingsMap[k] }));
+          await fetch('/api/admin/site-settings', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ settings: list })
+          });
+          alert('บันทึกการตั้งค่าเว็บไซต์เรียบร้อย');
+        },
+
+        // Articles
+        async deleteArticle(id) {
+          if (!confirm('ยืนยันลบบทความนี้?')) return;
+          await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
+          await this.loadAll();
+        },
+
+        // Purge Cache
+        async triggerCachePurge() {
+          this.isPurging = true;
+          await fetch('/api/admin/sync/purge-cache', { method: 'POST' });
+          alert('ส่งคำสั่ง Sync & Purge Cache เรียบร้อยแล้ว!');
+          this.isPurging = false;
+        },
+
+        formatDate(d) {
+          if (!d) return '-';
+          return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+      };
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
 </head>
 <body class="h-full flex overflow-hidden" x-data="adminApp()" x-init="init()">
@@ -432,29 +672,29 @@ function getAdminHtml(userEmail) {
       </div>
     </div>
     <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-      <button @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('dashboard')" :class="currentTab === 'dashboard' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard ภาพรวม</span>
       </button>
-            <button @click="currentTab = 'navigation'" :class="currentTab === 'navigation' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('navigation')" :class="currentTab === 'navigation' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="compass" class="w-4 h-4"></i><span>Navigation เมนูหลัก</span>
       </button>
-      <button @click="currentTab = 'portfolios'" :class="currentTab === 'portfolios' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('portfolios')" :class="currentTab === 'portfolios' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="briefcase" class="w-4 h-4"></i><span>Portfolios ผลงาน</span>
       </button>
-      <button @click="currentTab = 'services'" :class="currentTab === 'services' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('services')" :class="currentTab === 'services' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="sparkles" class="w-4 h-4"></i><span>Services บริการ</span>
       </button>
-      <button @click="currentTab = 'articles'" :class="currentTab === 'articles' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('articles')" :class="currentTab === 'articles' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="newspaper" class="w-4 h-4"></i><span>Blog & Events บทความ</span>
       </button>
-      <button @click="currentTab = 'clients'" :class="currentTab === 'clients' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('clients')" :class="currentTab === 'clients' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="building-2" class="w-4 h-4"></i><span>Client Logos ลูกค้า</span>
       </button>
-      <button @click="currentTab = 'inquiries'" :class="currentTab === 'inquiries' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all justify-between">
+      <button type="button" @click="switchTab('inquiries')" :class="currentTab === 'inquiries' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all justify-between">
         <div class="flex items-center gap-3"><i data-lucide="inbox" class="w-4 h-4"></i><span>Inquiries ข้อความติดต่อ</span></div>
         <span x-show="stats.new_inquiries > 0" x-text="stats.new_inquiries" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
       </button>
-      <button @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
+      <button type="button" @click="switchTab('settings')" :class="currentTab === 'settings' ? 'active-nav' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all">
         <i data-lucide="settings" class="w-4 h-4"></i><span>Site Settings & SEO</span>
       </button>
     </nav>
@@ -478,7 +718,7 @@ function getAdminHtml(userEmail) {
         <span class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60">Cloudflare D1 Live</span>
       </div>
       <div class="flex items-center gap-3">
-        <button @click="triggerCachePurge()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
+        <button type="button" @click="triggerCachePurge()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="isPurging ? 'animate-spin' : ''"></i><span>Sync & Purge Cache</span>
         </button>
       </div>
@@ -530,11 +770,58 @@ function getAdminHtml(userEmail) {
         </div>
       </section>
 
+      <!-- NAVIGATION MENUS -->
+      <section x-show="currentTab === 'navigation'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white">จัดการเมนูหลักของเว็บไซต์ (Navigation Menus)</h3>
+            <p class="text-xs text-slate-400">เพิ่ม ลบ แก้ไข และจัดเรียงเมนูบนแถบ Navigation หน้าบ้าน</p>
+          </div>
+          <button type="button" @click="openCreateNavMenu()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มเมนูหลักใหม่</span>
+          </button>
+        </div>
+
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+              <tr>
+                <th class="p-4 font-semibold">ลำดับ</th>
+                <th class="p-4 font-semibold">ชื่อเมนู (Label)</th>
+                <th class="p-4 font-semibold">URL Path (เช่น /our-service)</th>
+                <th class="p-4 font-semibold">ประเภท</th>
+                <th class="p-4 font-semibold">สถานะ</th>
+                <th class="p-4 font-semibold text-right">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <template x-for="item in navMenus" :key="item.id">
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-4 text-slate-400 font-semibold" x-text="item.sort_order"></td>
+                  <td class="p-4 font-bold text-white" x-text="item.label"></td>
+                  <td class="p-4 text-blue-400 font-mono text-[11px]" x-text="item.path"></td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_external ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'" x-text="item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)'"></span>
+                  </td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'" x-text="item.is_active ? 'เปิดใช้งาน' : 'ปิด'"></span>
+                  </td>
+                  <td class="p-4 text-right space-x-2">
+                    <button type="button" @click="openEditNavMenu(item)" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    <button type="button" @click="deleteNavMenu(item.id)" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- PORTFOLIOS -->
       <section x-show="currentTab === 'portfolios'" class="space-y-6">
         <div class="flex items-center justify-between">
           <h3 class="text-base font-bold text-white">จัดการผลงาน (Portfolios)</h3>
-          <button @click="openCreatePortfolio()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white">+ เพิ่มผลงานใหม่</button>
+          <button type="button" @click="openCreatePortfolio()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white">+ เพิ่มผลงานใหม่</button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <template x-for="item in portfolios" :key="item.id">
@@ -547,7 +834,7 @@ function getAdminHtml(userEmail) {
                   <p class="text-xs text-slate-400 mt-2 line-clamp-2" x-text="item.summary"></p>
                 </div>
                 <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end">
-                  <button @click="deletePortfolio(item.id)" class="text-rose-400 hover:text-rose-300 text-xs font-semibold">ลบผลงาน</button>
+                  <button type="button" @click="deletePortfolio(item.id)" class="text-rose-400 hover:text-rose-300 text-xs font-semibold">ลบผลงาน</button>
                 </div>
               </div>
             </div>
@@ -564,7 +851,7 @@ function getAdminHtml(userEmail) {
               <h4 class="font-bold text-sm text-white" x-text="svc.title"></h4>
               <input type="text" x-model="svc.subtitle" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">
               <textarea x-model="svc.description" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"></textarea>
-              <div class="flex justify-end"><button @click="saveService(svc)" class="px-4 py-2 rounded-xl bg-blue-600 text-xs font-semibold text-white">บันทึก</button></div>
+              <div class="flex justify-end"><button type="button" @click="saveService(svc)" class="px-4 py-2 rounded-xl bg-blue-600 text-xs font-semibold text-white">บันทึก</button></div>
             </div>
           </template>
         </div>
@@ -578,7 +865,7 @@ function getAdminHtml(userEmail) {
             <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40"><tr><th class="p-4">ชื่อบทความ</th><th class="p-4">วันที่</th><th class="p-4 text-right">ลบ</th></tr></thead>
             <tbody class="divide-y divide-slate-800/60">
               <template x-for="art in articles" :key="art.id">
-                <tr><td class="p-4 font-medium text-white" x-text="art.title"></td><td class="p-4 text-slate-400" x-text="formatDate(art.published_at)"></td><td class="p-4 text-right"><button @click="deleteArticle(art.id)" class="text-rose-400">ลบ</button></td></tr>
+                <tr><td class="p-4 font-medium text-white" x-text="art.title"></td><td class="p-4 text-slate-400" x-text="formatDate(art.published_at)"></td><td class="p-4 text-right"><button type="button" @click="deleteArticle(art.id)" class="text-rose-400">ลบ</button></td></tr>
               </template>
             </tbody>
           </table>
@@ -587,11 +874,15 @@ function getAdminHtml(userEmail) {
 
       <!-- CLIENT LOGOS -->
       <section x-show="currentTab === 'clients'" class="space-y-6">
-        <h3 class="text-base font-bold text-white">โลโก้ลูกค้า</h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white">โลโก้ลูกค้า (Client Logos)</h3>
+          <button type="button" @click="openCreateClientLogo()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white">+ เพิ่มโลโก้ลูกค้า</button>
+        </div>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <template x-for="cl in clientLogos" :key="cl.id">
             <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group">
-              <button @click="deleteClientLogo(cl.id)" class="absolute top-2 right-2 text-rose-400">✕</button>
+              <button type="button" @click="deleteClientLogo(cl.id)" class="absolute top-2 right-2 text-rose-400 hover:text-rose-300">✕</button>
+              <img :src="cl.logo_url" class="h-10 object-contain mb-2 opacity-80 group-hover:opacity-100" alt="">
               <span class="text-xs font-medium text-slate-300" x-text="cl.name"></span>
             </div>
           </template>
@@ -602,7 +893,7 @@ function getAdminHtml(userEmail) {
       <section x-show="currentTab === 'inquiries'" class="space-y-6">
         <div class="flex items-center justify-between">
           <h3 class="text-base font-bold text-white">กล่องข้อความติดต่อ</h3>
-          <a href="/api/admin/inquiries/export.csv" class="px-4 py-2 rounded-xl bg-emerald-600 text-xs font-semibold text-white">Export เป็น CSV</a>
+          <a href="/api/admin/inquiries/export.csv" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white">Export เป็น CSV</a>
         </div>
         <div class="glass-card rounded-2xl overflow-hidden">
           <table class="w-full text-left text-xs">
@@ -637,60 +928,13 @@ function getAdminHtml(userEmail) {
                       x-text="inq.status"></span>
                   </td>
                   <td class="p-4 text-right space-x-2">
-                    <button @click="editInquiryNote(inq)" title="จดโน้ตภายใน" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">📝 โน้ต</button>
+                    <button type="button" @click="openEditNote(inq)" title="จดโน้ตภายใน" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">📝 โน้ต</button>
                     <select @change="updateStatus(inq.id, $event.target.value)" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200">
                       <option value="new" :selected="inq.status === 'new'">New</option>
                       <option value="in_progress" :selected="inq.status === 'in_progress'">In Progress</option>
                       <option value="contacted" :selected="inq.status === 'contacted'">Contacted</option>
                       <option value="closed" :selected="inq.status === 'closed'">Closed</option>
                     </select>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-            <!-- NAVIGATION MENUS -->
-      <section x-show="currentTab === 'navigation'" class="space-y-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-white">จัดการเมนูหลักของเว็บไซต์ (Navigation Menus)</h3>
-            <p class="text-xs text-slate-400">เพิ่ม ลบ แก้ไข และจัดเรียงเมนูบนแถบ Navigation หน้าบ้าน</p>
-          </div>
-          <button @click="openCreateNavMenu()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>เพิ่มเมนูหลักใหม่</span>
-          </button>
-        </div>
-
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
-              <tr>
-                <th class="p-4 font-semibold">ลำดับ</th>
-                <th class="p-4 font-semibold">ชื่อเมนู (Label)</th>
-                <th class="p-4 font-semibold">URL Path (เช่น /our-service)</th>
-                <th class="p-4 font-semibold">ประเภท</th>
-                <th class="p-4 font-semibold">สถานะ</th>
-                <th class="p-4 font-semibold text-right">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-              <template x-for="item in navMenus" :key="item.id">
-                <tr class="hover:bg-slate-800/30">
-                  <td class="p-4 text-slate-400 font-semibold" x-text="item.sort_order"></td>
-                  <td class="p-4 font-bold text-white" x-text="item.label"></td>
-                  <td class="p-4 text-blue-400 font-mono text-[11px]" x-text="item.path"></td>
-                  <td class="p-4">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_external ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'" x-text="item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)'"></span>
-                  </td>
-                  <td class="p-4">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" :class="item.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'" x-text="item.is_active ? 'เปิดใช้งาน' : 'ปิด'"></span>
-                  </td>
-                  <td class="p-4 text-right space-x-2">
-                    <button @click="editNavMenu(item)" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                    <button @click="deleteNavMenu(item.id)" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                   </td>
                 </tr>
               </template>
@@ -709,141 +953,147 @@ function getAdminHtml(userEmail) {
             <div class="md:col-span-2"><label class="text-xs text-slate-400 block mb-1">Hero Headline</label><input type="text" x-model="settingsMap.hero_headline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"></div>
             <div class="md:col-span-2"><label class="text-xs text-slate-400 block mb-1">Hero Subheadline</label><textarea x-model="settingsMap.hero_subheadline" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"></textarea></div>
           </div>
-          <button @click="saveSettings()" class="px-6 py-2 rounded-xl bg-blue-600 text-xs font-bold text-white">บันทึกทั้งหมด</button>
+          <button type="button" @click="saveSettings()" class="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white">บันทึกทั้งหมด</button>
         </div>
       </section>
     </main>
   </div>
 
-  <script>
-    function adminApp() {
-      return {
-        currentTab: 'dashboard',
-        isPurging: false,
-        stats: { total_inquiries: 0, new_inquiries: 0, total_portfolios: 0, total_services: 0, total_articles: 0, recent_inquiries: [] },
-        portfolios: [], services: [], articles: [], clientLogos: [], inquiries: [], navMenus: [], settingsMap: {},
-        async init() {
-          await this.loadAll();
-          this.$nextTick(() => { lucide.createIcons(); });
-        },
-        async loadAll() {
-          const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([
-            fetch('/api/admin/dashboard/stats').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/portfolios').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/services').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/articles').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/client-logos').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/inquiries').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/navigation').then(r=>r.json()).catch(()=>({})),
-            fetch('/api/admin/site-settings').then(r=>r.json()).catch(()=>({}))
-          ]);
-          if (nav && nav.data) this.navMenus = nav.data;
-          if (s.data) this.stats = s.data;
-          if (p.data) this.portfolios = p.data;
-          if (sv.data) this.services = sv.data;
-          if (a.data) this.articles = a.data;
-          if (cl.data) this.clientLogos = cl.data;
-          if (inq.data) this.inquiries = inq.data;
-          if (set.data) {
-            const m = {};
-            set.data.forEach(item => { m[item.key] = item.value; });
-            this.settingsMap = m;
-          }
-          this.$nextTick(() => { lucide.createIcons(); });
-        },
-        async saveSettings() {
-          const list = Object.keys(this.settingsMap).map(k => ({ key: k, value: this.settingsMap[k] }));
-          await fetch('/api/admin/site-settings', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ settings: list }) });
-          alert('บันทึกเรียบร้อย');
-        },
-        async saveService(svc) {
-          await fetch('/api/admin/services/' + svc.id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(svc) });
-          alert('บันทึกเรียบร้อย');
-        },
-        async updateStatus(id, st) {
-          await fetch('/api/admin/inquiries/' + id + '/status', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: st }) });
-          await this.loadAll();
-        },
-        async deletePortfolio(id) {
-          if (!confirm('ยืนยันลบ?')) return;
-          await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
-          await this.loadAll();
-        },
-        async deleteArticle(id) {
-          if (!confirm('ยืนยันลบ?')) return;
-          await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
-          await this.loadAll();
-        },
-        async deleteClientLogo(id) {
-          if (!confirm('ยืนยันลบ?')) return;
-          await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
-          await this.loadAll();
-        },
-        async openCreatePortfolio() {
-          const title = prompt('ชื่อผลงาน:');
-          if (!title) return;
-          const client = prompt('ชื่อลูกค้า (เช่น Cross Pattaya):');
-          const cover = prompt('URL รูปภาพปก:', 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80');
-          const category = prompt('หมวดหมู่ (hotels-resorts, real-estate, food-beverage):', 'hotels-resorts');
-          await fetch('/api/admin/portfolios', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ title, client_name: client, category_slug: category, cover_image: cover, summary: 'โปรดักชันภาพถ่ายระดับพรีเมียม', featured: 1 })
-          });
-          await this.loadAll();
-        },
-                async openCreateNavMenu() {
-          const label = prompt('ชื่อเมนู (เช่น บริการของเรา, ผลงาน, หรือเมนูใหม่):');
-          if (!label) return;
-          const p = prompt('URL Path (เช่น /our-service, /special-deal หรือ https://...):', '/');
-          const sort = prompt('ลำดับการแสดงผล (ตัวเลข):', '1');
-          await fetch('/api/admin/navigation', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ label, path: p, sort_order: Number(sort)||1, is_active: 1 })
-          });
-          await this.loadAll();
-        },
-        async editNavMenu(item) {
-          const label = prompt('ชื่อเมนู:', item.label);
-          if (!label) return;
-          const p = prompt('URL Path:', item.path);
-          const sort = prompt('ลำดับ:', item.sort_order);
-          await fetch('/api/admin/navigation/' + item.id, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ label, path: p, sort_order: Number(sort)||1, is_active: item.is_active })
-          });
-          await this.loadAll();
-        },
-        async deleteNavMenu(id) {
-          if (!confirm('ยืนยันลบเมนูนี้?')) return;
-          await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
-          await this.loadAll();
-        },
-        async editInquiryNote(inq) {
-          const note = prompt('บันทึกโน้ตภายในสำหรับลูกค้าท่านนี้:', inq.admin_notes || '');
-          if (note === null) return;
-          await fetch('/api/admin/inquiries/' + inq.id + '/notes', {
-            method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ notes: note })
-          });
-          await this.loadAll();
-        },
-        async triggerCachePurge() {
-          this.isPurging = true;
-          await fetch('/api/admin/sync/purge-cache', { method: 'POST' });
-          alert('Sync & Purge Cache เรียบร้อยแล้ว!');
-          this.isPurging = false;
-        },
-        formatDate(d) {
-          if (!d) return '-';
-          return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-      };
-    }
-  </script>
+  <!-- ==================== MODALS ==================== -->
+  <!-- Navigation Modal -->
+  <div x-show="navModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div @click.away="navModalOpen = false" class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-white text-sm" x-text="navForm.id ? 'แก้ไขเมนูหลัก' : 'เพิ่มเมนูหลักใหม่'"></h4>
+        <button type="button" @click="navModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อเมนู (Label) *</label>
+          <input type="text" x-model="navForm.label" placeholder="เช่น บริการของเรา, ผลงาน, ติดต่อเรา" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL Path *</label>
+          <input type="text" x-model="navForm.path" placeholder="เช่น /our-service หรือ https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">ลำดับการแสดงผล</label>
+            <input type="number" x-model.number="navForm.sort_order" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">ประเภทลิงก์</label>
+            <select x-model.number="navForm.is_external" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option :value="0">หน้าภายในเว็บ (Page)</option>
+              <option :value="1">ลิงก์ภายนอก (External)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer pt-2">
+            <input type="checkbox" :checked="navForm.is_active == 1" @change="navForm.is_active = $event.target.checked ? 1 : 0" class="rounded bg-slate-950 border-slate-800 text-blue-600">
+            <span class="text-xs text-slate-300">เปิดแสดงผลเมนูนี้บนหน้าเว็บไซต์</span>
+          </label>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" @click="navModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
+        <button type="button" @click="submitNavMenu()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolio Modal -->
+  <div x-show="portfolioModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div @click.away="portfolioModalOpen = false" class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-white text-sm">เพิ่มผลงานใหม่ (New Portfolio)</h4>
+        <button type="button" @click="portfolioModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อผลงาน (Title) *</label>
+          <input type="text" x-model="portfolioForm.title" placeholder="เช่น Cross Pattaya Oceanphere — Luxury Pool Villa" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อลูกค้า (Client Name) *</label>
+            <input type="text" x-model="portfolioForm.client_name" placeholder="เช่น Cross Hotels & Resorts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">หมวดหมู่ (Category)</label>
+            <select x-model="portfolioForm.category_slug" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="hotels-resorts">Hotels & Resorts</option>
+              <option value="real-estate">Real Estate</option>
+              <option value="food-beverage">Food & Beverage</option>
+              <option value="lifestyle-wellness">Lifestyle & Wellness</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL รูปภาพปก (Cover Image URL) *</label>
+          <input type="text" x-model="portfolioForm.cover_image" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">สรุปรายละเอียดสั้นๆ (Summary)</label>
+          <textarea x-model="portfolioForm.summary" rows="2" placeholder="อธิบายภาพรวมผลงาน เช่น งานถ่ายภาพสถาปัตยกรรมระดับพรีเมียม" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" @click="portfolioModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
+        <button type="button" @click="submitPortfolio()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกผลงาน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Logo Modal -->
+  <div x-show="clientModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div @click.away="clientModalOpen = false" class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-white text-sm">เพิ่มโลโก้ลูกค้าใหม่</h4>
+        <button type="button" @click="clientModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อลูกค้า/แบรนด์ *</label>
+          <input type="text" x-model="clientForm.name" placeholder="เช่น Cross Hotels & Resorts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL โลโก้ *</label>
+          <input type="text" x-model="clientForm.logo_url" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">เว็บไซต์ของลูกค้า (ถ้ามี)</label>
+          <input type="text" x-model="clientForm.website_url" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" @click="clientModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
+        <button type="button" @click="submitClientLogo()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white">บันทึกโลโก้</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note Modal -->
+  <div x-show="noteModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div @click.away="noteModalOpen = false" class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h4 class="font-bold text-white text-sm">จดบันทึกภายใน (Internal Notes)</h4>
+          <p class="text-[11px] text-blue-400 mt-0.5" x-text="'ลูกค้า: ' + noteForm.customerName"></p>
+        </div>
+        <button type="button" @click="noteModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">บันทึกข้อความสำหรับทีมงานภายใน</label>
+        <textarea x-model="noteForm.notes" rows="4" placeholder="เช่น นัดคุยงานวันจันทร์ 10.00 น. หรือ ส่งใบเสนอราคาแล้ว" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" @click="noteModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
+        <button type="button" @click="submitNote()" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white">บันทึกโน้ต</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>`;
 }
