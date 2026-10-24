@@ -12,7 +12,7 @@ database_id = "ltt-cms-d1-prod"
 # Cloudflare R2 Media Storage binding
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "ltt-cms-media"
+bucket_name = "ltt-cms-bucket"
 
 # Environment variables
 [vars]

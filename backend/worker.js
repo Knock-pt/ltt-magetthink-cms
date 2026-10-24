@@ -70,23 +70,29 @@ export default {
 
     try {
       // -------------------------------------------------------------
-      // 1. Root & Admin UI
+      // 1. Root & Admin UI (Opens CMS directly at path / and /admin)
       // -------------------------------------------------------------
-      if (path === '/' || path === '') {
-        return htmlResponse(`
-          <!DOCTYPE html>
-          <html lang="th" style="background:#0f172a;color:#f8fafc;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-            <div style="text-align:center;max-width:520px;padding:2.5rem;background:#1e293b;border-radius:1.25rem;border:1px solid #334155;box-shadow:0 20px 25px -5px rgb(0 0 0 / 0.5);">
-              <h1 style="margin:0 0 0.5rem 0;color:#60a5fa;font-size:1.6rem;font-weight:700;">LTT Ma getThink Edge CMS</h1>
-              <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:1.75rem;line-height:1.6;">ระบบบริหารจัดการหลังบ้าน Cloudflare Worker & D1 Database พร้อม Zero-Trust Access</p>
-              <a href="/admin" style="background:#2563eb;color:#fff;text-decoration:none;padding:0.75rem 1.5rem;border-radius:0.75rem;font-size:0.875rem;font-weight:600;display:inline-block;">เข้าสู่ระบบจัดการหลังบ้าน (CMS Dashboard)</a>
-            </div>
-          </html>
-        `);
+      if (path === '/' || path === '' || path === '/admin' || path.startsWith('/admin/')) {
+        return htmlResponse(getAdminHtml(userEmail));
       }
 
-      if (path === '/admin' || path.startsWith('/admin/')) {
-        return htmlResponse(getAdminHtml(userEmail));
+      // -------------------------------------------------------------
+      // 1.1 R2 Media File Delivery (/media/uploads/...)
+      // -------------------------------------------------------------
+      if (path.startsWith('/media/') && method === 'GET') {
+        const fileKey = path.replace('/media/', '');
+        if (env.R2_BUCKET) {
+          const object = await env.R2_BUCKET.get(fileKey);
+          if (object) {
+            const headers = new Headers();
+            object.writeHttpMetadata(headers);
+            headers.set('etag', object.httpEtag);
+            headers.set('Cache-Control', 'public, max-age=31536000');
+            headers.set('Access-Control-Allow-Origin', '*');
+            return new Response(object.body, { headers });
+          }
+        }
+        return jsonResponse({ error: 'File not found' }, 404, origin);
       }
 
       // -------------------------------------------------------------
@@ -304,6 +310,28 @@ export default {
 
       if (path === '/api/admin/sync/purge-cache' && method === 'POST') {
         return jsonResponse({ success: true, message: 'คำสั่งล้างแคชส่งไปยังหน้าบ้านเรียบร้อยแล้ว' }, 200, origin);
+      }
+
+      if (path === '/api/admin/media/upload' && method === 'POST') {
+        if (!env.R2_BUCKET) {
+          return jsonResponse({ success: false, error: 'ยังไม่ได้ผูก R2_BUCKET ในหน้า Settings ของ Worker' }, 400, origin);
+        }
+        const formData = await request.formData();
+        const file = formData.get('file');
+        if (!file || !(file instanceof File)) {
+          return jsonResponse({ success: false, error: 'กรุณาเลือกไฟล์ที่ต้องการอัปโหลด' }, 400, origin);
+        }
+        const ext = file.name.split('.').pop() || 'jpg';
+        const fileKey = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+        await env.R2_BUCKET.put(fileKey, file.stream(), {
+          httpMetadata: { contentType: file.type }
+        });
+        const fileUrl = `/media/${fileKey}`;
+        await env.DB.prepare(
+          'INSERT INTO media_assets (file_name, file_key, file_url, mime_type, file_size) VALUES (?, ?, ?, ?, ?)'
+        ).bind(file.name, fileKey, fileUrl, file.type, file.size).run();
+
+        return jsonResponse({ success: true, file_url: fileUrl, file_key: fileKey }, 200, origin);
       }
 
       return jsonResponse({ error: 'Endpoint Not Found', path }, 404, origin);
