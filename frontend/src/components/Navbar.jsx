@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
-
-const DEFAULT_MENUS = [
-  { id: 1, label: 'หน้าแรก', path: '/' },
-  { id: 2, label: 'บริการของเรา', path: '/our-service' },
-  { id: 3, label: 'ผลงาน', path: '/portfolio' },
-  { id: 4, label: 'เกี่ยวกับเรา', path: '/about-us' },
-  { id: 5, label: 'บทความ & ข่าวสาร', path: '/blog' },
-  { id: 6, label: 'ติดต่อเรา', path: '/contact-us' },
-];
+import { Menu, X, ArrowRight, Globe } from 'lucide-react';
+import { useLanguage } from '../lib/LanguageContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [menus, setMenus] = useState(DEFAULT_MENUS);
+  const { language, setLanguage, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const defaultMenus = [
+    { id: 1, label: t('nav_home'), path: '/' },
+    { id: 2, label: t('nav_services'), path: '/our-service' },
+    { id: 3, label: t('nav_portfolio'), path: '/portfolio' },
+    { id: 4, label: t('nav_about'), path: '/about-us' },
+    { id: 5, label: t('nav_blog'), path: '/blog' },
+    { id: 6, label: t('nav_contact'), path: '/contact-us' },
+  ];
+
+  const [menus, setMenus] = useState(defaultMenus);
 
   useEffect(() => {
     fetch('https://ltt-backend.thunchanok-raj.workers.dev/api/public/navigation')
@@ -82,13 +85,39 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* CTA & Mobile Toggle */}
+        {/* Right Action: Language Switcher + CTA */}
         <div className="flex items-center gap-3">
+          {/* Language Switcher Toggle */}
+          <div className="flex items-center bg-slate-900/80 border border-slate-800 p-1 rounded-full text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setLanguage('th')}
+              className={`px-2.5 py-1 rounded-full transition ${
+                language === 'th'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              TH
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className={`px-2.5 py-1 rounded-full transition ${
+                language === 'en'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              EN
+            </button>
+          </div>
+
           <Link
             href="/contact-us"
             className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/25 transition duration-300"
           >
-            <span>ปรึกษาทีมงาน</span>
+            <span>{t('nav_cta')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
 
@@ -144,7 +173,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 font-bold text-xs text-white"
             >
-              <span>ติดต่อปรึกษาฟรี</span>
+              <span>{t('nav_cta')}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

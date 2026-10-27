@@ -1,6 +1,6 @@
 /**
- * LTT Ma getThink — Standalone Cloudflare Worker (Zero Dependencies)
- * Ready to copy-paste directly into Cloudflare Web Editor in your browser!
+ * LTT Ma getThink — Cloudflare Worker Backend & CMS Backoffice
+ * Pure Vanilla JavaScript (0% unsafe-eval) | Strict CSP | Zero Trust Ready
  */
 
 // DevSecOps Security Headers & CORS
@@ -15,11 +15,21 @@ function setSecurityHeaders(response, origin) {
     "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https:;"
   );
 
-  // CORS
-  headers.set('Access-Control-Allow-Origin', origin || '*');
+  // CORS - Whitelist website domains and allow preflights cleanly
+  const isAllowed = origin && (
+    origin.includes('ltt-website.pages.dev') ||
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1')
+  );
+
+  if (isAllowed) {
+    headers.set('Access-Control-Allow-Origin', origin);
+    headers.set('Access-Control-Allow-Credentials', 'true');
+  } else {
+    headers.set('Access-Control-Allow-Origin', '*');
+  }
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cf-Access-Jwt-Assertion');
-  headers.set('Access-Control-Allow-Credentials', 'true');
 
   return new Response(response.body, {
     status: response.status,
@@ -48,8 +58,65 @@ function sanitizeInput(str) {
   if (!str) return '';
   return String(str)
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<[^>]+>/g, '')
     .trim();
+}
+
+// Auto Schema Migration Helper for D1
+let schemaEnsured = false;
+async function ensureDbSchema(env) {
+  if (schemaEnsured || !env.DB) return;
+  const queries = [
+    `CREATE TABLE IF NOT EXISTS custom_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      content TEXT NOT NULL,
+      cover_image TEXT,
+      template_style TEXT DEFAULT 'standard',
+      title_en TEXT,
+      content_en TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    "ALTER TABLE articles ADD COLUMN tags_meta TEXT",
+    "ALTER TABLE articles ADD COLUMN template_style TEXT DEFAULT 'standard'",
+    "ALTER TABLE articles ADD COLUMN custom_instruction TEXT",
+    "ALTER TABLE articles ADD COLUMN video_url TEXT",
+    "ALTER TABLE articles ADD COLUMN map_coords TEXT",
+    "ALTER TABLE articles ADD COLUMN travel_date TEXT",
+    "ALTER TABLE articles ADD COLUMN title_en TEXT",
+    "ALTER TABLE articles ADD COLUMN summary_en TEXT",
+    "ALTER TABLE articles ADD COLUMN content_en TEXT",
+    "ALTER TABLE articles ADD COLUMN tags_en TEXT",
+    "ALTER TABLE portfolios ADD COLUMN tags_meta TEXT",
+    "ALTER TABLE portfolios ADD COLUMN template_style TEXT DEFAULT 'case-study'",
+    "ALTER TABLE portfolios ADD COLUMN custom_instruction TEXT",
+    "ALTER TABLE portfolios ADD COLUMN video_url TEXT",
+    "ALTER TABLE portfolios ADD COLUMN map_coords TEXT",
+    "ALTER TABLE portfolios ADD COLUMN travel_date TEXT",
+    "ALTER TABLE portfolios ADD COLUMN title_en TEXT",
+    "ALTER TABLE portfolios ADD COLUMN summary_en TEXT",
+    "ALTER TABLE portfolios ADD COLUMN details_en TEXT",
+    "ALTER TABLE portfolios ADD COLUMN tags_en TEXT",
+    "ALTER TABLE services ADD COLUMN image_url TEXT",
+    "ALTER TABLE services ADD COLUMN title_en TEXT",
+    "ALTER TABLE services ADD COLUMN subtitle_en TEXT",
+    "ALTER TABLE services ADD COLUMN description_en TEXT",
+    "ALTER TABLE services ADD COLUMN bullet_points_en TEXT",
+    "ALTER TABLE inquiries ADD COLUMN source_page TEXT DEFAULT 'contact-us'",
+    "ALTER TABLE inquiries ADD COLUMN admin_notes TEXT",
+    "ALTER TABLE inquiries ADD COLUMN ip_address TEXT"
+  ];
+
+  for (const q of queries) {
+    try {
+      await env.DB.prepare(q).run();
+    } catch (e) {
+      // Column or table already exists
+    }
+  }
+  schemaEnsured = true;
 }
 
 export default {
@@ -65,12 +132,16 @@ export default {
       return setSecurityHeaders(resp, origin);
     }
 
-    // Cloudflare Access Email detection
     const userEmail = request.headers.get('CF-Access-Authenticated-User-Email') || 'admin@lttmagetthink.co';
 
     try {
+      // Auto-migrate schema lazily
+      if (path.startsWith('/api/')) {
+        await ensureDbSchema(env);
+      }
+
       // -------------------------------------------------------------
-      // 1. Root & Admin UI (Opens CMS directly at path / and /admin)
+      // 1. Root & Admin UI (Backoffice)
       // -------------------------------------------------------------
       if (path === '/' || path === '' || path === '/admin' || path.startsWith('/admin/')) {
         return htmlResponse(getAdminHtml(userEmail));
@@ -96,7 +167,7 @@ export default {
       }
 
       // -------------------------------------------------------------
-      // 2. Public APIs (For Frontend)
+      // 2. Public APIs (For Frontend Website)
       // -------------------------------------------------------------
       if (path === '/api/public/navigation' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM navigation_menus WHERE is_active = 1 ORDER BY sort_order ASC, id ASC').all();
@@ -111,45 +182,57 @@ export default {
       }
 
       if (path === '/api/public/services' && method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY sort_order ASC, id ASC').all();
-        const formatted = (results || []).map(s => ({
-          ...s,
-          bullet_points: s.bullet_points ? JSON.parse(s.bullet_points) : []
-        }));
+        const { results } = await env.DB.prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY sort_order ASC').all();
+        const formatted = (results || []).map(s => {
+          let bullets = [];
+          try { bullets = JSON.parse(s.bullet_points || '[]'); } catch (e) {
+            bullets = s.bullet_points ? s.bullet_points.split('\n').filter(Boolean) : [];
+          }
+          return { ...s, bullet_points: bullets };
+        });
         return jsonResponse({ success: true, data: formatted }, 200, origin);
       }
 
       if (path === '/api/public/portfolios' && method === 'GET') {
-        const category = url.searchParams.get('category');
-        let query = 'SELECT * FROM portfolios WHERE is_active = 1';
-        const params = [];
-        if (category && category !== 'all') {
-          query += ' AND category_slug = ?';
-          params.push(category);
-        }
-        query += ' ORDER BY sort_order ASC, id DESC';
-        const stmt = env.DB.prepare(query);
-        const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
-        const formatted = (results || []).map(p => ({
-          ...p,
-          gallery_images: p.gallery_images ? JSON.parse(p.gallery_images) : []
-        }));
+        const { results } = await env.DB.prepare('SELECT * FROM portfolios WHERE is_active = 1 ORDER BY sort_order ASC, id DESC').all();
+        const formatted = (results || []).map(p => {
+          let tagsMeta = {};
+          try { tagsMeta = JSON.parse(p.tags_meta || '{}'); } catch (e) {}
+          let gallery = [];
+          try { gallery = JSON.parse(p.gallery_images || '[]'); } catch (e) {}
+          return { ...p, tags_meta: tagsMeta, gallery_images: gallery };
+        });
         return jsonResponse({ success: true, data: formatted }, 200, origin);
       }
 
       if (path.startsWith('/api/public/portfolios/') && method === 'GET') {
         const slug = path.replace('/api/public/portfolios/', '');
-        const item = await env.DB.prepare('SELECT * FROM portfolios WHERE slug = ? AND is_active = 1').bind(slug).first();
-        if (!item) return jsonResponse({ success: false, error: 'Not found' }, 404, origin);
-        return jsonResponse({
-          success: true,
-          data: { ...item, gallery_images: item.gallery_images ? JSON.parse(item.gallery_images) : [] }
-        }, 200, origin);
+        const item = await env.DB.prepare('SELECT * FROM portfolios WHERE (slug = ? OR id = ?) AND is_active = 1').bind(slug, slug).first();
+        if (!item) return jsonResponse({ success: false, error: 'Portfolio not found' }, 404, origin);
+        let tagsMeta = {};
+        try { tagsMeta = JSON.parse(item.tags_meta || '{}'); } catch (e) {}
+        let gallery = [];
+        try { gallery = JSON.parse(item.gallery_images || '[]'); } catch (e) {}
+        return jsonResponse({ success: true, data: { ...item, tags_meta: tagsMeta, gallery_images: gallery } }, 200, origin);
       }
 
       if (path === '/api/public/articles' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM articles WHERE status = "published" ORDER BY published_at DESC').all();
-        return jsonResponse({ success: true, data: results || [] }, 200, origin);
+        const formatted = (results || []).map(a => {
+          let tagsMeta = {};
+          try { tagsMeta = JSON.parse(a.tags_meta || '{}'); } catch (e) {}
+          return { ...a, tags_meta: tagsMeta };
+        });
+        return jsonResponse({ success: true, data: formatted }, 200, origin);
+      }
+
+      if (path.startsWith('/api/public/articles/') && method === 'GET') {
+        const slug = path.replace('/api/public/articles/', '');
+        const item = await env.DB.prepare('SELECT * FROM articles WHERE (slug = ? OR id = ?) AND status = "published"').bind(slug, slug).first();
+        if (!item) return jsonResponse({ success: false, error: 'Article not found' }, 404, origin);
+        let tagsMeta = {};
+        try { tagsMeta = JSON.parse(item.tags_meta || '{}'); } catch (e) {}
+        return jsonResponse({ success: true, data: { ...item, tags_meta: tagsMeta } }, 200, origin);
       }
 
       if (path === '/api/public/client-logos' && method === 'GET') {
@@ -162,15 +245,15 @@ export default {
         const full_name = sanitizeInput(body.full_name);
         const email = sanitizeInput(body.email);
         const phone = sanitizeInput(body.phone);
-        const company = sanitizeInput(body.company);
-        const service_interested = sanitizeInput(body.service_interested);
-        const budget_range = sanitizeInput(body.budget_range);
+        const company = sanitizeInput(body.company || '');
+        const service_interested = sanitizeInput(body.service_interested || 'General');
+        const budget_range = sanitizeInput(body.budget_range || '-');
         const message = sanitizeInput(body.message);
-        const source_page = sanitizeInput(body.source_page) || 'contact-us';
+        const source_page = sanitizeInput(body.source_page || 'contact-us');
         const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
         if (!full_name || !email || !phone || !message) {
-          return jsonResponse({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน' }, 400, origin);
+          return jsonResponse({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน (ชื่อ, อีเมล, เบอร์โทร, ข้อความ)' }, 400, origin);
         }
 
         await env.DB.prepare(
@@ -178,12 +261,76 @@ export default {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(full_name, email, phone, company, service_interested, budget_range, message, source_page, ip).run();
 
-        return jsonResponse({ success: true, message: 'ส่งข้อมูลเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุดครับ' }, 200, origin);
+        return jsonResponse({ success: true, message: 'ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุดครับ' }, 200, origin);
       }
 
       // -------------------------------------------------------------
       // 3. Admin APIs (Backoffice)
       // -------------------------------------------------------------
+      // AI Translation (Bilingual Helper)
+      if (path === '/api/admin/translate' && method === 'POST') {
+        const body = await request.json();
+        const fields = body.fields || {};
+
+        async function translate(str) {
+          if (!str || typeof str !== 'string' || !str.trim()) return '';
+          // 1. Try Cloudflare Workers AI M2M-100 Translation model
+          if (env.AI) {
+            try {
+              const aiRes = await env.AI.run('@cf/meta/m2m100-1.2b', {
+                text: str,
+                source_lang: 'th',
+                target_lang: 'en'
+              });
+              if (aiRes && aiRes.translated_text) return aiRes.translated_text.trim();
+            } catch (e1) {
+              console.error('M2M-100 error, trying llama:', e1);
+              try {
+                const llamaRes = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
+                  messages: [
+                    { role: 'system', content: 'Translate the following Thai text to English. Output only the English translation.' },
+                    { role: 'user', content: str }
+                  ]
+                });
+                if (llamaRes && llamaRes.response) return llamaRes.response.trim();
+              } catch (e2) {
+                console.error('Llama error:', e2);
+              }
+            }
+          }
+
+          // 2. Fallback to MyMemory translation API
+          try {
+            const mmUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(str.substring(0, 500)) + '&langpair=th|en';
+            const res = await fetch(mmUrl);
+            if (res.ok) {
+              const resJson = await res.json();
+              if (resJson && resJson.responseData && resJson.responseData.translatedText) {
+                return resJson.responseData.translatedText;
+              }
+            }
+          } catch (e) {
+            console.error('MyMemory error:', e);
+          }
+          return str;
+        }
+
+        const out = {};
+        if (fields.title) out.title_en = await translate(fields.title);
+        if (fields.summary) out.summary_en = await translate(fields.summary);
+        if (fields.content) out.content_en = await translate(fields.content);
+        if (fields.tags_meta) {
+          const tmEn = {};
+          for (const [k, v] of Object.entries(fields.tags_meta)) {
+            tmEn[k] = await translate(v);
+          }
+          out.tags_meta_en = tmEn;
+        }
+
+        return jsonResponse({ success: true, data: out }, 200, origin);
+      }
+
+      // Navigation
       if (path === '/api/admin/navigation' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM navigation_menus ORDER BY sort_order ASC, id ASC').all();
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
@@ -198,30 +345,24 @@ export default {
         const is_active = b.is_active !== undefined ? (b.is_active ? 1 : 0) : 1;
 
         if (!label || !p) {
-          return jsonResponse({ success: false, error: 'กรุณากรอกชื่อเมนูและ Path' }, 400, origin);
+          return jsonResponse({ success: false, error: 'กรุณากรอกชื่อเมนูและ URL' }, 400, origin);
         }
 
         await env.DB.prepare(
           'INSERT INTO navigation_menus (label, path, is_external, sort_order, is_active) VALUES (?, ?, ?, ?, ?)'
         ).bind(label, p, is_external, sort_order, is_active).run();
 
-        return jsonResponse({ success: true, message: 'เพิ่มเมนูหลักเรียบร้อยแล้ว' }, 200, origin);
+        return jsonResponse({ success: true, message: 'เพิ่มเมนูเรียบร้อยแล้ว' }, 200, origin);
       }
 
       if (path.startsWith('/api/admin/navigation/') && method === 'PUT') {
         const id = path.replace('/api/admin/navigation/', '');
         const b = await request.json();
-        const label = sanitizeInput(b.label);
-        const p = sanitizeInput(b.path);
-        const is_external = b.is_external ? 1 : 0;
-        const sort_order = Number(b.sort_order) || 0;
-        const is_active = b.is_active ? 1 : 0;
-
         await env.DB.prepare(
           'UPDATE navigation_menus SET label = ?, path = ?, is_external = ?, sort_order = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).bind(label, p, is_external, sort_order, is_active, id).run();
+        ).bind(sanitizeInput(b.label), sanitizeInput(b.path), b.is_external ? 1 : 0, Number(b.sort_order) || 0, b.is_active ? 1 : 0, id).run();
 
-        return jsonResponse({ success: true, message: 'อัปเดตเมนูเรียบร้อยแล้ว' }, 200, origin);
+        return jsonResponse({ success: true, message: 'อัปเดตเมนูเรียบร้อย' }, 200, origin);
       }
 
       if (path.startsWith('/api/admin/navigation/') && method === 'DELETE') {
@@ -230,13 +371,7 @@ export default {
         return jsonResponse({ success: true, message: 'ลบเมนูเรียบร้อยแล้ว' }, 200, origin);
       }
 
-      if (path.match(/\/api\/admin\/inquiries\/\d+\/notes/) && method === 'PATCH') {
-        const id = path.split('/')[4];
-        const { notes } = await request.json();
-        await env.DB.prepare('UPDATE inquiries SET admin_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sanitizeInput(notes), id).run();
-        return jsonResponse({ success: true, message: 'บันทึกโน้ตสำเร็จ' }, 200, origin);
-      }
-
+      // Dashboard Stats
       if (path === '/api/admin/dashboard/stats' && method === 'GET') {
         const totalInquiries = await env.DB.prepare('SELECT COUNT(*) as count FROM inquiries').first();
         const newInquiries = await env.DB.prepare('SELECT COUNT(*) as count FROM inquiries WHERE status = "new"').first();
@@ -259,6 +394,7 @@ export default {
         }, 200, origin);
       }
 
+      // Portfolios Admin
       if (path === '/api/admin/portfolios' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM portfolios ORDER BY sort_order ASC, id DESC').all();
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
@@ -267,20 +403,58 @@ export default {
       if (path === '/api/admin/portfolios' && method === 'POST') {
         const b = await request.json();
         const title = sanitizeInput(b.title);
-        const slug = sanitizeInput(b.slug) || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const client_name = sanitizeInput(b.client_name);
-        const category_slug = sanitizeInput(b.category_slug) || 'all';
-        const cover_image = sanitizeInput(b.cover_image);
-        const summary = sanitizeInput(b.summary);
+        const slug = sanitizeInput(b.slug) || (title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-4));
+        const client_name = sanitizeInput(b.client_name || '');
+        const category_slug = sanitizeInput(b.category_slug || 'all');
+        const cover_image = sanitizeInput(b.cover_image || '');
+        const summary = sanitizeInput(b.summary || '');
+        const details = b.details || b.content || '';
+        const tags_meta = JSON.stringify(b.tags_meta || {});
+        const template_style = sanitizeInput(b.template_style || 'case-study');
+        const custom_instruction = sanitizeInput(b.custom_instruction || '');
+        const video_url = sanitizeInput(b.video_url || '');
+        const map_coords = sanitizeInput(b.map_coords || '');
+        const travel_date = sanitizeInput(b.travel_date || '');
+        const title_en = sanitizeInput(b.title_en || '');
+        const summary_en = sanitizeInput(b.summary_en || '');
+        const details_en = b.details_en || '';
         const featured = b.featured ? 1 : 0;
         const sort_order = Number(b.sort_order) || 0;
 
         await env.DB.prepare(
-          `INSERT INTO portfolios (title, slug, client_name, category_slug, cover_image, summary, featured, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(title, slug, client_name, category_slug, cover_image, summary, featured, sort_order).run();
+          `INSERT INTO portfolios (
+            title, slug, client_name, category_slug, cover_image, summary, details,
+            tags_meta, template_style, custom_instruction, video_url, map_coords, travel_date,
+            title_en, summary_en, details_en, featured, sort_order
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          title, slug, client_name, category_slug, cover_image, summary, details,
+          tags_meta, template_style, custom_instruction, video_url, map_coords, travel_date,
+          title_en, summary_en, details_en, featured, sort_order
+        ).run();
 
         return jsonResponse({ success: true, message: 'บันทึกผลงานเรียบร้อยแล้ว' }, 200, origin);
+      }
+
+      if (path.startsWith('/api/admin/portfolios/') && method === 'PUT') {
+        const id = path.replace('/api/admin/portfolios/', '');
+        const b = await request.json();
+        await env.DB.prepare(
+          `UPDATE portfolios SET
+            title = ?, slug = ?, client_name = ?, category_slug = ?, cover_image = ?, summary = ?, details = ?,
+            tags_meta = ?, template_style = ?, custom_instruction = ?, video_url = ?, map_coords = ?, travel_date = ?,
+            title_en = ?, summary_en = ?, details_en = ?, featured = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?`
+        ).bind(
+          sanitizeInput(b.title), sanitizeInput(b.slug), sanitizeInput(b.client_name), sanitizeInput(b.category_slug),
+          sanitizeInput(b.cover_image), sanitizeInput(b.summary), b.details || b.content || '',
+          JSON.stringify(b.tags_meta || {}), sanitizeInput(b.template_style || 'case-study'), sanitizeInput(b.custom_instruction || ''),
+          sanitizeInput(b.video_url || ''), sanitizeInput(b.map_coords || ''), sanitizeInput(b.travel_date || ''),
+          sanitizeInput(b.title_en || ''), sanitizeInput(b.summary_en || ''), b.details_en || '',
+          b.featured ? 1 : 0, Number(b.sort_order) || 0, id
+        ).run();
+
+        return jsonResponse({ success: true, message: 'อัปเดตผลงานเรียบร้อย' }, 200, origin);
       }
 
       if (path.startsWith('/api/admin/portfolios/') && method === 'DELETE') {
@@ -289,23 +463,102 @@ export default {
         return jsonResponse({ success: true, message: 'ลบผลงานเรียบร้อย' }, 200, origin);
       }
 
+      // Services Admin
       if (path === '/api/admin/services' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM services ORDER BY sort_order ASC').all();
-        return jsonResponse({ success: true, data: results || [] }, 200, origin);
+        const formatted = (results || []).map(s => {
+          let bullets = [];
+          try { bullets = JSON.parse(s.bullet_points || '[]'); } catch (e) {
+            bullets = s.bullet_points ? s.bullet_points.split('\n').filter(Boolean) : [];
+          }
+          return { ...s, bullet_points: bullets };
+        });
+        return jsonResponse({ success: true, data: formatted }, 200, origin);
       }
 
       if (path.startsWith('/api/admin/services/') && method === 'PUT') {
         const id = path.replace('/api/admin/services/', '');
         const b = await request.json();
+        const bulletJson = Array.isArray(b.bullet_points) ? JSON.stringify(b.bullet_points) : JSON.stringify([b.bullet_points].filter(Boolean));
+
         await env.DB.prepare(
-          `UPDATE services SET title = ?, subtitle = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-        ).bind(sanitizeInput(b.title), sanitizeInput(b.subtitle), sanitizeInput(b.description), id).run();
+          `UPDATE services SET
+            title = ?, subtitle = ?, description = ?, image_url = ?, bullet_points = ?,
+            title_en = ?, subtitle_en = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?`
+        ).bind(
+          sanitizeInput(b.title), sanitizeInput(b.subtitle), sanitizeInput(b.description),
+          sanitizeInput(b.image_url || ''), bulletJson,
+          sanitizeInput(b.title_en || ''), sanitizeInput(b.subtitle_en || ''), sanitizeInput(b.description_en || ''),
+          id
+        ).run();
         return jsonResponse({ success: true, message: 'อัปเดตบริการเรียบร้อย' }, 200, origin);
       }
 
+      // Articles Admin
       if (path === '/api/admin/articles' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM articles ORDER BY published_at DESC').all();
-        return jsonResponse({ success: true, data: results || [] }, 200, origin);
+        const formatted = (results || []).map(a => {
+          let tagsMeta = {};
+          try { tagsMeta = JSON.parse(a.tags_meta || '{}'); } catch (e) {}
+          return { ...a, tags_meta: tagsMeta };
+        });
+        return jsonResponse({ success: true, data: formatted }, 200, origin);
+      }
+
+      if (path === '/api/admin/articles' && method === 'POST') {
+        const b = await request.json();
+        const title = sanitizeInput(b.title);
+        const slug = sanitizeInput(b.slug) || (title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-4));
+        const summary = sanitizeInput(b.summary || '');
+        const content = b.content || '';
+        const cover_image = sanitizeInput(b.cover_image || '');
+        const author = sanitizeInput(b.author || 'LTT Team');
+        const status = sanitizeInput(b.status || 'published');
+        const tags_meta = JSON.stringify(b.tags_meta || {});
+        const template_style = sanitizeInput(b.template_style || 'standard');
+        const custom_instruction = sanitizeInput(b.custom_instruction || '');
+        const video_url = sanitizeInput(b.video_url || '');
+        const map_coords = sanitizeInput(b.map_coords || '');
+        const travel_date = sanitizeInput(b.travel_date || '');
+        const title_en = sanitizeInput(b.title_en || '');
+        const summary_en = sanitizeInput(b.summary_en || '');
+        const content_en = b.content_en || '';
+
+        await env.DB.prepare(
+          `INSERT INTO articles (
+            title, slug, summary, content, cover_image, author, status,
+            tags_meta, template_style, custom_instruction, video_url, map_coords, travel_date,
+            title_en, summary_en, content_en
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          title, slug, summary, content, cover_image, author, status,
+          tags_meta, template_style, custom_instruction, video_url, map_coords, travel_date,
+          title_en, summary_en, content_en
+        ).run();
+
+        return jsonResponse({ success: true, message: 'บันทึกบทความเรียบร้อย' }, 200, origin);
+      }
+
+      if (path.startsWith('/api/admin/articles/') && method === 'PUT') {
+        const id = path.replace('/api/admin/articles/', '');
+        const b = await request.json();
+        await env.DB.prepare(
+          `UPDATE articles SET
+            title = ?, slug = ?, summary = ?, content = ?, cover_image = ?, status = ?,
+            tags_meta = ?, template_style = ?, custom_instruction = ?, video_url = ?, map_coords = ?, travel_date = ?,
+            title_en = ?, summary_en = ?, content_en = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?`
+        ).bind(
+          sanitizeInput(b.title), sanitizeInput(b.slug), sanitizeInput(b.summary), b.content || '',
+          sanitizeInput(b.cover_image), sanitizeInput(b.status || 'published'),
+          JSON.stringify(b.tags_meta || {}), sanitizeInput(b.template_style || 'standard'), sanitizeInput(b.custom_instruction || ''),
+          sanitizeInput(b.video_url || ''), sanitizeInput(b.map_coords || ''), sanitizeInput(b.travel_date || ''),
+          sanitizeInput(b.title_en || ''), sanitizeInput(b.summary_en || ''), b.content_en || '',
+          id
+        ).run();
+
+        return jsonResponse({ success: true, message: 'อัปเดตบทความเรียบร้อย' }, 200, origin);
       }
 
       if (path.startsWith('/api/admin/articles/') && method === 'DELETE') {
@@ -314,6 +567,7 @@ export default {
         return jsonResponse({ success: true, message: 'ลบบทความเรียบร้อย' }, 200, origin);
       }
 
+      // Client Logos
       if (path === '/api/admin/client-logos' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM client_logos ORDER BY sort_order ASC').all();
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
@@ -323,7 +577,7 @@ export default {
         const body = await request.json();
         const name = sanitizeInput(body.name);
         const logo_url = sanitizeInput(body.logo_url);
-        const website_url = sanitizeInput(body.website_url);
+        const website_url = sanitizeInput(body.website_url || '');
         const sort_order = Number(body.sort_order) || 0;
         await env.DB.prepare(
           'INSERT INTO client_logos (name, logo_url, website_url, sort_order, is_active) VALUES (?, ?, ?, ?, 1)'
@@ -337,6 +591,7 @@ export default {
         return jsonResponse({ success: true, message: 'ลบโลโก้เรียบร้อย' }, 200, origin);
       }
 
+      // Inquiries
       if (path === '/api/admin/inquiries' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM inquiries ORDER BY created_at DESC').all();
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
@@ -347,6 +602,13 @@ export default {
         const { status } = await request.json();
         await env.DB.prepare('UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(status, id).run();
         return jsonResponse({ success: true, message: 'อัปเดตสถานะเรียบร้อย' }, 200, origin);
+      }
+
+      if (path.match(/\/api\/admin\/inquiries\/\d+\/notes/) && method === 'PATCH') {
+        const id = path.split('/')[4];
+        const { notes } = await request.json();
+        await env.DB.prepare('UPDATE inquiries SET admin_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sanitizeInput(notes), id).run();
+        return jsonResponse({ success: true, message: 'บันทึกโน้ตสำเร็จ' }, 200, origin);
       }
 
       if (path === '/api/admin/inquiries/export.csv' && method === 'GET') {
@@ -365,6 +627,7 @@ export default {
         return setSecurityHeaders(resp, origin);
       }
 
+      // Site Settings
       if (path === '/api/admin/site-settings' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT * FROM site_settings').all();
         return jsonResponse({ success: true, data: results || [] }, 200, origin);
@@ -379,13 +642,10 @@ export default {
         return jsonResponse({ success: true, message: 'บันทึกการตั้งค่าเรียบร้อย' }, 200, origin);
       }
 
-      if (path === '/api/admin/sync/purge-cache' && method === 'POST') {
-        return jsonResponse({ success: true, message: 'คำสั่งล้างแคชส่งไปยังหน้าบ้านเรียบร้อยแล้ว' }, 200, origin);
-      }
-
+      // R2 Media Upload
       if (path === '/api/admin/media/upload' && method === 'POST') {
         if (!env.R2_BUCKET) {
-          return jsonResponse({ success: false, error: 'ยังไม่ได้ผูก R2_BUCKET ในหน้า Settings ของ Worker' }, 400, origin);
+          return jsonResponse({ success: false, error: 'ยังไม่ได้ผูก R2_BUCKET' }, 400, origin);
         }
         const formData = await request.formData();
         const file = formData.get('file');
@@ -412,985 +672,9 @@ export default {
   }
 };
 
-// Embedded Backoffice HTML
+
+const ADMIN_HTML_TEMPLATE = "<!DOCTYPE html>\n<html lang=\"th\" class=\"h-full bg-slate-900 text-slate-100\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>LTT Ma getThink — Edge CMS Backoffice</title>\n  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n  <link href=\"https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap\" rel=\"stylesheet\">\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <script src=\"https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js\"></script>\n  <style>\n    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', sans-serif; }\n    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }\n    .active-nav { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }\n    .editor-btn { padding: 0.375rem; border-radius: 0.375rem; color: #cbd5e1; transition: all 0.2s; }\n    .editor-btn:hover { background-color: #f1f5f9; color: #0f172a; }\n    [contenteditable]:empty:before { content: attr(placeholder); color: #94a3b8; pointer-events: none; }\n  </style>\n</head>\n<body class=\"h-full flex overflow-hidden\">\n  <!-- Sidebar -->\n  <aside class=\"w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 z-20\">\n    <div class=\"h-16 flex items-center px-6 gap-3 border-b border-slate-800\">\n      <div class=\"w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-blue-500/30\">\n        L\n      </div>\n      <div>\n        <h1 class=\"font-bold text-sm text-white\">LTT Ma getThink</h1>\n        <p class=\"text-[11px] text-blue-400 font-medium\">Edge Backoffice CMS</p>\n      </div>\n    </div>\n\n    <!-- Navigation Tabs -->\n    <nav class=\"flex-1 px-3 py-4 space-y-1.5 overflow-y-auto\" id=\"sidebarNav\">\n      <button type=\"button\" onclick=\"switchTab('dashboard')\" id=\"btn-tab-dashboard\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition active-nav\">\n        <i data-lucide=\"layout-dashboard\" class=\"w-4 h-4 shrink-0\"></i><span>Dashboard ภาพรวม</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('navigation')\" id=\"btn-tab-navigation\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"compass\" class=\"w-4 h-4 shrink-0\"></i><span>Navigation เมนูหลัก</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('portfolios')\" id=\"btn-tab-portfolios\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"briefcase\" class=\"w-4 h-4 shrink-0\"></i><span>Portfolios ผลงาน</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('services')\" id=\"btn-tab-services\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"sparkles\" class=\"w-4 h-4 shrink-0\"></i><span>Services บริการ</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('articles')\" id=\"btn-tab-articles\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"newspaper\" class=\"w-4 h-4 shrink-0\"></i><span>บทความ & ข่าวสาร</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('clients')\" id=\"btn-tab-clients\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"building-2\" class=\"w-4 h-4 shrink-0\"></i><span>Client Logos ลูกค้า</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('inquiries')\" id=\"btn-tab-inquiries\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900 justify-between\">\n        <div class=\"flex items-center gap-3\">\n          <i data-lucide=\"inbox\" class=\"w-4 h-4 shrink-0\"></i><span>Inquiries ข้อความติดต่อ</span>\n        </div>\n        <span id=\"badge-new-inquiries\" class=\"hidden bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full\">0</span>\n      </button>\n      <button type=\"button\" onclick=\"switchTab('settings')\" id=\"btn-tab-settings\" class=\"w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900\">\n        <i data-lucide=\"settings\" class=\"w-4 h-4 shrink-0\"></i><span>Site Settings & SEO</span>\n      </button>\n    </nav>\n  </aside>\n\n  <!-- Main Content Area -->\n  <div class=\"flex-1 flex flex-col min-w-0 overflow-hidden\">\n    <!-- Clean Minimalist Header (Without top D1 badge / purge buttons as requested) -->\n    <div class=\"h-14 border-b border-slate-800 bg-slate-950/60 px-8 flex items-center justify-between shrink-0\">\n      <div class=\"flex items-center gap-2\">\n        <h2 id=\"currentTabTitle\" class=\"text-sm font-bold text-white capitalize\">Dashboard ภาพรวม</h2>\n      </div>\n      <div class=\"flex items-center gap-3\">\n        <a href=\"https://ltt-website.pages.dev/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-xs text-slate-400 hover:text-white transition border border-slate-800\">\n          <span>เปิดหน้าเว็บไซต์</span>\n          <i data-lucide=\"external-link\" class=\"w-3.5 h-3.5\"></i>\n        </a>\n      </div>\n    </div>\n\n    <main class=\"flex-1 overflow-y-auto p-8\">\n      <!-- SECTION 1: DASHBOARD -->\n      <section id=\"section-dashboard\" class=\"space-y-8\">\n        <div class=\"grid grid-cols-1 md:grid-cols-4 gap-6\">\n          <div class=\"glass-card p-6 rounded-2xl\">\n            <span class=\"text-xs font-medium text-slate-400\">ข้อความติดต่อทั้งหมด</span>\n            <div id=\"stat-total-inquiries\" class=\"text-2xl font-bold text-white mt-1\">0</div>\n            <p class=\"text-[11px] text-emerald-400 mt-2 font-medium\">\n              <span id=\"stat-new-inquiries\">0</span> ข้อความใหม่\n            </p>\n          </div>\n          <div class=\"glass-card p-6 rounded-2xl\">\n            <span class=\"text-xs font-medium text-slate-400\">ผลงานทั้งหมด</span>\n            <div id=\"stat-total-portfolios\" class=\"text-2xl font-bold text-white mt-1\">0</div>\n            <p class=\"text-[11px] text-blue-400 mt-2\">D1 Database</p>\n          </div>\n          <div class=\"glass-card p-6 rounded-2xl\">\n            <span class=\"text-xs font-medium text-slate-400\">บริการหลัก</span>\n            <div id=\"stat-total-services\" class=\"text-2xl font-bold text-white mt-1\">0</div>\n            <p class=\"text-[11px] text-indigo-400 mt-2\">Services</p>\n          </div>\n          <div class=\"glass-card p-6 rounded-2xl\">\n            <span class=\"text-xs font-medium text-slate-400\">บทความ & ข่าวสาร</span>\n            <div id=\"stat-total-articles\" class=\"text-2xl font-bold text-white mt-1\">0</div>\n            <p class=\"text-[11px] text-purple-400 mt-2\">Articles</p>\n          </div>\n        </div>\n\n        <div class=\"glass-card p-6 rounded-2xl\">\n          <h3 class=\"font-bold text-white text-sm mb-4\">ข้อความติดต่อล่าสุด</h3>\n          <div class=\"overflow-x-auto\">\n            <table class=\"w-full text-left text-xs\">\n              <thead class=\"text-slate-400 border-b border-slate-800\">\n                <tr>\n                  <th class=\"pb-3\">ชื่อลูกค้า</th>\n                  <th class=\"pb-3\">บริษัท</th>\n                  <th class=\"pb-3\">บริการ</th>\n                  <th class=\"pb-3\">สถานะ</th>\n                  <th class=\"pb-3\">วันที่</th>\n                </tr>\n              </thead>\n              <tbody id=\"table-recent-inquiries\" class=\"divide-y divide-slate-800/60\">\n                <tr><td colspan=\"5\" class=\"py-4 text-slate-500 text-center\">กำลังโหลด...</td></tr>\n              </tbody>\n            </table>\n          </div>\n        </div>\n      </section>\n\n      <!-- SECTION 2: NAVIGATION -->\n      <section id=\"section-navigation\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <h3 class=\"text-base font-bold text-white\">จัดการเมนูนำทาง (Navigation Menus)</h3>\n          <button type=\"button\" onclick=\"openNavModal()\" class=\"px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2\">\n            <i data-lucide=\"plus\" class=\"w-4 h-4\"></i><span>+ เพิ่มเมนูใหม่</span>\n          </button>\n        </div>\n        <div class=\"glass-card rounded-2xl overflow-hidden\">\n          <table class=\"w-full text-left text-xs\">\n            <thead class=\"text-slate-400 border-b border-slate-800 bg-slate-950/40\">\n              <tr>\n                <th class=\"p-4\">ลำดับ</th>\n                <th class=\"p-4\">ชื่อเมนู (Label)</th>\n                <th class=\"p-4\">URL Path</th>\n                <th class=\"p-4\">ประเภท</th>\n                <th class=\"p-4\">สถานะ</th>\n                <th class=\"p-4 text-right\">การจัดการ</th>\n              </tr>\n            </thead>\n            <tbody id=\"table-navigation\" class=\"divide-y divide-slate-800/60\">\n              <tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">กำลังโหลดข้อมูล...</td></tr>\n            </tbody>\n          </table>\n        </div>\n      </section>\n\n      <!-- SECTION 3: PORTFOLIOS -->\n      <section id=\"section-portfolios\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <div>\n            <h3 class=\"text-base font-bold text-white\">จัดการผลงาน (Portfolios)</h3>\n            <p class=\"text-xs text-slate-400 mt-0.5\">ผลงานลูกค้า รองรับการเขียนเนื้อหา Tags 6 มิติ วิดีโอ และพิกัด Google Maps</p>\n          </div>\n          <button type=\"button\" onclick=\"openRichEditor('portfolio')\" class=\"px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2\">\n            <i data-lucide=\"plus\" class=\"w-4 h-4\"></i><span>+ เพิ่มผลงานใหม่</span>\n          </button>\n        </div>\n        <div id=\"grid-portfolios\" class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n          <div class=\"p-6 text-slate-500 text-xs\">กำลังโหลดข้อมูล...</div>\n        </div>\n      </section>\n\n      <!-- SECTION 4: SERVICES -->\n      <section id=\"section-services\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <div>\n            <h3 class=\"text-base font-bold text-white\">จัดการบริการ (Services)</h3>\n            <p class=\"text-xs text-slate-400 mt-0.5\">สามารถอัปโหลดรูปภาพบริการ และแก้ไขรายการติ๊กถูก (Checkmarks) ได้อย่างอิสระ</p>\n          </div>\n        </div>\n        <div id=\"grid-services\" class=\"grid grid-cols-1 md:grid-cols-2 gap-6\">\n          <div class=\"p-6 text-slate-500 text-xs\">กำลังโหลดข้อมูล...</div>\n        </div>\n      </section>\n\n      <!-- SECTION 5: ARTICLES -->\n      <section id=\"section-articles\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <div>\n            <h3 class=\"text-base font-bold text-white\">บทความ & ข่าวสาร (Blog & Events)</h3>\n            <p class=\"text-xs text-slate-400 mt-0.5\">เขียนบทความ รีวิว ท่องเที่ยว อัปโหลดรูปภาพ แทรกวิดีโอ YouTube และพิกัด Google Maps</p>\n          </div>\n          <button type=\"button\" onclick=\"openRichEditor('article')\" class=\"px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2\">\n            <i data-lucide=\"plus\" class=\"w-4 h-4\"></i><span>+ เพิ่มบทความใหม่</span>\n          </button>\n        </div>\n        <div class=\"glass-card rounded-2xl overflow-hidden\">\n          <table class=\"w-full text-left text-xs\">\n            <thead class=\"text-slate-400 border-b border-slate-800 bg-slate-950/40\">\n              <tr>\n                <th class=\"p-4\">ภาพ</th>\n                <th class=\"p-4\">ชื่อบทความ</th>\n                <th class=\"p-4\">Template สไตล์</th>\n                <th class=\"p-4\">วันที่</th>\n                <th class=\"p-4\">สถานะ</th>\n                <th class=\"p-4 text-right\">การจัดการ</th>\n              </tr>\n            </thead>\n            <tbody id=\"table-articles\" class=\"divide-y divide-slate-800/60\">\n              <tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">กำลังโหลดข้อมูล...</td></tr>\n            </tbody>\n          </table>\n        </div>\n      </section>\n\n      <!-- SECTION 6: CLIENT LOGOS -->\n      <section id=\"section-clients\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <div>\n            <h3 class=\"text-base font-bold text-white\">โลโก้ลูกค้า (Client Logos)</h3>\n            <p class=\"text-xs text-slate-400 mt-0.5\">รองรับการอัปโหลดไฟล์ภาพตรงลง Cloudflare R2 Bucket</p>\n          </div>\n          <button type=\"button\" onclick=\"openClientModal()\" class=\"px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2\">\n            <i data-lucide=\"plus\" class=\"w-4 h-4\"></i><span>+ เพิ่มโลโก้ลูกค้า</span>\n          </button>\n        </div>\n        <div id=\"grid-client-logos\" class=\"grid grid-cols-2 md:grid-cols-5 gap-4\">\n          <div class=\"p-4 text-slate-500 text-xs\">กำลังโหลดข้อมูล...</div>\n        </div>\n      </section>\n\n      <!-- SECTION 7: INQUIRIES -->\n      <section id=\"section-inquiries\" class=\"space-y-6 hidden\">\n        <div class=\"flex items-center justify-between\">\n          <h3 class=\"text-base font-bold text-white\">ข้อความติดต่อจากเว็บไซต์</h3>\n          <a href=\"/api/admin/inquiries/export.csv\" class=\"px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition flex items-center gap-2\">\n            <i data-lucide=\"download\" class=\"w-4 h-4\"></i><span>Export CSV</span>\n          </a>\n        </div>\n        <div class=\"glass-card rounded-2xl overflow-hidden\">\n          <table class=\"w-full text-left text-xs\">\n            <thead class=\"text-slate-400 border-b border-slate-800 bg-slate-950/40\">\n              <tr>\n                <th class=\"p-4\">ชื่อลูกค้า</th>\n                <th class=\"p-4\">ติดต่อ</th>\n                <th class=\"p-4\">ข้อความ & บันทึก</th>\n                <th class=\"p-4\">หน้าต้นทาง</th>\n                <th class=\"p-4\">สถานะ</th>\n                <th class=\"p-4 text-right\">การจัดการ</th>\n              </tr>\n            </thead>\n            <tbody id=\"table-inquiries\" class=\"divide-y divide-slate-800/60\">\n              <tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">กำลังโหลดข้อมูล...</td></tr>\n            </tbody>\n          </table>\n        </div>\n      </section>\n\n      <!-- SECTION 8: SITE SETTINGS & SEO -->\n      <section id=\"section-settings\" class=\"space-y-6 hidden\">\n        <div>\n          <h3 class=\"text-base font-bold text-white\">ตั้งค่าเว็บไซต์ & SEO ครบวงจร</h3>\n          <p class=\"text-xs text-slate-400 mt-0.5\">จัดการข้อมูลติดต่อ, โซเชียลมีเดีย, การแชร์ Social Share (OG Tag) และเครื่องมือ Tracking</p>\n        </div>\n        <form id=\"form-site-settings\" onsubmit=\"handleSaveSettings(event)\" class=\"space-y-6 max-w-4xl\">\n          <!-- 1. ข้อมูลติดต่อหลัก -->\n          <div class=\"glass-card rounded-2xl p-6 space-y-4\">\n            <h4 class=\"text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2\">\n              <i data-lucide=\"phone\" class=\"w-4 h-4\"></i><span>ข้อมูลติดต่อหลัก (Contact Info)</span>\n            </h4>\n            <div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">ชื่อบริษัท (Company Name)</label>\n                <input type=\"text\" id=\"setting_company_name\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">เบอร์โทรศัพท์ (Phone)</label>\n                <input type=\"text\" id=\"setting_phone\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">อีเมลติดต่อ (Email)</label>\n                <input type=\"email\" id=\"setting_email\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">LINE Official Account (LINE OA)</label>\n                <input type=\"text\" id=\"setting_line_oa\" placeholder=\"@lttmagetthink\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div class=\"md:col-span-2\">\n                <label class=\"text-xs text-slate-400 block mb-1\">ที่อยู่บริษัท (Address)</label>\n                <textarea rows=\"2\" id=\"setting_address\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\"></textarea>\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">เวลาทำการ (Working Hours)</label>\n                <input type=\"text\" id=\"setting_working_hours\" placeholder=\"จันทร์ - เสาร์ 09:00 - 18:00\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n            </div>\n          </div>\n\n          <!-- 2. Social Links -->\n          <div class=\"glass-card rounded-2xl p-6 space-y-4\">\n            <h4 class=\"text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2\">\n              <i data-lucide=\"share-2\" class=\"w-4 h-4\"></i><span>ลิงก์โซเชียลมีเดีย (Social Media)</span>\n            </h4>\n            <div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Facebook URL</label>\n                <input type=\"text\" id=\"setting_social_facebook\" placeholder=\"https://facebook.com/...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Instagram URL</label>\n                <input type=\"text\" id=\"setting_social_instagram\" placeholder=\"https://instagram.com/...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">TikTok URL</label>\n                <input type=\"text\" id=\"setting_social_tiktok\" placeholder=\"https://tiktok.com/@...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">YouTube URL</label>\n                <input type=\"text\" id=\"setting_social_youtube\" placeholder=\"https://youtube.com/@...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n            </div>\n          </div>\n\n          <!-- 3. SEO & Open Graph -->\n          <div class=\"glass-card rounded-2xl p-6 space-y-4\">\n            <h4 class=\"text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2\">\n              <i data-lucide=\"globe\" class=\"w-4 h-4\"></i><span>การตั้งค่า SEO & Social Share (Open Graph)</span>\n            </h4>\n            <div class=\"space-y-4\">\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Meta Title (หัวข้อสำหรับ Google Search)</label>\n                <input type=\"text\" id=\"setting_site_title\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Meta Description (คำอธิบายสำหรับ Google & Social Share)</label>\n                <textarea rows=\"2\" id=\"setting_site_description\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\"></textarea>\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">รูป Social Share Preview Image (OG Image 1200x630px)</label>\n                <div class=\"flex gap-2\">\n                  <input type=\"text\" id=\"setting_og_image\" class=\"flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white\">\n                  <label class=\"px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 cursor-pointer flex items-center gap-1.5 shrink-0\">\n                    <i data-lucide=\"upload\" class=\"w-3.5 h-3.5\"></i><span>อัปโหลด R2</span>\n                    <input type=\"file\" accept=\"image/*\" class=\"hidden\" onchange=\"uploadGenericFile(this, 'setting_og_image')\">\n                  </label>\n                </div>\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Google Site Verification Code (Search Console Meta Tag)</label>\n                <input type=\"text\" id=\"setting_google_verification\" placeholder=\"google-site-verification=...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono\">\n              </div>\n            </div>\n          </div>\n\n          <!-- 4. Analytics & Tracking -->\n          <div class=\"glass-card rounded-2xl p-6 space-y-4\">\n            <h4 class=\"text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2\">\n              <i data-lucide=\"bar-chart-3\" class=\"w-4 h-4\"></i><span>เครื่องมือ Analytics & Tracking</span>\n            </h4>\n            <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Google Tag Manager (GTM ID)</label>\n                <input type=\"text\" id=\"setting_gtm_id\" placeholder=\"GTM-XXXXXXX\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Google Analytics 4 (GA4 ID)</label>\n                <input type=\"text\" id=\"setting_ga4_id\" placeholder=\"G-XXXXXXXXXX\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono\">\n              </div>\n              <div>\n                <label class=\"text-xs text-slate-400 block mb-1\">Facebook Pixel ID</label>\n                <input type=\"text\" id=\"setting_fb_pixel_id\" placeholder=\"1234567890\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono\">\n              </div>\n            </div>\n          </div>\n\n          <div class=\"flex justify-end\">\n            <button type=\"submit\" class=\"px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20\">\n              บันทึกการตั้งค่าเว็บไซต์ทั้งหมด\n            </button>\n          </div>\n        </form>\n      </section>\n    </main>\n  </div>\n\n  <!-- ==================== RICH CONTENT EDITOR MODAL (Based on Image 2) ==================== -->\n  <div id=\"modal-rich-editor\" class=\"fixed inset-0 z-50 items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden overflow-y-auto\">\n    <div class=\"bg-white text-slate-800 rounded-2xl w-full max-w-4xl my-8 shadow-2xl flex flex-col overflow-hidden max-h-[92vh]\">\n      \n      <!-- Top Action Bar (Matching Image 2) -->\n      <div class=\"bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0\">\n        <!-- Left Toolbar -->\n        <div class=\"flex items-center gap-1 text-slate-600\">\n          <button type=\"button\" onclick=\"execCmd('undo')\" title=\"Undo\" class=\"editor-btn\">↩</button>\n          <button type=\"button\" onclick=\"execCmd('redo')\" title=\"Redo\" class=\"editor-btn\">↪</button>\n          <span class=\"w-px h-4 bg-slate-200 mx-1\"></span>\n          <button type=\"button\" onclick=\"execCmd('formatBlock', '<p>')\" title=\"Paragraph\" class=\"editor-btn font-serif\">¶</button>\n          <button type=\"button\" onclick=\"toggleHeading()\" title=\"Heading (H2/H3)\" class=\"editor-btn font-bold\">A↕</button>\n          <button type=\"button\" onclick=\"execCmd('bold')\" title=\"Bold\" class=\"editor-btn font-bold\">B</button>\n          <button type=\"button\" onclick=\"execCmd('italic')\" title=\"Italic\" class=\"editor-btn italic\">I</button>\n          <button type=\"button\" onclick=\"execCmd('strikeThrough')\" title=\"Strikethrough\" class=\"editor-btn line-through\">S</button>\n          <span class=\"w-px h-4 bg-slate-200 mx-1\"></span>\n          <button type=\"button\" onclick=\"execCmd('insertUnorderedList')\" title=\"Bullet List\" class=\"editor-btn\">⋮≡</button>\n          <button type=\"button\" onclick=\"execCmd('insertOrderedList')\" title=\"Numbered List\" class=\"editor-btn\">1.≡</button>\n          <button type=\"button\" onclick=\"insertLinkPrompt()\" title=\"Insert Link\" class=\"editor-btn\">🔗</button>\n          <button type=\"button\" onclick=\"execCmd('insertHorizontalRule')\" title=\"Divider\" class=\"editor-btn\">—</button>\n          <span class=\"w-px h-4 bg-slate-200 mx-1\"></span>\n          <!-- Media Embed Buttons -->\n          <label title=\"Insert Image from R2\" class=\"editor-btn cursor-pointer inline-flex items-center\">\n            🖼️\n            <input type=\"file\" accept=\"image/*\" class=\"hidden\" onchange=\"uploadAndInsertImage(this)\">\n          </label>\n          <button type=\"button\" onclick=\"promptInsertVideo()\" title=\"Insert YouTube Video\" class=\"editor-btn\">▶️</button>\n          <button type=\"button\" onclick=\"promptInsertMap()\" title=\"Insert Google Map Coordinates\" class=\"editor-btn\">📍</button>\n        </div>\n\n        <!-- Right Action Controls -->\n        <div class=\"flex items-center gap-3\">\n          <select id=\"editor_status\" class=\"text-xs bg-slate-100 border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none\">\n            <option value=\"published\">เผยแพร่ (Published)</option>\n            <option value=\"draft\">ฉบับร่าง (Draft)</option>\n          </select>\n          <button type=\"button\" onclick=\"previewEditorContent()\" class=\"px-4 py-1.5 rounded-lg border border-teal-600 text-teal-700 hover:bg-teal-50 text-xs font-semibold transition\">\n            Preview\n          </button>\n          <button type=\"button\" onclick=\"handleSaveRichEditor()\" class=\"px-5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm\">\n            บันทึก\n          </button>\n          <button type=\"button\" onclick=\"closeRichEditor()\" class=\"text-slate-400 hover:text-slate-600 p-1 text-base\">✕</button>\n        </div>\n      </div>\n\n      <!-- Editor Body Form -->\n      <div class=\"flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50\">\n        <input type=\"hidden\" id=\"editor_target_type\" value=\"portfolio\">\n        <input type=\"hidden\" id=\"editor_item_id\" value=\"\">\n\n        <!-- Language Tabs & Auto-Translate -->\n        <div class=\"flex items-center justify-between border-b border-slate-200 pb-2\">\n          <div class=\"flex gap-2\">\n            <button type=\"button\" onclick=\"switchEditorLang('th')\" id=\"tab-lang-th\" class=\"px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white\">ภาษาไทย (TH)</button>\n            <button type=\"button\" onclick=\"switchEditorLang('en')\" id=\"tab-lang-en\" class=\"px-3 py-1 rounded-lg text-xs font-medium bg-slate-200 text-slate-700\">ภาษาอังกฤษ (EN)</button>\n          </div>\n          <button type=\"button\" onclick=\"runAiTranslate()\" id=\"btn-ai-translate\" class=\"px-3 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold flex items-center gap-1.5 transition\">\n            <span>🤖 AI แปลเป็นภาษาอังกฤษอัตโนมัติ</span>\n          </button>\n        </div>\n\n        <!-- THAI FIELDS -->\n        <div id=\"editor-fields-th\" class=\"space-y-6\">\n          <!-- 1. ชื่อบันทึก (Title) -->\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">ชื่อบันทึก / หัวข้อ *</label>\n            <input type=\"text\" id=\"editor_title_th\" placeholder=\"พิมพ์ชื่อผลงาน หรือชื่อหัวข้อบทความ...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-teal-500\">\n          </div>\n\n          <!-- 2. Tags 6 มิติ (Matching Image 2) -->\n          <div>\n            <div class=\"flex items-center gap-1.5 mb-2\">\n              <span class=\"text-xs font-bold text-slate-700\">Tags</span>\n              <span class=\"text-[11px] text-slate-400\">ⓘ</span>\n              <span class=\"text-[11px] text-rose-500 font-medium\">*กรุณาใส่ Tags ให้ครบถ้วน</span>\n            </div>\n            <div class=\"grid grid-cols-1 md:grid-cols-2 gap-3 text-xs\">\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">ประเทศ:</span>\n                <input type=\"text\" id=\"tag_country\" placeholder=\"ไทย, จีน, ฮ่องกง ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">ประเภท:</span>\n                <input type=\"text\" id=\"tag_type\" placeholder=\"ร้านอาหาร, รีสอร์ท, การตลาด ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">จุดหมาย:</span>\n                <input type=\"text\" id=\"tag_destination\" placeholder=\"กรุงเทพ, พัทยา, ภูเก็ต ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">การเดินทาง:</span>\n                <input type=\"text\" id=\"tag_transport\" placeholder=\"รถยนต์, รถไฟ, เครื่องบิน ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">ชื่อสถานที่:</span>\n                <input type=\"text\" id=\"tag_location\" placeholder=\"Cross Pattaya, W Hotel ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n              <div class=\"flex border border-slate-300 rounded-xl overflow-hidden bg-white\">\n                <span class=\"bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0\">กิจกรรม:</span>\n                <input type=\"text\" id=\"tag_activity\" placeholder=\"ถ่ายภาพสถาปัตยกรรม, รีวิว ...\" class=\"flex-1 px-3 py-2 focus:outline-none\">\n              </div>\n            </div>\n          </div>\n\n          <!-- 3. ภาพปก (Cover Image Upload to R2) -->\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">ภาพปก *</label>\n            <div id=\"dropzone_cover\" class=\"border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-white hover:border-teal-500 transition cursor-pointer relative\" onclick=\"document.getElementById('input_cover_file').click()\">\n              <input type=\"file\" id=\"input_cover_file\" accept=\"image/*\" class=\"hidden\" onchange=\"uploadCoverImage(this)\">\n              <div id=\"cover_placeholder\" class=\"space-y-2\">\n                <div class=\"w-12 h-12 mx-auto text-3xl\">🖼️</div>\n                <p class=\"text-xs font-semibold text-slate-700\">คลิกหรือลากไฟล์ภาพมาวางที่นี่เพื่ออัปโหลดขึ้น R2</p>\n                <p class=\"text-[11px] text-slate-400\">รองรับไฟล์ JPG, PNG, WebP ขนาดไม่เกิน 10MB</p>\n              </div>\n              <div id=\"cover_preview_box\" class=\"hidden\">\n                <img id=\"cover_preview_img\" src=\"\" class=\"max-h-52 mx-auto rounded-xl object-cover shadow\" alt=\"Cover Preview\">\n                <button type=\"button\" onclick=\"event.stopPropagation(); removeCoverImage();\" class=\"mt-2 text-xs text-rose-500 font-semibold hover:underline\">เปลี่ยนภาพปก</button>\n              </div>\n            </div>\n            <input type=\"hidden\" id=\"editor_cover_url\" value=\"\">\n            <p class=\"text-[10px] text-slate-500 mt-1.5 leading-relaxed\">\n              * ในกรณีเปลี่ยนหน้าปกใหม่ อาจจะใช้เวลาหลายนาทีในการแสดงภาพใหม่เนื่องจากตัวเว็บเบราว์เซอร์ยังจำค่าเดิมอยู่ หรือ \"เบราว์เซอร์แคช\" หากต้องการดูแบบเรียลไทม์ ให้เคลียร์แคชของเว็บเบราว์เซอร์ก่อน หรือ ใช้เบราว์เซอร์อื่นเพื่อดู\n            </p>\n          </div>\n\n          <!-- 4. วันที่ & ลิงก์สื่อ (YouTube & Google Map) -->\n          <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n            <div>\n              <label class=\"block text-xs font-bold text-slate-700 mb-1\">วันที่เดินทาง / วันที่เผยแพร่</label>\n              <input type=\"date\" id=\"editor_travel_date\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\">\n            </div>\n            <div>\n              <label class=\"block text-xs font-bold text-slate-700 mb-1\">YouTube Video Link (ถ้ามี)</label>\n              <input type=\"text\" id=\"editor_video_url\" placeholder=\"https://www.youtube.com/watch?v=...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\">\n            </div>\n            <div>\n              <label class=\"block text-xs font-bold text-slate-700 mb-1\">พิกัด / Embed Google Maps</label>\n              <input type=\"text\" id=\"editor_map_coords\" placeholder=\"เช่น 13.7563, 100.5018 หรือ iframe\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\">\n            </div>\n          </div>\n\n          <!-- 5. Template Layout Instruction (สไตล์การจัดหน้า) -->\n          <div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n            <div>\n              <label class=\"block text-xs font-bold text-slate-700 mb-1\">เลือกสไตล์การจัดหน้า (Template Layout)</label>\n              <select id=\"editor_template_style\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:outline-none\">\n                <option value=\"review-travel\">🏷️ Editorial Review & Travel Story (เน้นเล่าเรื่อง Hero + แผนที่ + วิดีโอ)</option>\n                <option value=\"case-study\">💼 Modern Case Study (โจทย์ลูกค้า สรุปผลงาน สถิติ แกลเลอรี)</option>\n                <option value=\"visual-gallery\">🖼️ Visual Gallery Showcase (เน้นผลงานภาพถ่ายขนาดใหญ่)</option>\n                <option value=\"standard\">📝 Standard Article (บทความมาตรฐานอ่านง่าย)</option>\n              </select>\n            </div>\n            <div>\n              <label class=\"block text-xs font-bold text-slate-700 mb-1\">คำแนะนำเฉพาะ (Custom Instruction / Notes)</label>\n              <input type=\"text\" id=\"editor_custom_instruction\" placeholder=\"เช่น ใส่โทนสีอบอุ่น เน้นไฮไลท์สระว่ายน้ำ...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\">\n            </div>\n          </div>\n\n          <!-- 6. สรุปสั้นๆ (Summary) -->\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">สรุปย่อ (Summary / Lead Paragraph)</label>\n            <textarea rows=\"2\" id=\"editor_summary_th\" placeholder=\"สรุปภาพรวม 2-3 บรรทัด...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\"></textarea>\n          </div>\n\n          <!-- 7. เนื้อหาหลัก (Rich Content Area) -->\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">เนื้อหา (Content) *</label>\n            <div id=\"editor_content_th\" contenteditable=\"true\" placeholder=\"พิมพ์เนื้อหาของรีวิวและใส่รูปภาพที่นี่...\" class=\"min-h-[280px] bg-white border border-slate-300 rounded-xl p-4 text-sm text-slate-800 focus:outline-none focus:border-teal-500 overflow-y-auto leading-relaxed\"></div>\n          </div>\n        </div>\n\n        <!-- ENGLISH FIELDS (Bilingual) -->\n        <div id=\"editor-fields-en\" class=\"space-y-6 hidden\">\n          <div class=\"p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700\">\n            ℹ️ ข้อมูลภาษาอังกฤษสำหรับแสดงผลเมื่อผู้เข้าชมเลือกภาษาอังกฤษ (EN) บนหน้าเว็บไซต์\n          </div>\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">Title (English)</label>\n            <input type=\"text\" id=\"editor_title_en\" placeholder=\"Article / Portfolio Title in English...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none\">\n          </div>\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">Summary (English)</label>\n            <textarea rows=\"2\" id=\"editor_summary_en\" placeholder=\"Short overview in English...\" class=\"w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none\"></textarea>\n          </div>\n          <div>\n            <label class=\"block text-xs font-bold text-slate-700 mb-1\">Content (English)</label>\n            <div id=\"editor_content_en\" contenteditable=\"true\" placeholder=\"Write or paste English content here...\" class=\"min-h-[280px] bg-white border border-slate-300 rounded-xl p-4 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed\"></div>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Preview Modal -->\n  <div id=\"modal-preview\" class=\"fixed inset-0 z-[60] items-center justify-center p-4 bg-black/85 backdrop-blur-sm hidden overflow-y-auto\">\n    <div class=\"bg-slate-950 text-slate-100 border border-slate-800 rounded-2xl w-full max-w-3xl my-8 p-8 shadow-2xl flex flex-col max-h-[90vh]\">\n      <div class=\"flex items-center justify-between pb-4 border-b border-slate-800\">\n        <h4 class=\"text-sm font-bold text-white\">ตัวอย่างการแสดงผลบนหน้าเว็บไซต์ (Website Preview)</h4>\n        <button type=\"button\" onclick=\"closePreviewModal()\" class=\"text-slate-400 hover:text-white\">✕</button>\n      </div>\n      <div id=\"preview-container\" class=\"flex-1 overflow-y-auto py-6 space-y-6\"></div>\n    </div>\n  </div>\n\n  <!-- Navigation Modal -->\n  <div id=\"modal-nav\" class=\"fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden\">\n    <div class=\"bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4\">\n      <div class=\"flex items-center justify-between border-b border-slate-800 pb-3\">\n        <h4 id=\"modal-nav-title\" class=\"font-bold text-white text-sm\">เพิ่มเมนูหลักใหม่</h4>\n        <button type=\"button\" onclick=\"closeNavModal()\" class=\"text-slate-400 hover:text-white\">✕</button>\n      </div>\n      <form id=\"form-nav\" onsubmit=\"handleSaveNav(event)\" class=\"space-y-3\">\n        <input type=\"hidden\" id=\"nav_id\">\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">ชื่อเมนู (Label) *</label>\n          <input type=\"text\" id=\"nav_label\" required placeholder=\"เช่น บริการของเรา, ผลงาน, ติดต่อเรา\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n        </div>\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">URL Path *</label>\n          <input type=\"text\" id=\"nav_path\" required placeholder=\"เช่น /our-service หรือ https://...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n        </div>\n        <div class=\"grid grid-cols-2 gap-3\">\n          <div>\n            <label class=\"block text-xs font-medium text-slate-400 mb-1\">ลำดับการแสดงผล</label>\n            <input type=\"number\" id=\"nav_sort_order\" value=\"1\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n          </div>\n          <div>\n            <label class=\"block text-xs font-medium text-slate-400 mb-1\">ประเภทลิงก์</label>\n            <select id=\"nav_is_external\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n              <option value=\"0\">หน้าภายในเว็บ (Page)</option>\n              <option value=\"1\">ลิงก์ภายนอก (External)</option>\n            </select>\n          </div>\n        </div>\n        <div>\n          <label class=\"flex items-center gap-2 cursor-pointer pt-2\">\n            <input type=\"checkbox\" id=\"nav_is_active\" checked class=\"rounded bg-slate-950 border-slate-800 text-blue-600\">\n            <span class=\"text-xs text-slate-300\">เปิดแสดงผลเมนูนี้บนหน้าเว็บไซต์</span>\n          </label>\n        </div>\n        <div class=\"flex items-center justify-end gap-2 pt-3 border-t border-slate-800\">\n          <button type=\"button\" onclick=\"closeNavModal()\" class=\"px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300\">ยกเลิก</button>\n          <button type=\"submit\" class=\"px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20\">บันทึกข้อมูล</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <!-- Client Logo Modal (With R2 Direct Upload) -->\n  <div id=\"modal-client\" class=\"fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden\">\n    <div class=\"bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4\">\n      <div class=\"flex items-center justify-between border-b border-slate-800 pb-3\">\n        <h4 class=\"font-bold text-white text-sm\">เพิ่มโลโก้ลูกค้าใหม่ (Upload to R2)</h4>\n        <button type=\"button\" onclick=\"closeClientModal()\" class=\"text-slate-400 hover:text-white\">✕</button>\n      </div>\n      <form id=\"form-client\" onsubmit=\"handleSaveClient(event)\" class=\"space-y-3\">\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">ชื่อลูกค้า/แบรนด์ *</label>\n          <input type=\"text\" id=\"client_name\" required placeholder=\"เช่น Cross Hotels & Resorts\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n        </div>\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">อัปโหลดไฟล์โลโก้ขึ้น Cloudflare R2 *</label>\n          <div class=\"flex gap-2\">\n            <input type=\"text\" id=\"client_logo_url\" required placeholder=\"https://... หรือ /media/uploads/...\" class=\"flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none\">\n            <label class=\"px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white cursor-pointer shrink-0\">\n              <span>เลือกไฟล์</span>\n              <input type=\"file\" accept=\"image/*\" class=\"hidden\" onchange=\"uploadClientLogoFile(this)\">\n            </label>\n          </div>\n          <div id=\"client_logo_preview\" class=\"mt-2 hidden\">\n            <img src=\"\" id=\"client_logo_preview_img\" class=\"h-10 object-contain p-2 rounded bg-slate-800 border border-slate-700\" alt=\"\">\n          </div>\n        </div>\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">เว็บไซต์ของลูกค้า (ถ้ามี)</label>\n          <input type=\"text\" id=\"client_website_url\" placeholder=\"https://...\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\">\n        </div>\n        <div class=\"flex items-center justify-end gap-2 pt-3 border-t border-slate-800\">\n          <button type=\"button\" onclick=\"closeClientModal()\" class=\"px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300\">ยกเลิก</button>\n          <button type=\"submit\" class=\"px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20\">บันทึกโลโก้</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <!-- Note Modal -->\n  <div id=\"modal-note\" class=\"fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden\">\n    <div class=\"bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4\">\n      <div class=\"flex items-center justify-between border-b border-slate-800 pb-3\">\n        <div>\n          <h4 class=\"font-bold text-white text-sm\">จดบันทึกภายใน (Internal Notes)</h4>\n          <p id=\"note-customer-name\" class=\"text-[11px] text-blue-400 mt-0.5\"></p>\n        </div>\n        <button type=\"button\" onclick=\"closeNoteModal()\" class=\"text-slate-400 hover:text-white\">✕</button>\n      </div>\n      <form id=\"form-note\" onsubmit=\"handleSaveNote(event)\" class=\"space-y-3\">\n        <input type=\"hidden\" id=\"note_inquiry_id\">\n        <div>\n          <label class=\"block text-xs font-medium text-slate-400 mb-1\">บันทึกข้อความสำหรับทีมงานภายใน</label>\n          <textarea rows=\"4\" id=\"note_text\" placeholder=\"เช่น นัดคุยงานวันจันทร์ 10.00 น. หรือ ส่งใบเสนอราคาแล้ว\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500\"></textarea>\n        </div>\n        <div class=\"flex items-center justify-end gap-2 pt-3 border-t border-slate-800\">\n          <button type=\"button\" onclick=\"closeNoteModal()\" class=\"px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300\">ยกเลิก</button>\n          <button type=\"submit\" class=\"px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20\">บันทึกโน้ต</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <!-- ==================== CLIENT SCRIPTS (Pure DOM JS - Zero unsafe-eval) ==================== -->\n  <script>\n    const appState = {\n      currentTab: 'dashboard',\n      navMenus: [],\n      portfolios: [],\n      services: [],\n      articles: [],\n      clientLogos: [],\n      inquiries: [],\n      settingsMap: {},\n      editingType: null,\n      editingItem: null\n    };\n\n    function switchTab(tabId) {\n      const tabs = ['dashboard', 'navigation', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];\n      tabs.forEach(function(t) {\n        const sec = document.getElementById('section-' + t);\n        const btn = document.getElementById('btn-tab-' + t);\n        if (sec) sec.classList.add('hidden');\n        if (btn) {\n          btn.classList.remove('active-nav');\n          btn.classList.add('text-slate-400');\n        }\n      });\n\n      const activeSec = document.getElementById('section-' + tabId);\n      const activeBtn = document.getElementById('btn-tab-' + tabId);\n      if (activeSec) activeSec.classList.remove('hidden');\n      if (activeBtn) {\n        activeBtn.classList.add('active-nav');\n        activeBtn.classList.remove('text-slate-400');\n      }\n\n      appState.currentTab = tabId;\n      const titles = {\n        'dashboard': 'Dashboard ภาพรวม',\n        'navigation': 'Navigation เมนูหลัก',\n        'portfolios': 'Portfolios ผลงาน',\n        'services': 'Services บริการ',\n        'articles': 'บทความ & ข่าวสาร (Blog & Events)',\n        'clients': 'Client Logos โลโก้ลูกค้า',\n        'inquiries': 'Inquiries ข้อความติดต่อ',\n        'settings': 'Site Settings & SEO'\n      };\n      const titleEl = document.getElementById('currentTabTitle');\n      if (titleEl) titleEl.innerText = titles[tabId] || tabId;\n      refreshIcons();\n    }\n\n    function refreshIcons() {\n      setTimeout(function() {\n        if (window.lucide && typeof window.lucide.createIcons === 'function') {\n          window.lucide.createIcons();\n        }\n      }, 50);\n    }\n\n    async function loadAllData() {\n      try {\n        const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([\n          fetch('/api/admin/dashboard/stats').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/portfolios').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/services').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/articles').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/client-logos').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/inquiries').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/navigation').then(function(r) { return r.json(); }).catch(function() { return {}; }),\n          fetch('/api/admin/site-settings').then(function(r) { return r.json(); }).catch(function() { return {}; })\n        ]);\n\n        if (s.data) renderDashboard(s.data);\n        if (nav.data) renderNavigation(nav.data);\n        if (p.data) renderPortfolios(p.data);\n        if (sv.data) renderServices(sv.data);\n        if (a.data) renderArticles(a.data);\n        if (cl.data) renderClientLogos(cl.data);\n        if (inq.data) renderInquiries(inq.data);\n        if (set.data) renderSettings(set.data);\n\n        refreshIcons();\n      } catch (err) {\n        console.error('Error fetching CMS data:', err);\n      }\n    }\n\n    function renderDashboard(data) {\n      document.getElementById('stat-total-inquiries').innerText = data.total_inquiries || 0;\n      document.getElementById('stat-new-inquiries').innerText = data.new_inquiries || 0;\n      document.getElementById('stat-total-portfolios').innerText = data.total_portfolios || 0;\n      document.getElementById('stat-total-services').innerText = data.total_services || 0;\n      document.getElementById('stat-total-articles').innerText = data.total_articles || 0;\n\n      const badge = document.getElementById('badge-new-inquiries');\n      if (data.new_inquiries > 0) {\n        badge.innerText = data.new_inquiries;\n        badge.classList.remove('hidden');\n      } else {\n        badge.classList.add('hidden');\n      }\n\n      const tbody = document.getElementById('table-recent-inquiries');\n      if (!data.recent_inquiries || data.recent_inquiries.length === 0) {\n        tbody.innerHTML = '<tr><td colspan=\"5\" class=\"py-4 text-slate-500 text-center\">ยังไม่มีข้อความติดต่อ</td></tr>';\n        return;\n      }\n      tbody.innerHTML = data.recent_inquiries.map(function(inq) {\n        return '<tr class=\"hover:bg-slate-800/30\">' +\n          '<td class=\"py-3 font-medium text-white\">' + escapeHtml(inq.full_name) + '</td>' +\n          '<td class=\"py-3 text-slate-300\">' + escapeHtml(inq.company || '-') + '</td>' +\n          '<td class=\"py-3 text-slate-300\">' + escapeHtml(inq.service_interested || '-') + '</td>' +\n          '<td class=\"py-3\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20\">' + escapeHtml(inq.status) + '</span></td>' +\n          '<td class=\"py-3 text-slate-400\">' + new Date(inq.created_at).toLocaleDateString('th-TH') + '</td>' +\n        '</tr>';\n      }).join('');\n    }\n\n    function renderNavigation(items) {\n      appState.navMenus = items;\n      const tbody = document.getElementById('table-navigation');\n      if (!items || items.length === 0) {\n        tbody.innerHTML = '<tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">ยังไม่มีเมนู</td></tr>';\n        return;\n      }\n      tbody.innerHTML = items.map(function(item) {\n        const badgeExt = item.is_external ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20';\n        const labelExt = item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)';\n        const badgeAct = item.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border-slate-500/30';\n        const labelAct = item.is_active ? 'เปิดใช้งาน' : 'ปิด';\n\n        return '<tr class=\"hover:bg-slate-800/30\">' +\n          '<td class=\"p-4 text-slate-400 font-semibold\">' + item.sort_order + '</td>' +\n          '<td class=\"p-4 font-bold text-white\">' + escapeHtml(item.label) + '</td>' +\n          '<td class=\"p-4 text-blue-400 font-mono text-[11px]\">' + escapeHtml(item.path) + '</td>' +\n          '<td class=\"p-4\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold border ' + badgeExt + '\">' + labelExt + '</span></td>' +\n          '<td class=\"p-4\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold border ' + badgeAct + '\">' + labelAct + '</span></td>' +\n          '<td class=\"p-4 text-right space-x-2\">' +\n            '<button type=\"button\" onclick=\"editNavMenu(' + item.id + ')\" class=\"p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white\"><i data-lucide=\"edit-3\" class=\"w-4 h-4\"></i></button>' +\n            '<button type=\"button\" onclick=\"deleteNavMenu(' + item.id + ')\" class=\"p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400\"><i data-lucide=\"trash-2\" class=\"w-4 h-4\"></i></button>' +\n          '</td>' +\n        '</tr>';\n      }).join('');\n    }\n\n    function renderPortfolios(items) {\n      appState.portfolios = items;\n      const grid = document.getElementById('grid-portfolios');\n      if (!items || items.length === 0) {\n        grid.innerHTML = '<div class=\"p-6 text-slate-500 text-xs\">ยังไม่มีผลงาน</div>';\n        return;\n      }\n      grid.innerHTML = items.map(function(item) {\n        const cover = item.cover_image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b';\n        return '<div class=\"glass-card rounded-2xl overflow-hidden flex flex-col justify-between group\">' +\n          '<div class=\"relative overflow-hidden\">' +\n            '<img src=\"' + escapeHtml(cover) + '\" class=\"w-full h-44 object-cover group-hover:scale-105 transition duration-300\" alt=\"\">' +\n            '<span class=\"absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-950/80 text-white uppercase backdrop-blur\">' + escapeHtml(item.template_style || 'case-study') + '</span>' +\n          '</div>' +\n          '<div class=\"p-5 flex-1 flex flex-col justify-between space-y-3\">' +\n            '<div>' +\n              '<h4 class=\"font-bold text-sm text-white line-clamp-1\">' + escapeHtml(item.title) + '</h4>' +\n              '<p class=\"text-xs text-blue-400 mt-0.5\">' + escapeHtml(item.client_name || '') + '</p>' +\n              '<p class=\"text-xs text-slate-400 mt-2 line-clamp-2\">' + escapeHtml(item.summary || '') + '</p>' +\n            '</div>' +\n            '<div class=\"pt-3 border-t border-slate-800 flex items-center justify-between\">' +\n              '<button type=\"button\" onclick=\"openRichEditor(\\'portfolio\\', ' + item.id + ')\" class=\"text-blue-400 hover:text-blue-300 text-xs font-semibold flex items-center gap-1\"><i data-lucide=\"edit-3\" class=\"w-3.5 h-3.5\"></i><span>แก้ไขเนื้อหา</span></button>' +\n              '<button type=\"button\" onclick=\"deletePortfolio(' + item.id + ')\" class=\"text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1\"><i data-lucide=\"trash-2\" class=\"w-3.5 h-3.5\"></i><span>ลบ</span></button>' +\n            '</div>' +\n          '</div>' +\n        '</div>';\n      }).join('');\n    }\n\n    function renderServices(items) {\n      appState.services = items;\n      const grid = document.getElementById('grid-services');\n      if (!items || items.length === 0) {\n        grid.innerHTML = '<div class=\"p-6 text-slate-500 text-xs\">ยังไม่มีบริการ</div>';\n        return;\n      }\n      grid.innerHTML = items.map(function(svc) {\n        const bullets = Array.isArray(svc.bullet_points) ? svc.bullet_points : [];\n        const bulletsHtml = bullets.map(function(b) {\n          return '<div class=\"flex items-center gap-2\">' +\n            '<span class=\"text-blue-400 text-xs font-bold\">✓</span>' +\n            '<input type=\"text\" value=\"' + escapeHtml(b) + '\" class=\"svc-bullet-' + svc.id + ' flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200\">' +\n            '<button type=\"button\" onclick=\"this.parentElement.remove()\" class=\"text-rose-400 hover:text-rose-300 text-xs\">✕</button>' +\n          '</div>';\n        }).join('');\n\n        return '<div class=\"glass-card rounded-2xl p-6 space-y-4\">' +\n          '<div class=\"flex items-start justify-between\">' +\n            '<div>' +\n              '<h4 class=\"font-bold text-sm text-white\">' + escapeHtml(svc.title) + '</h4>' +\n              '<p class=\"text-xs text-blue-400 mt-0.5 font-mono\">' + escapeHtml(svc.slug) + '</p>' +\n            '</div>' +\n          '</div>' +\n          '<div>' +\n            '<label class=\"text-[11px] text-slate-400 block mb-1\">รูปภาพบริการ (R2 Image URL)</label>' +\n            '<div class=\"flex gap-2\">' +\n              '<input type=\"text\" id=\"svc_img_' + svc.id + '\" value=\"' + escapeHtml(svc.image_url || '') + '\" placeholder=\"https://... หรือ /media/uploads/...\" class=\"flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200\">' +\n              '<label class=\"px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 cursor-pointer shrink-0\">' +\n                '<span>อัปโหลด</span>' +\n                '<input type=\"file\" accept=\"image/*\" class=\"hidden\" onchange=\"uploadGenericFile(this, \\'svc_img_' + svc.id + '\\')\">' +\n              '</label>' +\n            '</div>' +\n          '</div>' +\n          '<div>' +\n            '<label class=\"text-[11px] text-slate-400 block mb-1\">Subtitle</label>' +\n            '<input type=\"text\" id=\"svc_subtitle_' + svc.id + '\" value=\"' + escapeHtml(svc.subtitle || '') + '\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200\">' +\n          '</div>' +\n          '<div>' +\n            '<label class=\"text-[11px] text-slate-400 block mb-1\">รายละเอียดบริการ</label>' +\n            '<textarea rows=\"2\" id=\"svc_desc_' + svc.id + '\" class=\"w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200\">' + escapeHtml(svc.description || '') + '</textarea>' +\n          '</div>' +\n          '<div>' +\n            '<div class=\"flex items-center justify-between mb-2\">' +\n              '<label class=\"text-[11px] text-slate-400\">รายการติ๊กถูก (Checkmark Features)</label>' +\n              '<button type=\"button\" onclick=\"addServiceBullet(' + svc.id + ')\" class=\"text-[10px] text-blue-400 hover:underline font-bold\">+ เพิ่มข้อ</button>' +\n            '</div>' +\n            '<div id=\"svc_bullets_container_' + svc.id + '\" class=\"space-y-1.5\">' + bulletsHtml + '</div>' +\n          '</div>' +\n          '<div class=\"flex justify-end pt-2 border-t border-slate-800\">' +\n            '<button type=\"button\" onclick=\"saveService(' + svc.id + ')\" class=\"px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20\">บันทึกการแก้ไขบริการ</button>' +\n          '</div>' +\n        '</div>';\n      }).join('');\n    }\n\n    function addServiceBullet(svcId) {\n      const container = document.getElementById('svc_bullets_container_' + svcId);\n      if (!container) return;\n      const div = document.createElement('div');\n      div.className = 'flex items-center gap-2';\n      div.innerHTML = '<span class=\"text-blue-400 text-xs font-bold\">✓</span>' +\n        '<input type=\"text\" placeholder=\"ระบุฟีเจอร์หรือบริการย่อย...\" class=\"svc-bullet-' + svcId + ' flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200\">' +\n        '<button type=\"button\" onclick=\"this.parentElement.remove()\" class=\"text-rose-400 hover:text-rose-300 text-xs\">✕</button>';\n      container.appendChild(div);\n    }\n\n    function renderArticles(items) {\n      appState.articles = items;\n      const tbody = document.getElementById('table-articles');\n      if (!items || items.length === 0) {\n        tbody.innerHTML = '<tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">ยังไม่มีบทความ</td></tr>';\n        return;\n      }\n      tbody.innerHTML = items.map(function(art) {\n        const cover = art.cover_image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643';\n        const stBadge = art.status === 'published' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';\n\n        return '<tr class=\"hover:bg-slate-800/30\">' +\n          '<td class=\"p-4\"><img src=\"' + escapeHtml(cover) + '\" class=\"w-12 h-10 object-cover rounded-lg\" alt=\"\"></td>' +\n          '<td class=\"p-4 font-bold text-white\">' + escapeHtml(art.title) + '</td>' +\n          '<td class=\"p-4\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20\">' + escapeHtml(art.template_style || 'standard') + '</span></td>' +\n          '<td class=\"p-4 text-slate-400\">' + new Date(art.published_at || art.created_at).toLocaleDateString('th-TH') + '</td>' +\n          '<td class=\"p-4\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold ' + stBadge + '\">' + escapeHtml(art.status || 'published') + '</span></td>' +\n          '<td class=\"p-4 text-right space-x-2\">' +\n            '<button type=\"button\" onclick=\"openRichEditor(\\'article\\', ' + art.id + ')\" class=\"p-1.5 rounded-lg hover:bg-slate-800 text-blue-400\"><i data-lucide=\"edit-3\" class=\"w-4 h-4\"></i></button>' +\n            '<button type=\"button\" onclick=\"deleteArticle(' + art.id + ')\" class=\"p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400\"><i data-lucide=\"trash-2\" class=\"w-4 h-4\"></i></button>' +\n          '</td>' +\n        '</tr>';\n      }).join('');\n    }\n\n    function renderClientLogos(items) {\n      appState.clientLogos = items;\n      const grid = document.getElementById('grid-client-logos');\n      if (!items || items.length === 0) {\n        grid.innerHTML = '<div class=\"p-4 text-slate-500 text-xs\">ยังไม่มีโลโก้ลูกค้า</div>';\n        return;\n      }\n      grid.innerHTML = items.map(function(cl) {\n        return '<div class=\"glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group\">' +\n          '<button type=\"button\" onclick=\"deleteClientLogo(' + cl.id + ')\" class=\"absolute top-2 right-2 text-rose-400 hover:text-rose-300\">✕</button>' +\n          '<img src=\"' + escapeHtml(cl.logo_url) + '\" class=\"h-10 object-contain mb-2 opacity-80 group-hover:opacity-100\" alt=\"\">' +\n          '<span class=\"text-xs font-medium text-slate-300\">' + escapeHtml(cl.name) + '</span>' +\n        '</div>';\n      }).join('');\n    }\n\n    function renderInquiries(items) {\n      appState.inquiries = items;\n      const tbody = document.getElementById('table-inquiries');\n      if (!items || items.length === 0) {\n        tbody.innerHTML = '<tr><td colspan=\"6\" class=\"p-4 text-slate-500 text-center\">ยังไม่มีข้อความติดต่อ</td></tr>';\n        return;\n      }\n      tbody.innerHTML = items.map(function(inq) {\n        const noteHtml = inq.admin_notes ? '<div class=\"mt-1 p-1.5 rounded bg-blue-950/60 border border-blue-800/40 text-[11px] text-blue-300 font-medium\">📌 โน้ต: ' + escapeHtml(inq.admin_notes) + '</div>' : '';\n        const stBadge = inq.status === 'new' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20';\n\n        return '<tr>' +\n          '<td class=\"p-4 font-semibold text-white\">' + escapeHtml(inq.full_name) + '</td>' +\n          '<td class=\"p-4 text-slate-300\"><div>' + escapeHtml(inq.email) + '</div><div class=\"text-[11px] text-blue-400\">' + escapeHtml(inq.phone) + '</div></td>' +\n          '<td class=\"p-4 text-slate-300 max-w-xs\"><div class=\"line-clamp-2\">' + escapeHtml(inq.message) + '</div>' + noteHtml + '</td>' +\n          '<td class=\"p-4 text-slate-400 font-mono text-[11px]\">' + escapeHtml(inq.source_page || '/contact-us') + '</td>' +\n          '<td class=\"p-4\"><span class=\"px-2 py-0.5 rounded-full text-[10px] font-semibold border ' + stBadge + '\">' + escapeHtml(inq.status) + '</span></td>' +\n          '<td class=\"p-4 text-right space-x-2\">' +\n            '<button type=\"button\" onclick=\"openNoteModal(' + inq.id + ', \\'' + escapeQuote(inq.full_name) + '\\', \\'' + escapeQuote(inq.admin_notes || '') + '\\')\" class=\"px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition\">📝 โน้ต</button>' +\n            '<select onchange=\"updateInquiryStatus(' + inq.id + ', this.value)\" class=\"bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200\">' +\n              '<option value=\"new\" ' + (inq.status === 'new' ? 'selected' : '') + '>New</option>' +\n              '<option value=\"in_progress\" ' + (inq.status === 'in_progress' ? 'selected' : '') + '>In Progress</option>' +\n              '<option value=\"contacted\" ' + (inq.status === 'contacted' ? 'selected' : '') + '>Contacted</option>' +\n              '<option value=\"closed\" ' + (inq.status === 'closed' ? 'selected' : '') + '>Closed</option>' +\n            '</select>' +\n          '</td>' +\n        '</tr>';\n      }).join('');\n    }\n\n    function renderSettings(items) {\n      const map = {};\n      items.forEach(function(i) { map[i.key] = i.value; });\n      appState.settingsMap = map;\n\n      const setVal = function(id, val) {\n        const el = document.getElementById(id);\n        if (el) el.value = val || '';\n      };\n\n      setVal('setting_company_name', map.company_name);\n      setVal('setting_phone', map.phone);\n      setVal('setting_email', map.email);\n      setVal('setting_line_oa', map.line_oa);\n      setVal('setting_address', map.address);\n      setVal('setting_working_hours', map.working_hours);\n\n      setVal('setting_social_facebook', map.social_facebook);\n      setVal('setting_social_instagram', map.social_instagram);\n      setVal('setting_social_tiktok', map.social_tiktok);\n      setVal('setting_social_youtube', map.social_youtube);\n\n      setVal('setting_site_title', map.site_title);\n      setVal('setting_site_description', map.site_description);\n      setVal('setting_og_image', map.og_image);\n      setVal('setting_google_verification', map.google_verification);\n\n      setVal('setting_gtm_id', map.gtm_id);\n      setVal('setting_ga4_id', map.ga4_id);\n      setVal('setting_fb_pixel_id', map.fb_pixel_id);\n    }\n\n    // ==================== RICH CONTENT EDITOR LOGIC (Matching Image 2) ====================\n    function openRichEditor(type, id) {\n      appState.editingType = type;\n      appState.editingItem = null;\n\n      document.getElementById('editor_target_type').value = type;\n      document.getElementById('editor_item_id').value = id || '';\n\n      switchEditorLang('th');\n\n      if (id) {\n        const list = type === 'portfolio' ? appState.portfolios : appState.articles;\n        const item = list.find(function(x) { return x.id === id; });\n        if (item) {\n          appState.editingItem = item;\n          document.getElementById('editor_title_th').value = item.title || '';\n          document.getElementById('editor_title_en').value = item.title_en || '';\n          document.getElementById('editor_summary_th').value = item.summary || '';\n          document.getElementById('editor_summary_en').value = item.summary_en || '';\n          document.getElementById('editor_content_th').innerHTML = item.details || item.content || '';\n          document.getElementById('editor_content_en').innerHTML = item.details_en || item.content_en || '';\n\n          let tagsMeta = {};\n          try {\n            tagsMeta = typeof item.tags_meta === 'object' ? item.tags_meta : JSON.parse(item.tags_meta || '{}');\n          } catch(e) {}\n\n          document.getElementById('tag_country').value = tagsMeta.country || '';\n          document.getElementById('tag_type').value = tagsMeta.type || '';\n          document.getElementById('tag_destination').value = tagsMeta.destination || '';\n          document.getElementById('tag_transport').value = tagsMeta.transportation || '';\n          document.getElementById('tag_location').value = tagsMeta.location_name || '';\n          document.getElementById('tag_activity').value = tagsMeta.activity || '';\n\n          document.getElementById('editor_cover_url').value = item.cover_image || '';\n          if (item.cover_image) {\n            document.getElementById('cover_placeholder').classList.add('hidden');\n            document.getElementById('cover_preview_box').classList.remove('hidden');\n            document.getElementById('cover_preview_img').src = item.cover_image;\n          } else {\n            removeCoverImage();\n          }\n\n          document.getElementById('editor_travel_date').value = item.travel_date || (item.published_at ? item.published_at.substring(0, 10) : '');\n          document.getElementById('editor_video_url').value = item.video_url || '';\n          document.getElementById('editor_map_coords').value = item.map_coords || '';\n          document.getElementById('editor_template_style').value = item.template_style || (type === 'portfolio' ? 'case-study' : 'standard');\n          document.getElementById('editor_custom_instruction').value = item.custom_instruction || '';\n          document.getElementById('editor_status').value = item.status || 'published';\n\n          document.getElementById('modal-rich-editor').classList.remove('hidden');\n          document.getElementById('modal-rich-editor').classList.add('flex');\n          return;\n        }\n      }\n\n      // New item reset\n      document.getElementById('editor_title_th').value = '';\n      document.getElementById('editor_title_en').value = '';\n      document.getElementById('editor_summary_th').value = '';\n      document.getElementById('editor_summary_en').value = '';\n      document.getElementById('editor_content_th').innerHTML = '';\n      document.getElementById('editor_content_en').innerHTML = '';\n\n      document.getElementById('tag_country').value = '';\n      document.getElementById('tag_type').value = '';\n      document.getElementById('tag_destination').value = '';\n      document.getElementById('tag_transport').value = '';\n      document.getElementById('tag_location').value = '';\n      document.getElementById('tag_activity').value = '';\n\n      removeCoverImage();\n      document.getElementById('editor_travel_date').value = new Date().toISOString().substring(0, 10);\n      document.getElementById('editor_video_url').value = '';\n      document.getElementById('editor_map_coords').value = '';\n      document.getElementById('editor_template_style').value = type === 'portfolio' ? 'case-study' : 'standard';\n      document.getElementById('editor_custom_instruction').value = '';\n      document.getElementById('editor_status').value = 'published';\n\n      document.getElementById('modal-rich-editor').classList.remove('hidden');\n      document.getElementById('modal-rich-editor').classList.add('flex');\n    }\n\n    function closeRichEditor() {\n      document.getElementById('modal-rich-editor').classList.add('hidden');\n      document.getElementById('modal-rich-editor').classList.remove('flex');\n    }\n\n    function switchEditorLang(lang) {\n      const thSec = document.getElementById('editor-fields-th');\n      const enSec = document.getElementById('editor-fields-en');\n      const thBtn = document.getElementById('tab-lang-th');\n      const enBtn = document.getElementById('tab-lang-en');\n\n      if (lang === 'th') {\n        thSec.classList.remove('hidden');\n        enSec.classList.add('hidden');\n        thBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white';\n        enBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-slate-200 text-slate-700';\n      } else {\n        thSec.classList.add('hidden');\n        enSec.classList.remove('hidden');\n        thBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-slate-200 text-slate-700';\n        enBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white';\n      }\n    }\n\n    function execCmd(command, val) {\n      document.execCommand(command, false, val || null);\n    }\n\n    function toggleHeading() {\n      const format = document.queryCommandValue('formatBlock');\n      if (format === 'h2') {\n        document.execCommand('formatBlock', false, '<h3>');\n      } else if (format === 'h3') {\n        document.execCommand('formatBlock', false, '<p>');\n      } else {\n        document.execCommand('formatBlock', false, '<h2>');\n      }\n    }\n\n    function insertLinkPrompt() {\n      const url = prompt('ระบุ URL ลิงก์:', 'https://');\n      if (url) execCmd('createLink', url);\n    }\n\n    function promptInsertVideo() {\n      const video = prompt('ใส่ YouTube Link หรือ Video URL:');\n      if (!video) return;\n      document.getElementById('editor_video_url').value = video;\n      let embedHtml = '';\n      if (video.includes('youtube.com') || video.includes('youtu.be')) {\n        let videoId = '';\n        if (video.includes('v=')) videoId = video.split('v=')[1].split('&')[0];\n        else if (video.includes('youtu.be/')) videoId = video.split('youtu.be/')[1].split('?')[0];\n        if (videoId) {\n          embedHtml = '<div class=\"my-4 aspect-video rounded-2xl overflow-hidden shadow\"><iframe class=\"w-full h-full\" src=\"https://www.youtube.com/embed/' + videoId + '\" frameborder=\"0\" allowfullscreen></iframe></div><p><br></p>';\n        }\n      }\n      if (embedHtml) {\n        document.getElementById('editor_content_th').focus();\n        execCmd('insertHTML', embedHtml);\n      } else {\n        alert('บันทึกลิงก์วิดีโอไว้ที่ช่อง YouTube Video เรียบร้อย');\n      }\n    }\n\n    function promptInsertMap() {\n      const coords = prompt('ระบุพิกัด ละติจูด,ลองจิจูด (เช่น 13.7563, 100.5018) หรือ Embed Iframe:');\n      if (!coords) return;\n      document.getElementById('editor_map_coords').value = coords;\n      alert('บันทึกพิกัดแผนที่เรียบร้อย');\n    }\n\n    async function uploadCoverImage(input) {\n      const file = input.files && input.files[0];\n      if (!file) return;\n      const fd = new FormData();\n      fd.append('file', file);\n      try {\n        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });\n        const data = await res.json();\n        if (data.success && data.file_url) {\n          document.getElementById('editor_cover_url').value = data.file_url;\n          document.getElementById('cover_placeholder').classList.add('hidden');\n          document.getElementById('cover_preview_box').classList.remove('hidden');\n          document.getElementById('cover_preview_img').src = data.file_url;\n        } else {\n          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));\n        }\n      } catch (err) {\n        alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + err.message);\n      }\n    }\n\n    function removeCoverImage() {\n      document.getElementById('editor_cover_url').value = '';\n      document.getElementById('cover_preview_img').src = '';\n      document.getElementById('cover_preview_box').classList.add('hidden');\n      document.getElementById('cover_placeholder').classList.remove('hidden');\n    }\n\n    async function uploadAndInsertImage(input) {\n      const file = input.files && input.files[0];\n      if (!file) return;\n      const fd = new FormData();\n      fd.append('file', file);\n      try {\n        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });\n        const data = await res.json();\n        if (data.success && data.file_url) {\n          const imgHtml = '<figure class=\"my-4\"><img src=\"' + data.file_url + '\" class=\"rounded-2xl max-w-full mx-auto shadow\" alt=\"\"><figcaption class=\"text-xs text-center text-slate-400 mt-1.5\"></figcaption></figure><p><br></p>';\n          document.getElementById('editor_content_th').focus();\n          execCmd('insertHTML', imgHtml);\n        } else {\n          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));\n        }\n      } catch (err) {\n        alert('เกิดข้อผิดพลาด: ' + err.message);\n      }\n    }\n\n    async function runAiTranslate() {\n      const btn = document.getElementById('btn-ai-translate');\n      btn.innerText = '⏳ กำลังแปลภาษาด้วย AI...';\n      btn.disabled = true;\n\n      const title = document.getElementById('editor_title_th').value;\n      const summary = document.getElementById('editor_summary_th').value;\n      const content = document.getElementById('editor_content_th').innerText;\n      const tagsMeta = {\n        country: document.getElementById('tag_country').value,\n        type: document.getElementById('tag_type').value,\n        destination: document.getElementById('tag_destination').value,\n        transportation: document.getElementById('tag_transport').value,\n        location_name: document.getElementById('tag_location').value,\n        activity: document.getElementById('tag_activity').value\n      };\n\n      try {\n        const res = await fetch('/api/admin/translate', {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({ fields: { title, summary, content, tags_meta: tagsMeta } })\n        });\n        const resData = await res.json();\n        if (resData.success && resData.data) {\n          const d = resData.data;\n          document.getElementById('editor_title_en').value = d.title_en || '';\n          document.getElementById('editor_summary_en').value = d.summary_en || '';\n          document.getElementById('editor_content_en').innerHTML = (d.content_en || '').replace(/\\n/g, '<br>');\n          switchEditorLang('en');\n          alert('แปลภาษาอังกฤษสำเร็จ! คุณสามารถตรวจสอบและปรับแก้คำแปลในแท็บภาษาอังกฤษได้เลยครับ');\n        } else {\n          alert('การแปลล้มเหลว กรุณาลองใหม่อีกครั้ง');\n        }\n      } catch (e) {\n        alert('เกิดข้อผิดพลาด: ' + e.message);\n      } finally {\n        btn.innerText = '🤖 AI แปลเป็นภาษาอังกฤษอัตโนมัติ';\n        btn.disabled = false;\n      }\n    }\n\n    async function handleSaveRichEditor() {\n      const type = document.getElementById('editor_target_type').value;\n      const id = document.getElementById('editor_item_id').value;\n\n      const title = document.getElementById('editor_title_th').value;\n      if (!title) {\n        alert('กรุณาระบุชื่อบันทึก / หัวข้อ');\n        return;\n      }\n\n      const tagsMeta = {\n        country: document.getElementById('tag_country').value,\n        type: document.getElementById('tag_type').value,\n        destination: document.getElementById('tag_destination').value,\n        transportation: document.getElementById('tag_transport').value,\n        location_name: document.getElementById('tag_location').value,\n        activity: document.getElementById('tag_activity').value\n      };\n\n      const payload = {\n        title: title,\n        title_en: document.getElementById('editor_title_en').value,\n        summary: document.getElementById('editor_summary_th').value,\n        summary_en: document.getElementById('editor_summary_en').value,\n        content: document.getElementById('editor_content_th').innerHTML,\n        content_en: document.getElementById('editor_content_en').innerHTML,\n        details: document.getElementById('editor_content_th').innerHTML,\n        details_en: document.getElementById('editor_content_en').innerHTML,\n        cover_image: document.getElementById('editor_cover_url').value || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b',\n        tags_meta: tagsMeta,\n        travel_date: document.getElementById('editor_travel_date').value,\n        video_url: document.getElementById('editor_video_url').value,\n        map_coords: document.getElementById('editor_map_coords').value,\n        template_style: document.getElementById('editor_template_style').value,\n        custom_instruction: document.getElementById('editor_custom_instruction').value,\n        status: document.getElementById('editor_status').value,\n        client_name: tagsMeta.location_name || 'LTT Client',\n        category_slug: tagsMeta.type ? tagsMeta.type.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'general'\n      };\n\n      const url = type === 'portfolio'\n        ? (id ? '/api/admin/portfolios/' + id : '/api/admin/portfolios')\n        : (id ? '/api/admin/articles/' + id : '/api/admin/articles');\n\n      const method = id ? 'PUT' : 'POST';\n\n      try {\n        const res = await fetch(url, {\n          method,\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify(payload)\n        });\n        const d = await res.json();\n        if (d.success) {\n          alert('บันทึกข้อมูลเรียบร้อยแล้ว!');\n          closeRichEditor();\n          await loadAllData();\n        } else {\n          alert('เกิดข้อผิดพลาด: ' + (d.error || 'กรุณาลองใหม่'));\n        }\n      } catch (err) {\n        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);\n      }\n    }\n\n    function previewEditorContent() {\n      const title = document.getElementById('editor_title_th').value || 'หัวข้อตัวอย่าง';\n      const summary = document.getElementById('editor_summary_th').value;\n      const content = document.getElementById('editor_content_th').innerHTML;\n      const cover = document.getElementById('editor_cover_url').value;\n      const date = document.getElementById('editor_travel_date').value;\n      const template = document.getElementById('editor_template_style').value;\n      const video = document.getElementById('editor_video_url').value;\n\n      const container = document.getElementById('preview-container');\n      container.innerHTML = '<div>' +\n        '<span class=\"px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-600 text-white uppercase\">' + escapeHtml(template) + '</span>' +\n        '<h1 class=\"text-2xl font-bold text-white mt-3\">' + escapeHtml(title) + '</h1>' +\n        (date ? '<p class=\"text-xs text-slate-400 mt-1\">วันที่: ' + escapeHtml(date) + '</p>' : '') +\n      '</div>' +\n      (cover ? '<img src=\"' + escapeHtml(cover) + '\" class=\"w-full max-h-80 object-cover rounded-2xl shadow\" alt=\"\">' : '') +\n      (summary ? '<p class=\"text-sm text-slate-300 italic border-l-2 border-blue-500 pl-4 py-1\">' + escapeHtml(summary) + '</p>' : '') +\n      (video ? '<div class=\"p-3 bg-slate-900 rounded-xl text-xs text-blue-400\">▶️ วิดีโอ: ' + escapeHtml(video) + '</div>' : '') +\n      '<div class=\"prose prose-invert max-w-none text-sm text-slate-200 leading-relaxed pt-2\">' + content + '</div>';\n\n      document.getElementById('modal-preview').classList.remove('hidden');\n      document.getElementById('modal-preview').classList.add('flex');\n    }\n\n    function closePreviewModal() {\n      document.getElementById('modal-preview').classList.add('hidden');\n      document.getElementById('modal-preview').classList.remove('flex');\n    }\n\n    function openNavModal(id) {\n      document.getElementById('modal-nav').classList.remove('hidden');\n      document.getElementById('modal-nav').classList.add('flex');\n      if (id) {\n        const item = appState.navMenus.find(function(m) { return m.id === id; });\n        if (item) {\n          document.getElementById('modal-nav-title').innerText = 'แก้ไขเมนูหลัก';\n          document.getElementById('nav_id').value = item.id;\n          document.getElementById('nav_label').value = item.label;\n          document.getElementById('nav_path').value = item.path;\n          document.getElementById('nav_sort_order').value = item.sort_order;\n          document.getElementById('nav_is_external').value = item.is_external || 0;\n          document.getElementById('nav_is_active').checked = item.is_active == 1;\n          return;\n        }\n      }\n      document.getElementById('modal-nav-title').innerText = 'เพิ่มเมนูหลักใหม่';\n      document.getElementById('nav_id').value = '';\n      document.getElementById('nav_label').value = '';\n      document.getElementById('nav_path').value = '/';\n      document.getElementById('nav_sort_order').value = (appState.navMenus.length + 1);\n      document.getElementById('nav_is_external').value = '0';\n      document.getElementById('nav_is_active').checked = true;\n    }\n    function editNavMenu(id) { openNavModal(id); }\n    function closeNavModal() {\n      document.getElementById('modal-nav').classList.add('hidden');\n      document.getElementById('modal-nav').classList.remove('flex');\n    }\n\n    function openClientModal() {\n      document.getElementById('client_name').value = '';\n      document.getElementById('client_logo_url').value = '';\n      document.getElementById('client_website_url').value = '';\n      document.getElementById('client_logo_preview').classList.add('hidden');\n      document.getElementById('modal-client').classList.remove('hidden');\n      document.getElementById('modal-client').classList.add('flex');\n    }\n    function closeClientModal() {\n      document.getElementById('modal-client').classList.add('hidden');\n      document.getElementById('modal-client').classList.remove('flex');\n    }\n\n    async function uploadClientLogoFile(input) {\n      const file = input.files && input.files[0];\n      if (!file) return;\n      const fd = new FormData();\n      fd.append('file', file);\n      try {\n        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });\n        const data = await res.json();\n        if (data.success && data.file_url) {\n          document.getElementById('client_logo_url').value = data.file_url;\n          document.getElementById('client_logo_preview').classList.remove('hidden');\n          document.getElementById('client_logo_preview_img').src = data.file_url;\n        } else {\n          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));\n        }\n      } catch (e) {\n        alert('เกิดข้อผิดพลาด: ' + e.message);\n      }\n    }\n\n    async function uploadGenericFile(input, targetInputId) {\n      const file = input.files && input.files[0];\n      if (!file) return;\n      const fd = new FormData();\n      fd.append('file', file);\n      try {\n        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });\n        const data = await res.json();\n        if (data.success && data.file_url) {\n          const el = document.getElementById(targetInputId);\n          if (el) el.value = data.file_url;\n          alert('อัปโหลดไฟล์ขึ้น R2 สำเร็จ!');\n        } else {\n          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));\n        }\n      } catch (e) {\n        alert('เกิดข้อผิดพลาด: ' + e.message);\n      }\n    }\n\n    function openNoteModal(id, customerName, notes) {\n      document.getElementById('modal-note').classList.remove('hidden');\n      document.getElementById('modal-note').classList.add('flex');\n      document.getElementById('note_inquiry_id').value = id;\n      document.getElementById('note-customer-name').innerText = 'ลูกค้า: ' + customerName;\n      document.getElementById('note_text').value = notes || '';\n    }\n    function closeNoteModal() {\n      document.getElementById('modal-note').classList.add('hidden');\n      document.getElementById('modal-note').classList.remove('flex');\n    }\n\n    async function handleSaveNav(e) {\n      e.preventDefault();\n      const id = document.getElementById('nav_id').value;\n      const payload = {\n        label: document.getElementById('nav_label').value,\n        path: document.getElementById('nav_path').value,\n        sort_order: Number(document.getElementById('nav_sort_order').value) || 1,\n        is_external: Number(document.getElementById('nav_is_external').value),\n        is_active: document.getElementById('nav_is_active').checked ? 1 : 0\n      };\n      const url = id ? '/api/admin/navigation/' + id : '/api/admin/navigation';\n      const method = id ? 'PUT' : 'POST';\n\n      await fetch(url, {\n        method,\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify(payload)\n      });\n      closeNavModal();\n      await loadAllData();\n    }\n\n    async function deleteNavMenu(id) {\n      if (!confirm('ยืนยันลบเมนูนี้ออกจาก Navigation?')) return;\n      await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });\n      await loadAllData();\n    }\n\n    async function deletePortfolio(id) {\n      if (!confirm('ยืนยันลบผลงานนี้?')) return;\n      await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });\n      await loadAllData();\n    }\n\n    async function saveService(id) {\n      const subtitle = document.getElementById('svc_subtitle_' + id).value;\n      const desc = document.getElementById('svc_desc_' + id).value;\n      const img = document.getElementById('svc_img_' + id).value;\n\n      const bulletInputs = document.querySelectorAll('.svc-bullet-' + id);\n      const bullets = [];\n      bulletInputs.forEach(function(i) { if (i.value.trim()) bullets.push(i.value.trim()); });\n\n      await fetch('/api/admin/services/' + id, {\n        method: 'PUT',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ subtitle, description: desc, image_url: img, bullet_points: bullets })\n      });\n      alert('บันทึกข้อมูลบริการเรียบร้อย');\n      await loadAllData();\n    }\n\n    async function deleteArticle(id) {\n      if (!confirm('ยืนยันลบบทความนี้?')) return;\n      await fetch('/api/admin/articles/' + id, { method: 'DELETE' });\n      await loadAllData();\n    }\n\n    async function handleSaveClient(e) {\n      e.preventDefault();\n      const payload = {\n        name: document.getElementById('client_name').value,\n        logo_url: document.getElementById('client_logo_url').value,\n        website_url: document.getElementById('client_website_url').value,\n        sort_order: appState.clientLogos.length + 1\n      };\n      await fetch('/api/admin/client-logos', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify(payload)\n      });\n      closeClientModal();\n      await loadAllData();\n    }\n\n    async function deleteClientLogo(id) {\n      if (!confirm('ยืนยันลบลูกค้ารายนี้?')) return;\n      await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });\n      await loadAllData();\n    }\n\n    async function handleSaveNote(e) {\n      e.preventDefault();\n      const id = document.getElementById('note_inquiry_id').value;\n      const note = document.getElementById('note_text').value;\n      await fetch('/api/admin/inquiries/' + id + '/notes', {\n        method: 'PATCH',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ notes: note })\n      });\n      closeNoteModal();\n      await loadAllData();\n    }\n\n    async function updateInquiryStatus(id, st) {\n      await fetch('/api/admin/inquiries/' + id + '/status', {\n        method: 'PATCH',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ status: st })\n      });\n      await loadAllData();\n    }\n\n    async function handleSaveSettings(e) {\n      e.preventDefault();\n      const fields = [\n        'company_name', 'phone', 'email', 'line_oa', 'address', 'working_hours',\n        'social_facebook', 'social_instagram', 'social_tiktok', 'social_youtube',\n        'site_title', 'site_description', 'og_image', 'google_verification',\n        'gtm_id', 'ga4_id', 'fb_pixel_id'\n      ];\n      const list = fields.map(function(k) {\n        return {\n          key: k,\n          value: (document.getElementById('setting_' + k) ? document.getElementById('setting_' + k).value : '')\n        };\n      });\n\n      await fetch('/api/admin/site-settings', {\n        method: 'PUT',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ settings: list })\n      });\n      alert('บันทึกการตั้งค่าเว็บไซต์เรียบร้อย');\n    }\n\n    function escapeHtml(str) {\n      if (!str) return '';\n      return String(str)\n        .replace(/&/g, '&amp;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;')\n        .replace(/\"/g, '&quot;')\n        .replace(/'/g, '&#39;');\n    }\n\n    function escapeQuote(str) {\n      if (!str) return '';\n      return String(str).replace(/'/g, \"\\\\'\");\n    }\n\n    document.addEventListener('DOMContentLoaded', function() {\n      loadAllData();\n    });\n  </script>\n</body>\n</html>\n";
+
 function getAdminHtml(userEmail) {
-  return `<!DOCTYPE html>
-<html lang="th" class="h-full bg-slate-900 text-slate-100">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LTT Ma getThink — Edge CMS Backoffice</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
-  <style>
-    body { font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', sans-serif; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .active-nav { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }
-  </style>
-</head>
-<body class="h-full flex overflow-hidden">
-  <!-- Sidebar -->
-  <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 z-20">
-    <div class="h-16 flex items-center px-6 gap-3 border-b border-slate-800">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-blue-500/30">
-        L
-      </div>
-      <div>
-        <h1 class="font-bold text-sm text-white">LTT Ma getThink</h1>
-        <p class="text-[11px] text-blue-400 font-medium">Edge Backoffice CMS</p>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" id="sidebarNav">
-      <button type="button" onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition active-nav">
-        <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i><span>Dashboard ภาพรวม</span>
-      </button>
-      <button type="button" onclick="switchTab('navigation')" id="btn-tab-navigation" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="compass" class="w-4 h-4 shrink-0"></i><span>Navigation เมนูหลัก</span>
-      </button>
-      <button type="button" onclick="switchTab('portfolios')" id="btn-tab-portfolios" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="briefcase" class="w-4 h-4 shrink-0"></i><span>Portfolios ผลงาน</span>
-      </button>
-      <button type="button" onclick="switchTab('services')" id="btn-tab-services" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="sparkles" class="w-4 h-4 shrink-0"></i><span>Services บริการ</span>
-      </button>
-      <button type="button" onclick="switchTab('articles')" id="btn-tab-articles" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="newspaper" class="w-4 h-4 shrink-0"></i><span>Blog & Events บทความ</span>
-      </button>
-      <button type="button" onclick="switchTab('clients')" id="btn-tab-clients" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="building-2" class="w-4 h-4 shrink-0"></i><span>Client Logos ลูกค้า</span>
-      </button>
-      <button type="button" onclick="switchTab('inquiries')" id="btn-tab-inquiries" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900 justify-between">
-        <div class="flex items-center gap-3">
-          <i data-lucide="inbox" class="w-4 h-4 shrink-0"></i><span>Inquiries ข้อความติดต่อ</span>
-        </div>
-        <span id="badge-new-inquiries" class="hidden bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
-      </button>
-      <button type="button" onclick="switchTab('settings')" id="btn-tab-settings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span>Site Settings & SEO</span>
-      </button>
-    </nav>
-
-    <div class="p-3 border-t border-slate-800">
-      <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px]">
-        <div class="flex items-center gap-2 text-emerald-400 font-semibold mb-1">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Zero Trust Protected</span>
-        </div>
-        <p class="text-slate-400 truncate">${userEmail}</p>
-        <p class="text-[10px] text-slate-500 mt-0.5">Pure JS (Strict CSP - No unsafe-eval)</p>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-    <header class="h-16 border-b border-slate-800 bg-slate-950/40 backdrop-blur px-8 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-3">
-        <h2 id="currentTabTitle" class="text-base font-bold text-white capitalize">Dashboard ภาพรวม</h2>
-        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700/60 font-mono">
-          Cloudflare D1 Live
-        </span>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <a href="https://ltt-website.pages.dev/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-xs font-medium text-slate-300 border border-slate-800 transition">
-          <span>เปิดหน้าเว็บไซต์</span>
-          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-        </a>
-        <button type="button" onclick="triggerPurgeCache()" id="btn-purge-cache" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="purge-icon"></i>
-          <span>Sync & Purge Cache</span>
-        </button>
-      </div>
-    </header>
-
-    <main class="flex-1 overflow-y-auto p-8 space-y-8">
-      <!-- SECTION 1: DASHBOARD -->
-      <section id="section-dashboard" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-          <div class="glass-card p-5 rounded-2xl">
-            <div class="flex items-center justify-between text-slate-400 text-xs mb-3">
-              <span>ข้อความติดต่อทั้งหมด</span>
-              <i data-lucide="mail" class="w-4 h-4 text-blue-400"></i>
-            </div>
-            <div id="stat-total-inquiries" class="text-2xl font-bold text-white">0</div>
-            <p class="text-[11px] text-emerald-400 mt-2 font-medium flex items-center gap-1">
-              <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
-              <span id="stat-new-inquiries">0</span> ข้อความใหม่
-            </p>
-          </div>
-
-          <div class="glass-card p-5 rounded-2xl">
-            <div class="flex items-center justify-between text-slate-400 text-xs mb-3">
-              <span>ผลงานในระบบ</span>
-              <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i>
-            </div>
-            <div id="stat-total-portfolios" class="text-2xl font-bold text-white">0</div>
-            <p class="text-[11px] text-slate-400 mt-2">แสดงบนหน้าเว็บและ Showcase</p>
-          </div>
-
-          <div class="glass-card p-5 rounded-2xl">
-            <div class="flex items-center justify-between text-slate-400 text-xs mb-3">
-              <span>บริการหลัก</span>
-              <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
-            </div>
-            <div id="stat-total-services" class="text-2xl font-bold text-white">0</div>
-            <p class="text-[11px] text-slate-400 mt-2">Bullet points ครบถ้วน</p>
-          </div>
-
-          <div class="glass-card p-5 rounded-2xl">
-            <div class="flex items-center justify-between text-slate-400 text-xs mb-3">
-              <span>บทความ & ข่าวสาร</span>
-              <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
-            </div>
-            <div id="stat-total-articles" class="text-2xl font-bold text-white">0</div>
-            <p class="text-[11px] text-slate-400 mt-2">อัปเดตเทรนด์การตลาด</p>
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-6">
-          <h3 class="text-sm font-bold text-white mb-4">ข้อความติดต่อล่าสุด (Recent Leads)</h3>
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800">
-              <tr>
-                <th class="pb-3">ชื่อลูกค้า</th>
-                <th class="pb-3">บริษัท</th>
-                <th class="pb-3">บริการ</th>
-                <th class="pb-3">สถานะ</th>
-                <th class="pb-3">วันที่</th>
-              </tr>
-            </thead>
-            <tbody id="table-recent-inquiries" class="divide-y divide-slate-800/60">
-              <tr><td colspan="5" class="py-4 text-slate-500 text-center">กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SECTION 2: NAVIGATION MENUS -->
-      <section id="section-navigation" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-white">จัดการเมนูหลักของเว็บไซต์ (Navigation Menus)</h3>
-            <p class="text-xs text-slate-400">เพิ่ม ลบ แก้ไข และจัดเรียงเมนูบนแถบ Navigation หน้าบ้าน</p>
-          </div>
-          <button type="button" onclick="openNavModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มเมนูหลักใหม่</span>
-          </button>
-        </div>
-
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
-              <tr>
-                <th class="p-4 font-semibold">ลำดับ</th>
-                <th class="p-4 font-semibold">ชื่อเมนู (Label)</th>
-                <th class="p-4 font-semibold">URL Path (เช่น /our-service)</th>
-                <th class="p-4 font-semibold">ประเภท</th>
-                <th class="p-4 font-semibold">สถานะ</th>
-                <th class="p-4 font-semibold text-right">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="table-navigation" class="divide-y divide-slate-800/60">
-              <tr><td colspan="6" class="p-4 text-slate-500 text-center">กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SECTION 3: PORTFOLIOS -->
-      <section id="section-portfolios" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">จัดการผลงาน (Portfolios)</h3>
-          <button type="button" onclick="openPortfolioModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มผลงานใหม่</span>
-          </button>
-        </div>
-        <div id="grid-portfolios" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="p-6 text-slate-500 text-xs">กำลังโหลดข้อมูล...</div>
-        </div>
-      </section>
-
-      <!-- SECTION 4: SERVICES -->
-      <section id="section-services" class="space-y-6 hidden">
-        <h3 class="text-base font-bold text-white">จัดการบริการ (Services)</h3>
-        <div id="grid-services" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="p-6 text-slate-500 text-xs">กำลังโหลดข้อมูล...</div>
-        </div>
-      </section>
-
-      <!-- SECTION 5: ARTICLES -->
-      <section id="section-articles" class="space-y-6 hidden">
-        <h3 class="text-base font-bold text-white">บทความ & ข่าวสาร</h3>
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
-              <tr>
-                <th class="p-4">ชื่อบทความ</th>
-                <th class="p-4">วันที่</th>
-                <th class="p-4 text-right">ลบ</th>
-              </tr>
-            </thead>
-            <tbody id="table-articles" class="divide-y divide-slate-800/60">
-              <tr><td colspan="3" class="p-4 text-slate-500 text-center">กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SECTION 6: CLIENT LOGOS -->
-      <section id="section-clients" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">โลโก้ลูกค้า (Client Logos)</h3>
-          <button type="button" onclick="openClientModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มโลโก้ลูกค้า</span>
-          </button>
-        </div>
-        <div id="grid-client-logos" class="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div class="p-4 text-slate-500 text-xs">กำลังโหลดข้อมูล...</div>
-        </div>
-      </section>
-
-      <!-- SECTION 7: INQUIRIES -->
-      <section id="section-inquiries" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">กล่องข้อความติดต่อ (Leads & Inquiries)</h3>
-          <a href="/api/admin/inquiries/export.csv" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
-            <i data-lucide="download" class="w-4 h-4"></i><span>Export เป็น CSV</span>
-          </a>
-        </div>
-
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
-              <tr>
-                <th class="p-4">ลูกค้า</th>
-                <th class="p-4">เบอร์/อีเมล</th>
-                <th class="p-4">ข้อความ & โน้ตภายใน</th>
-                <th class="p-4">ต้นทาง</th>
-                <th class="p-4">สถานะ</th>
-                <th class="p-4 text-right">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="table-inquiries" class="divide-y divide-slate-800/60">
-              <tr><td colspan="6" class="p-4 text-slate-500 text-center">กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- SECTION 8: SITE SETTINGS -->
-      <section id="section-settings" class="space-y-6 hidden">
-        <h3 class="text-base font-bold text-white">ตั้งค่าเว็บไซต์ & SEO</h3>
-        <form id="form-site-settings" onsubmit="handleSaveSettings(event)" class="glass-card rounded-2xl p-6 space-y-4 max-w-3xl">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-xs text-slate-400 block mb-1">ชื่อบริษัท</label>
-              <input type="text" id="setting_company_name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-            </div>
-            <div>
-              <label class="text-xs text-slate-400 block mb-1">เบอร์โทร</label>
-              <input type="text" id="setting_phone" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-            </div>
-            <div class="md:col-span-2">
-              <label class="text-xs text-slate-400 block mb-1">Hero Headline</label>
-              <input type="text" id="setting_hero_headline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-            </div>
-            <div class="md:col-span-2">
-              <label class="text-xs text-slate-400 block mb-1">Hero Subheadline</label>
-              <textarea rows="2" id="setting_hero_subheadline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"></textarea>
-            </div>
-          </div>
-          <button type="submit" class="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
-            บันทึกการตั้งค่าทั้งหมด
-          </button>
-        </form>
-      </section>
-    </main>
-  </div>
-
-  <!-- ==================== MODALS (Pure DOM) ==================== -->
-  <!-- Navigation Modal -->
-  <div id="modal-nav" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h4 id="modal-nav-title" class="font-bold text-white text-sm">เพิ่มเมนูหลักใหม่</h4>
-        <button type="button" onclick="closeNavModal()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-      <form id="form-nav" onsubmit="handleSaveNav(event)" class="space-y-3">
-        <input type="hidden" id="nav_id">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อเมนู (Label) *</label>
-          <input type="text" id="nav_label" required placeholder="เช่น บริการของเรา, ผลงาน, ติดต่อเรา" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">URL Path *</label>
-          <input type="text" id="nav_path" required placeholder="เช่น /our-service หรือ https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">ลำดับการแสดงผล</label>
-            <input type="number" id="nav_sort_order" value="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">ประเภทลิงก์</label>
-            <select id="nav_is_external" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-              <option value="0">หน้าภายในเว็บ (Page)</option>
-              <option value="1">ลิงก์ภายนอก (External)</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="flex items-center gap-2 cursor-pointer pt-2">
-            <input type="checkbox" id="nav_is_active" checked class="rounded bg-slate-950 border-slate-800 text-blue-600">
-            <span class="text-xs text-slate-300">เปิดแสดงผลเมนูนี้บนหน้าเว็บไซต์</span>
-          </label>
-        </div>
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeNavModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกข้อมูล</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Portfolio Modal -->
-  <div id="modal-portfolio" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h4 class="font-bold text-white text-sm">เพิ่มผลงานใหม่ (New Portfolio)</h4>
-        <button type="button" onclick="closePortfolioModal()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-      <form id="form-portfolio" onsubmit="handleSavePortfolio(event)" class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อผลงาน (Title) *</label>
-          <input type="text" id="portfolio_title" required placeholder="เช่น Cross Pattaya Oceanphere — Luxury Pool Villa" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อลูกค้า (Client Name) *</label>
-            <input type="text" id="portfolio_client" required placeholder="เช่น Cross Hotels & Resorts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">หมวดหมู่ (Category)</label>
-            <select id="portfolio_category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-              <option value="hotels-resorts">Hotels & Resorts</option>
-              <option value="real-estate">Real Estate</option>
-              <option value="food-beverage">Food & Beverage</option>
-              <option value="lifestyle-wellness">Lifestyle & Wellness</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">URL รูปภาพปก (Cover Image URL) *</label>
-          <input type="text" id="portfolio_cover" required value="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">สรุปรายละเอียดสั้นๆ (Summary)</label>
-          <textarea rows="2" id="portfolio_summary" placeholder="อธิบายภาพรวมผลงาน เช่น งานถ่ายภาพสถาปัตยกรรมระดับพรีเมียม" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
-        </div>
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closePortfolioModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกผลงาน</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Client Logo Modal -->
-  <div id="modal-client" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h4 class="font-bold text-white text-sm">เพิ่มโลโก้ลูกค้าใหม่</h4>
-        <button type="button" onclick="closeClientModal()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-      <form id="form-client" onsubmit="handleSaveClient(event)" class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อลูกค้า/แบรนด์ *</label>
-          <input type="text" id="client_name" required placeholder="เช่น Cross Hotels & Resorts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">URL โลโก้ *</label>
-          <input type="text" id="client_logo_url" required value="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">เว็บไซต์ของลูกค้า (ถ้ามี)</label>
-          <input type="text" id="client_website_url" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeClientModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกโลโก้</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Note Modal -->
-  <div id="modal-note" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div>
-          <h4 class="font-bold text-white text-sm">จดบันทึกภายใน (Internal Notes)</h4>
-          <p id="note-customer-name" class="text-[11px] text-blue-400 mt-0.5"></p>
-        </div>
-        <button type="button" onclick="closeNoteModal()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-      <form id="form-note" onsubmit="handleSaveNote(event)" class="space-y-3">
-        <input type="hidden" id="note_inquiry_id">
-        <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">บันทึกข้อความสำหรับทีมงานภายใน</label>
-          <textarea rows="4" id="note_text" placeholder="เช่น นัดคุยงานวันจันทร์ 10.00 น. หรือ ส่งใบเสนอราคาแล้ว" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
-        </div>
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeNoteModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกโน้ต</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Pure Vanilla JavaScript (ZERO unsafe-eval, 100% Strict CSP Compliant) -->
-  <script>
-    let currentTab = 'dashboard';
-    let appState = {
-      navMenus: [],
-      portfolios: [],
-      services: [],
-      articles: [],
-      clientLogos: [],
-      inquiries: [],
-      settingsMap: {}
-    };
-
-    // Tab Switching
-    function switchTab(tabId) {
-      currentTab = tabId;
-      const tabs = ['dashboard', 'navigation', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
-      const titles = {
-        'dashboard': 'Dashboard ภาพรวม',
-        'navigation': 'Navigation เมนูหลัก',
-        'portfolios': 'Portfolios ผลงาน',
-        'services': 'Services บริการ',
-        'articles': 'Blog & Events บทความ',
-        'clients': 'Client Logos ลูกค้า',
-        'inquiries': 'Inquiries ข้อความติดต่อ',
-        'settings': 'Site Settings & SEO'
-      };
-
-      tabs.forEach(t => {
-        const sec = document.getElementById('section-' + t);
-        const btn = document.getElementById('btn-tab-' + t);
-        if (t === tabId) {
-          if (sec) sec.classList.remove('hidden');
-          if (btn) {
-            btn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition active-nav';
-          }
-        } else {
-          if (sec) sec.classList.add('hidden');
-          if (btn) {
-            btn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900';
-          }
-        }
-      });
-
-      const titleEl = document.getElementById('currentTabTitle');
-      if (titleEl) titleEl.innerText = titles[tabId] || tabId;
-
-      refreshIcons();
-    }
-
-    function refreshIcons() {
-      setTimeout(() => {
-        if (window.lucide && typeof window.lucide.createIcons === 'function') {
-          window.lucide.createIcons();
-        }
-      }, 50);
-    }
-
-    // Load Data from Cloudflare Worker APIs
-    async function loadAllData() {
-      try {
-        const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([
-          fetch('/api/admin/dashboard/stats').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/portfolios').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/services').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/articles').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/client-logos').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/inquiries').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/navigation').then(r => r.json()).catch(() => ({})),
-          fetch('/api/admin/site-settings').then(r => r.json()).catch(() => ({}))
-        ]);
-
-        if (s.data) renderDashboard(s.data);
-        if (nav.data) renderNavigation(nav.data);
-        if (p.data) renderPortfolios(p.data);
-        if (sv.data) renderServices(sv.data);
-        if (a.data) renderArticles(a.data);
-        if (cl.data) renderClientLogos(cl.data);
-        if (inq.data) renderInquiries(inq.data);
-        if (set.data) renderSettings(set.data);
-
-        refreshIcons();
-      } catch (err) {
-        console.error('Error fetching CMS data:', err);
-      }
-    }
-
-    // 1. Dashboard Render
-    function renderDashboard(data) {
-      document.getElementById('stat-total-inquiries').innerText = data.total_inquiries || 0;
-      document.getElementById('stat-new-inquiries').innerText = data.new_inquiries || 0;
-      document.getElementById('stat-total-portfolios').innerText = data.total_portfolios || 0;
-      document.getElementById('stat-total-services').innerText = data.total_services || 0;
-      document.getElementById('stat-total-articles').innerText = data.total_articles || 0;
-
-      const badge = document.getElementById('badge-new-inquiries');
-      if (data.new_inquiries > 0) {
-        badge.innerText = data.new_inquiries;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
-      const tbody = document.getElementById('table-recent-inquiries');
-      if (!data.recent_inquiries || data.recent_inquiries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-slate-500 text-center">ยังไม่มีข้อความติดต่อ</td></tr>';
-        return;
-      }
-      tbody.innerHTML = data.recent_inquiries.map(inq => \`
-        <tr class="hover:bg-slate-800/30">
-          <td class="py-3 font-medium text-white">\${escapeHtml(inq.full_name)}</td>
-          <td class="py-3 text-slate-300">\${escapeHtml(inq.company || '-')}</td>
-          <td class="py-3 text-slate-300">\${escapeHtml(inq.service_interested || '-')}</td>
-          <td class="py-3">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              \${escapeHtml(inq.status)}
-            </span>
-          </td>
-          <td class="py-3 text-slate-400">\${new Date(inq.created_at).toLocaleDateString('th-TH')}</td>
-        </tr>
-      \`).join('');
-    }
-
-    // 2. Navigation Render
-    function renderNavigation(items) {
-      appState.navMenus = items;
-      const tbody = document.getElementById('table-navigation');
-      if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-500 text-center">ยังไม่มีเมนู</td></tr>';
-        return;
-      }
-      tbody.innerHTML = items.map(item => \`
-        <tr class="hover:bg-slate-800/30">
-          <td class="p-4 text-slate-400 font-semibold">\${item.sort_order}</td>
-          <td class="p-4 font-bold text-white">\${escapeHtml(item.label)}</td>
-          <td class="p-4 text-blue-400 font-mono text-[11px]">\${escapeHtml(item.path)}</td>
-          <td class="p-4">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border \${
-              item.is_external ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-            }">
-              \${item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)'}
-            </span>
-          </td>
-          <td class="p-4">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border \${
-              item.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
-            }">
-              \${item.is_active ? 'เปิดใช้งาน' : 'ปิด'}
-            </span>
-          </td>
-          <td class="p-4 text-right space-x-2">
-            <button type="button" onclick="editNavMenu(\${item.id})" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white">
-              <i data-lucide="edit-3" class="w-4 h-4"></i>
-            </button>
-            <button type="button" onclick="deleteNavMenu(\${item.id})" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </td>
-        </tr>
-      \`).join('');
-    }
-
-    // 3. Portfolios Render
-    function renderPortfolios(items) {
-      appState.portfolios = items;
-      const grid = document.getElementById('grid-portfolios');
-      if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-6 text-slate-500 text-xs">ยังไม่มีผลงาน</div>';
-        return;
-      }
-      grid.innerHTML = items.map(item => \`
-        <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between">
-          <img src="\${escapeHtml(item.cover_image)}" class="w-full h-44 object-cover" alt="">
-          <div class="p-5 flex-1 flex flex-col justify-between">
-            <div>
-              <h4 class="font-bold text-sm text-white">\${escapeHtml(item.title)}</h4>
-              <p class="text-xs text-blue-400 mt-1">\${escapeHtml(item.client_name)}</p>
-              <p class="text-xs text-slate-400 mt-2 line-clamp-2">\${escapeHtml(item.summary || '')}</p>
-            </div>
-            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end">
-              <button type="button" onclick="deletePortfolio(\${item.id})" class="text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                <span>ลบผลงาน</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      \`).join('');
-    }
-
-    // 4. Services Render
-    function renderServices(items) {
-      appState.services = items;
-      const grid = document.getElementById('grid-services');
-      if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-6 text-slate-500 text-xs">ยังไม่มีบริการ</div>';
-        return;
-      }
-      grid.innerHTML = items.map(svc => \`
-        <div class="glass-card rounded-2xl p-6 space-y-4">
-          <h4 class="font-bold text-sm text-white">\${escapeHtml(svc.title)}</h4>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Subtitle</label>
-            <input type="text" id="svc_subtitle_\${svc.id}" value="\${escapeHtml(svc.subtitle || '')}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">รายละเอียดบริการ</label>
-            <textarea rows="3" id="svc_desc_\${svc.id}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">\${escapeHtml(svc.description || '')}</textarea>
-          </div>
-          <div class="flex justify-end">
-            <button type="button" onclick="saveService(\${svc.id})" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white">
-              บันทึกการแก้ไข
-            </button>
-          </div>
-        </div>
-      \`).join('');
-    }
-
-    // 5. Articles Render
-    function renderArticles(items) {
-      appState.articles = items;
-      const tbody = document.getElementById('table-articles');
-      if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-slate-500 text-center">ยังไม่มีบทความ</td></tr>';
-        return;
-      }
-      tbody.innerHTML = items.map(art => \`
-        <tr>
-          <td class="p-4 font-medium text-white">\${escapeHtml(art.title)}</td>
-          <td class="p-4 text-slate-400">\${new Date(art.published_at).toLocaleDateString('th-TH')}</td>
-          <td class="p-4 text-right">
-            <button type="button" onclick="deleteArticle(\${art.id})" class="text-rose-400 hover:text-rose-300">
-              <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-            </button>
-          </td>
-        </tr>
-      \`).join('');
-    }
-
-    // 6. Client Logos Render
-    function renderClientLogos(items) {
-      appState.clientLogos = items;
-      const grid = document.getElementById('grid-client-logos');
-      if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-4 text-slate-500 text-xs">ยังไม่มีโลโก้ลูกค้า</div>';
-        return;
-      }
-      grid.innerHTML = items.map(cl => \`
-        <div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group">
-          <button type="button" onclick="deleteClientLogo(\${cl.id})" class="absolute top-2 right-2 text-rose-400 hover:text-rose-300">
-            ✕
-          </button>
-          <img src="\${escapeHtml(cl.logo_url)}" class="h-10 object-contain mb-2 opacity-80 group-hover:opacity-100" alt="">
-          <span class="text-xs font-medium text-slate-300">\${escapeHtml(cl.name)}</span>
-        </div>
-      \`).join('');
-    }
-
-    // 7. Inquiries Render
-    function renderInquiries(items) {
-      appState.inquiries = items;
-      const tbody = document.getElementById('table-inquiries');
-      if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-500 text-center">ยังไม่มีข้อความติดต่อ</td></tr>';
-        return;
-      }
-      tbody.innerHTML = items.map(inq => \`
-        <tr>
-          <td class="p-4 font-semibold text-white">\${escapeHtml(inq.full_name)}</td>
-          <td class="p-4 text-slate-300">
-            <div>\${escapeHtml(inq.email)}</div>
-            <div class="text-[11px] text-blue-400">\${escapeHtml(inq.phone)}</div>
-          </td>
-          <td class="p-4 text-slate-300 max-w-xs">
-            <div class="line-clamp-2">\${escapeHtml(inq.message)}</div>
-            \${inq.admin_notes ? \`
-              <div class="mt-1 p-1.5 rounded bg-blue-950/60 border border-blue-800/40 text-[11px] text-blue-300 font-medium">
-                📌 โน้ต: \${escapeHtml(inq.admin_notes)}
-              </div>
-            \` : ''}
-          </td>
-          <td class="p-4 text-slate-400 font-mono text-[11px]">\${escapeHtml(inq.source_page || '/contact-us')}</td>
-          <td class="p-4">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border \${
-              inq.status === 'new' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
-            }">
-              \${escapeHtml(inq.status)}
-            </span>
-          </td>
-          <td class="p-4 text-right space-x-2">
-            <button type="button" onclick="openNoteModal(\${inq.id}, '\${escapeQuote(inq.full_name)}', '\${escapeQuote(inq.admin_notes || '')}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">
-              📝 โน้ต
-            </button>
-            <select onchange="updateInquiryStatus(\${inq.id}, this.value)" class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-200">
-              <option value="new" \${inq.status === 'new' ? 'selected' : ''}>New</option>
-              <option value="in_progress" \${inq.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-              <option value="contacted" \${inq.status === 'contacted' ? 'selected' : ''}>Contacted</option>
-              <option value="closed" \${inq.status === 'closed' ? 'selected' : ''}>Closed</option>
-            </select>
-          </td>
-        </tr>
-      \`).join('');
-    }
-
-    // 8. Settings Render
-    function renderSettings(items) {
-      const map = {};
-      items.forEach(i => { map[i.key] = i.value; });
-      appState.settingsMap = map;
-      if (document.getElementById('setting_company_name')) document.getElementById('setting_company_name').value = map.company_name || '';
-      if (document.getElementById('setting_phone')) document.getElementById('setting_phone').value = map.phone || '';
-      if (document.getElementById('setting_hero_headline')) document.getElementById('setting_hero_headline').value = map.hero_headline || '';
-      if (document.getElementById('setting_hero_subheadline')) document.getElementById('setting_hero_subheadline').value = map.hero_subheadline || '';
-    }
-
-    // Modal Control Functions
-    function openNavModal(id = null) {
-      document.getElementById('modal-nav').classList.remove('hidden');
-      document.getElementById('modal-nav').classList.add('flex');
-      if (id) {
-        const item = appState.navMenus.find(m => m.id === id);
-        if (item) {
-          document.getElementById('modal-nav-title').innerText = 'แก้ไขเมนูหลัก';
-          document.getElementById('nav_id').value = item.id;
-          document.getElementById('nav_label').value = item.label;
-          document.getElementById('nav_path').value = item.path;
-          document.getElementById('nav_sort_order').value = item.sort_order;
-          document.getElementById('nav_is_external').value = item.is_external || 0;
-          document.getElementById('nav_is_active').checked = item.is_active == 1;
-          return;
-        }
-      }
-      document.getElementById('modal-nav-title').innerText = 'เพิ่มเมนูหลักใหม่';
-      document.getElementById('nav_id').value = '';
-      document.getElementById('nav_label').value = '';
-      document.getElementById('nav_path').value = '/';
-      document.getElementById('nav_sort_order').value = (appState.navMenus.length + 1);
-      document.getElementById('nav_is_external').value = '0';
-      document.getElementById('nav_is_active').checked = true;
-    }
-    function editNavMenu(id) { openNavModal(id); }
-    function closeNavModal() {
-      document.getElementById('modal-nav').classList.add('hidden');
-      document.getElementById('modal-nav').classList.remove('flex');
-    }
-
-    function openPortfolioModal() {
-      document.getElementById('modal-portfolio').classList.remove('hidden');
-      document.getElementById('modal-portfolio').classList.add('flex');
-    }
-    function closePortfolioModal() {
-      document.getElementById('modal-portfolio').classList.add('hidden');
-      document.getElementById('modal-portfolio').classList.remove('flex');
-    }
-
-    function openClientModal() {
-      document.getElementById('modal-client').classList.remove('hidden');
-      document.getElementById('modal-client').classList.add('flex');
-    }
-    function closeClientModal() {
-      document.getElementById('modal-client').classList.add('hidden');
-      document.getElementById('modal-client').classList.remove('flex');
-    }
-
-    function openNoteModal(id, customerName, notes) {
-      document.getElementById('modal-note').classList.remove('hidden');
-      document.getElementById('modal-note').classList.add('flex');
-      document.getElementById('note_inquiry_id').value = id;
-      document.getElementById('note-customer-name').innerText = 'ลูกค้า: ' + customerName;
-      document.getElementById('note_text').value = notes || '';
-    }
-    function closeNoteModal() {
-      document.getElementById('modal-note').classList.add('hidden');
-      document.getElementById('modal-note').classList.remove('flex');
-    }
-
-    // API Submission Handlers
-    async function handleSaveNav(e) {
-      e.preventDefault();
-      const id = document.getElementById('nav_id').value;
-      const payload = {
-        label: document.getElementById('nav_label').value,
-        path: document.getElementById('nav_path').value,
-        sort_order: Number(document.getElementById('nav_sort_order').value) || 1,
-        is_external: Number(document.getElementById('nav_is_external').value),
-        is_active: document.getElementById('nav_is_active').checked ? 1 : 0
-      };
-      const url = id ? '/api/admin/navigation/' + id : '/api/admin/navigation';
-      const method = id ? 'PUT' : 'POST';
-
-      await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closeNavModal();
-      await loadAllData();
-    }
-
-    async function deleteNavMenu(id) {
-      if (!confirm('ยืนยันลบเมนูนี้ออกจาก Navigation?')) return;
-      await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
-      await loadAllData();
-    }
-
-    async function handleSavePortfolio(e) {
-      e.preventDefault();
-      const payload = {
-        title: document.getElementById('portfolio_title').value,
-        client_name: document.getElementById('portfolio_client').value,
-        category_slug: document.getElementById('portfolio_category').value,
-        cover_image: document.getElementById('portfolio_cover').value,
-        summary: document.getElementById('portfolio_summary').value,
-        featured: 1
-      };
-      await fetch('/api/admin/portfolios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closePortfolioModal();
-      await loadAllData();
-    }
-
-    async function deletePortfolio(id) {
-      if (!confirm('ยืนยันลบผลงานนี้?')) return;
-      await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
-      await loadAllData();
-    }
-
-    async function saveService(id) {
-      const subtitle = document.getElementById('svc_subtitle_' + id).value;
-      const desc = document.getElementById('svc_desc_' + id).value;
-      await fetch('/api/admin/services/' + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtitle, description: desc })
-      });
-      alert('บันทึกข้อมูลบริการเรียบร้อย');
-      await loadAllData();
-    }
-
-    async function deleteArticle(id) {
-      if (!confirm('ยืนยันลบบทความนี้?')) return;
-      await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
-      await loadAllData();
-    }
-
-    async function handleSaveClient(e) {
-      e.preventDefault();
-      const payload = {
-        name: document.getElementById('client_name').value,
-        logo_url: document.getElementById('client_logo_url').value,
-        website_url: document.getElementById('client_website_url').value,
-        sort_order: appState.clientLogos.length + 1
-      };
-      await fetch('/api/admin/client-logos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closeClientModal();
-      await loadAllData();
-    }
-
-    async function deleteClientLogo(id) {
-      if (!confirm('ยืนยันลบลูกค้ารายนี้?')) return;
-      await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
-      await loadAllData();
-    }
-
-    async function handleSaveNote(e) {
-      e.preventDefault();
-      const id = document.getElementById('note_inquiry_id').value;
-      const note = document.getElementById('note_text').value;
-      await fetch('/api/admin/inquiries/' + id + '/notes', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: note })
-      });
-      closeNoteModal();
-      await loadAllData();
-    }
-
-    async function updateInquiryStatus(id, st) {
-      await fetch('/api/admin/inquiries/' + id + '/status', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: st })
-      });
-      await loadAllData();
-    }
-
-    async function handleSaveSettings(e) {
-      e.preventDefault();
-      const list = [
-        { key: 'company_name', value: document.getElementById('setting_company_name').value },
-        { key: 'phone', value: document.getElementById('setting_phone').value },
-        { key: 'hero_headline', value: document.getElementById('setting_hero_headline').value },
-        { key: 'hero_subheadline', value: document.getElementById('setting_hero_subheadline').value }
-      ];
-      await fetch('/api/admin/site-settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: list })
-      });
-      alert('บันทึกการตั้งค่าเว็บไซต์เรียบร้อย');
-    }
-
-    async function triggerPurgeCache() {
-      const icon = document.getElementById('purge-icon');
-      if (icon) icon.classList.add('animate-spin');
-      await fetch('/api/admin/sync/purge-cache', { method: 'POST' });
-      alert('ส่งคำสั่ง Sync & Purge Cache เรียบร้อยแล้ว!');
-      if (icon) icon.classList.remove('animate-spin');
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function escapeQuote(str) {
-      if (!str) return '';
-      return String(str).replace(/'/g, "\\'");
-    }
-
-    // Init on DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
-      loadAllData();
-    });
-  </script>
-</body>
-</html>`;
+  return ADMIN_HTML_TEMPLATE.replace("__USER_EMAIL__", userEmail);
 }

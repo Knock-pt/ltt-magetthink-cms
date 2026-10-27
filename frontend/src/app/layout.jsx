@@ -1,4 +1,5 @@
 import './globals.css';
+import { LanguageProvider } from '../lib/LanguageContext';
 
 export const metadata = {
   title: 'LTT Ma getThink — Digital Marketing & Creative Production',
@@ -17,7 +18,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-screen flex flex-col font-['Plus_Jakarta_Sans','Noto_Sans_Thai',sans-serif]">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
