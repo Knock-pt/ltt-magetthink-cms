@@ -115,3 +115,20 @@ CREATE INDEX IF NOT EXISTS idx_portfolios_category ON portfolios (category_slug)
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles (status, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_client_logos_active ON client_logos (is_active, sort_order);
+
+-- 9. Custom Pages (Built with Page Builder)
+CREATE TABLE IF NOT EXISTS custom_pages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    content TEXT NOT NULL,
+    content_json TEXT,
+    meta_description TEXT,
+    cover_image TEXT,
+    template_style TEXT DEFAULT 'visual-columns',
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_custom_pages_slug ON custom_pages (slug, is_active);
+

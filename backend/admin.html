@@ -37,10 +37,7 @@
         <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i><span>Dashboard ภาพรวม</span>
       </button>
       <button type="button" onclick="switchTab('navigation')" id="btn-tab-navigation" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="compass" class="w-4 h-4 shrink-0"></i><span>Navigation เมนูหลัก</span>
-      </button>
-      <button type="button" onclick="switchTab('pages')" id="btn-tab-pages" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
-        <i data-lucide="layers" class="w-4 h-4 shrink-0"></i><span>สร้างเพจใหม่ (Page Builder)</span>
+        <i data-lucide="compass" class="w-4 h-4 shrink-0"></i><span>Navigation & หน้าเพจ</span>
       </button>
       <button type="button" onclick="switchTab('portfolios')" id="btn-tab-portfolios" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
         <i data-lucide="briefcase" class="w-4 h-4 shrink-0"></i><span>Portfolios ผลงาน</span>
@@ -130,15 +127,35 @@
         </div>
       </section>
 
-      <!-- SECTION 2: NAVIGATION -->
+      <!-- SECTION 2: NAVIGATION & CUSTOM PAGES -->
       <section id="section-navigation" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">จัดการเมนูนำทาง (Navigation Menus)</h3>
-          <button type="button" onclick="openNavModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มเมนูใหม่</span>
-          </button>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="compass" class="w-5 h-5 text-blue-400"></i>
+              <span>จัดการเมนูนำทาง & หน้าเพจ (Navigation & Pages)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">จัดการแถบเมนูบนหน้าเว็บ และสร้างหน้าเพจใหม่ (Page Builder) พร้อมผูกเข้าแถบเมนูได้ทันที</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="loadTabData('navigation', true)" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs text-slate-400 hover:text-white transition border border-slate-800 flex items-center gap-1.5" title="รีเฟรช">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i><span>รีเฟรช</span>
+            </button>
+            <button type="button" onclick="openNavModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5">
+              <i data-lucide="link" class="w-3.5 h-3.5"></i><span>+ เพิ่มเมนูลิงก์</span>
+            </button>
+            <button type="button" onclick="openPageBuilderModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/25 transition flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4"></i><span>✨ สร้างหน้าเพจใหม่ & ผูกเมนู</span>
+            </button>
+          </div>
         </div>
-        <div class="glass-card rounded-2xl overflow-hidden">
+
+        <!-- Navigation Menus Table -->
+        <div class="glass-card rounded-2xl overflow-hidden border border-slate-800/80">
+          <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">รายการเมนูบน Navbar</span>
+            <span class="text-[11px] text-slate-500">เรียงตามลำดับ Sort Order</span>
+          </div>
           <table class="w-full text-left text-xs">
             <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
               <tr>
@@ -155,26 +172,25 @@
             </tbody>
           </table>
         </div>
-      </section>
 
-      <!-- SECTION 2.5: PAGES (PAGE BUILDER) -->
-      <section id="section-pages" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-white">จัดการหน้าเพจ & ตัวสร้างเพจใหม่ (Page Builder)</h3>
-            <p class="text-xs text-slate-400 mt-0.5">สร้างหน้าเพจใหม่ด้วยโครงสร้างคอลัมน์ (1-3 Columns), บล็อกข้อความ, รูปภาพ, วิดีโอ หรือเขียนโค้ด HTML/Tailwind โดยตรง</p>
+        <!-- Custom Pages List -->
+        <div class="glass-card rounded-2xl overflow-hidden border border-slate-800/80">
+          <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-white uppercase tracking-wider">คลังหน้าเพจที่สร้าง (Custom Pages)</span>
+              <p class="text-[11px] text-slate-400 mt-0.5">หน้าเพจที่สร้างจาก Page Builder เข้าชมได้ที่ URL: /p/[slug]</p>
+            </div>
+            <button type="button" onclick="openPageBuilderModal()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1">
+              <span>+ สร้างหน้าใหม่</span>
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
-          <button type="button" onclick="openPageBuilderModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ สร้างหน้าเพจใหม่</span>
-          </button>
-        </div>
-        <div class="glass-card rounded-2xl overflow-hidden">
           <table class="w-full text-left text-xs">
             <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
               <tr>
                 <th class="p-4">ชื่อหน้าเพจ (Page Title)</th>
-                <th class="p-4">URL Slug / Path</th>
-                <th class="p-4">สไตล์การสร้าง</th>
+                <th class="p-4">URL Path</th>
+                <th class="p-4">สไตล์</th>
                 <th class="p-4">แก้ไขล่าสุด</th>
                 <th class="p-4">สถานะ</th>
                 <th class="p-4 text-right">การจัดการ</th>
@@ -191,7 +207,7 @@
       <section id="section-portfolios" class="space-y-6 hidden">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-base font-bold text-white">จัดการผลงาน (Portfolios)</h3>
+            <div class="flex items-center gap-2"><h3 class="text-base font-bold text-white">จัดการผลงาน (Portfolios)</h3><button type="button" onclick="loadTabData('portfolios', true)" class="p-1 rounded text-slate-500 hover:text-white" title="รีเฟรช"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button></div>
             <p class="text-xs text-slate-400 mt-0.5">ผลงานลูกค้า รองรับการเขียนเนื้อหา Tags 6 มิติ วิดีโอ และพิกัด Google Maps</p>
           </div>
           <button type="button" onclick="openRichEditor('portfolio')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
@@ -207,7 +223,7 @@
       <section id="section-services" class="space-y-6 hidden">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-base font-bold text-white">จัดการบริการ (Services)</h3>
+            <div class="flex items-center gap-2"><h3 class="text-base font-bold text-white">จัดการบริการ (Services)</h3><button type="button" onclick="loadTabData('services', true)" class="p-1 rounded text-slate-500 hover:text-white" title="รีเฟรช"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button></div>
             <p class="text-xs text-slate-400 mt-0.5">สามารถอัปโหลดรูปภาพบริการ และแก้ไขรายการติ๊กถูก (Checkmarks) ได้อย่างอิสระ</p>
           </div>
         </div>
@@ -220,7 +236,7 @@
       <section id="section-articles" class="space-y-6 hidden">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-base font-bold text-white">บทความ & ข่าวสาร (Blog & Events)</h3>
+            <div class="flex items-center gap-2"><h3 class="text-base font-bold text-white">บทความ & ข่าวสาร (Blog & Events)</h3><button type="button" onclick="loadTabData('articles', true)" class="p-1 rounded text-slate-500 hover:text-white" title="รีเฟรช"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button></div>
             <p class="text-xs text-slate-400 mt-0.5">เขียนบทความ รีวิว ท่องเที่ยว อัปโหลดรูปภาพ แทรกวิดีโอ YouTube และพิกัด Google Maps</p>
           </div>
           <button type="button" onclick="openRichEditor('article')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
@@ -248,15 +264,43 @@
 
       <!-- SECTION 6: CLIENT LOGOS -->
       <section id="section-clients" class="space-y-6 hidden">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 class="text-base font-bold text-white">โลโก้ลูกค้า (Client Logos)</h3>
-            <p class="text-xs text-slate-400 mt-0.5">รองรับการอัปโหลดไฟล์ภาพตรงลง Cloudflare R2 Bucket</p>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="building-2" class="w-5 h-5 text-blue-400"></i>
+              <span>โลโก้ลูกค้า (Client Logos)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">รองรับการลากไฟล์ภาพอัปโหลดตรงลง Cloudflare R2 Bucket</p>
           </div>
-          <button type="button" onclick="openClientModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มโลโก้ลูกค้า</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="loadTabData('clients', true)" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs text-slate-400 hover:text-white transition border border-slate-800 flex items-center gap-1.5" title="รีเฟรช">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i><span>รีเฟรช</span>
+            </button>
+            <button type="button" onclick="openClientModal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i><span>+ เพิ่มโลโก้ลูกค้า</span>
+            </button>
+          </div>
         </div>
+
+        <!-- Direct Drag & Drop Zone on Page -->
+        <div id="dropzone_client_page" class="border-2 border-dashed border-slate-800 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-950/60 transition cursor-pointer relative" onclick="document.getElementById('input_client_page_file').click()">
+          <input type="file" id="input_client_page_file" accept="image/*" class="hidden" onchange="handleClientPageFileSelected(this)">
+          <div id="client_page_placeholder" class="space-y-2 pointer-events-none">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-blue-600/10 text-blue-400 flex items-center justify-center text-xl">🏢</div>
+            <p class="text-xs font-semibold text-slate-200">คลิกหรือลากไฟล์ภาพโลโก้มาวางที่นี่เพื่ออัปโหลดขึ้น R2 ทันที</p>
+            <p class="text-[11px] text-slate-500">รองรับไฟล์ SVG, PNG, WebP — อัปโหลดตรงเข้า Cloudflare R2</p>
+          </div>
+          <div id="client_page_progress" class="hidden max-w-xs mx-auto py-2 space-y-1.5 pointer-events-none">
+            <div class="flex items-center justify-between text-xs text-blue-400 font-bold">
+              <span>กำลังอัปโหลดไปยัง Cloudflare R2...</span>
+              <span id="client_page_pct">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div id="client_page_bar" class="bg-blue-600 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
         <div id="grid-client-logos" class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div class="p-4 text-slate-500 text-xs">กำลังโหลดข้อมูล...</div>
         </div>
@@ -265,7 +309,7 @@
       <!-- SECTION 7: INQUIRIES -->
       <section id="section-inquiries" class="space-y-6 hidden">
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">ข้อความติดต่อจากเว็บไซต์</h3>
+          <div class="flex items-center gap-2"><h3 class="text-base font-bold text-white">ข้อความติดต่อจากเว็บไซต์</h3><button type="button" onclick="loadTabData('inquiries', true)" class="p-1 rounded text-slate-500 hover:text-white" title="รีเฟรช"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button></div>
           <a href="/api/admin/inquiries/export.csv" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
             <i data-lucide="download" class="w-4 h-4"></i><span>Export CSV</span>
           </a>
@@ -768,15 +812,50 @@
       clientLogos: [],
       inquiries: [],
       settingsMap: {},
-      editingType: null,
-      editingItem: null,
       pages: [],
       builderRows: [],
       builderMode: 'visual'
     };
 
-    function switchTab(tabId) {
-      const tabs = ['dashboard', 'navigation', 'pages', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
+    const loadedTabs = {};
+
+    // -------------------------------------------------------------
+    // URL Routing & Hash State (Changes path when opening menus/articles)
+    // -------------------------------------------------------------
+    function updateUrlHash(subpath) {
+      if (!subpath) return;
+      if (window.location.hash !== '#' + subpath && window.location.hash !== '#/' + subpath) {
+        history.pushState(null, '', '#' + subpath);
+      }
+    }
+
+    function handleRoute() {
+      const hash = (window.location.hash || '').replace(/^#/?/, '');
+      const parts = hash.split('/');
+      const tab = parts[0] || 'dashboard';
+
+      const validTabs = ['dashboard', 'navigation', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
+      if (validTabs.includes(tab)) {
+        switchTab(tab, false);
+      }
+
+      if (parts[1] === 'new') {
+        if (tab === 'articles') openRichEditor('article');
+        if (tab === 'portfolios') openRichEditor('portfolio');
+        if (tab === 'navigation') openPageBuilderModal();
+      } else if (parts[1] === 'edit' && parts[2]) {
+        const id = Number(parts[2]);
+        if (tab === 'articles') openRichEditor('article', id);
+        if (tab === 'portfolios') openRichEditor('portfolio', id);
+        if (tab === 'navigation') openPageBuilderModal(id);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Tab Switching & Lazy On-Demand Loading
+    // -------------------------------------------------------------
+    function switchTab(tabId, pushHistory = true) {
+      const tabs = ['dashboard', 'navigation', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
       tabs.forEach(function(t) {
         const sec = document.getElementById('section-' + t);
         const btn = document.getElementById('btn-tab-' + t);
@@ -798,8 +877,7 @@
       appState.currentTab = tabId;
       const titles = {
         'dashboard': 'Dashboard ภาพรวม',
-        'navigation': 'Navigation เมนูหลัก',
-        'pages': 'สร้างเพจใหม่ (Page Builder)',
+        'navigation': 'Navigation & หน้าเพจ',
         'portfolios': 'Portfolios ผลงาน',
         'services': 'Services บริการ',
         'articles': 'บทความ & ข่าวสาร (Blog & Events)',
@@ -809,6 +887,13 @@
       };
       const titleEl = document.getElementById('currentTabTitle');
       if (titleEl) titleEl.innerText = titles[tabId] || tabId;
+
+      if (pushHistory) {
+        updateUrlHash(tabId);
+      }
+
+      // Load data ONLY for the opened tab
+      loadTabData(tabId);
       refreshIcons();
     }
 
@@ -820,33 +905,51 @@
       }, 50);
     }
 
-    async function loadAllData() {
+    async function loadTabData(tabId, force = false) {
+      if (loadedTabs[tabId] && !force) return;
+
       try {
-        const [s, p, sv, a, cl, inq, nav, set, pg] = await Promise.all([
-          fetch('/api/admin/dashboard/stats').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/portfolios').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/services').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/articles').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/client-logos').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/inquiries').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/navigation').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/site-settings').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/pages').then(function(r) { return r.json(); }).catch(function() { return {}; })
-        ]);
+        if (tabId === 'dashboard') {
+          const res = await fetch('/api/admin/dashboard/stats');
+          const data = await res.json();
+          if (data.data) renderDashboard(data.data);
+        } else if (tabId === 'navigation') {
+          const [nav, pg] = await Promise.all([
+            fetch('/api/admin/navigation').then(r => r.json()).catch(() => ({})),
+            fetch('/api/admin/pages').then(r => r.json()).catch(() => ({}))
+          ]);
+          if (nav.data) renderNavigation(nav.data);
+          if (pg.data) renderCustomPages(pg.data);
+        } else if (tabId === 'portfolios') {
+          const res = await fetch('/api/admin/portfolios');
+          const data = await res.json();
+          if (data.data) renderPortfolios(data.data);
+        } else if (tabId === 'services') {
+          const res = await fetch('/api/admin/services');
+          const data = await res.json();
+          if (data.data) renderServices(data.data);
+        } else if (tabId === 'articles') {
+          const res = await fetch('/api/admin/articles');
+          const data = await res.json();
+          if (data.data) renderArticles(data.data);
+        } else if (tabId === 'clients') {
+          const res = await fetch('/api/admin/client-logos');
+          const data = await res.json();
+          if (data.data) renderClientLogos(data.data);
+        } else if (tabId === 'inquiries') {
+          const res = await fetch('/api/admin/inquiries');
+          const data = await res.json();
+          if (data.data) renderInquiries(data.data);
+        } else if (tabId === 'settings') {
+          const res = await fetch('/api/admin/site-settings');
+          const data = await res.json();
+          if (data.data) renderSettings(data.data);
+        }
 
-        if (s.data) renderDashboard(s.data);
-        if (nav.data) renderNavigation(nav.data);
-        if (p.data) renderPortfolios(p.data);
-        if (sv.data) renderServices(sv.data);
-        if (a.data) renderArticles(a.data);
-        if (cl.data) renderClientLogos(cl.data);
-        if (inq.data) renderInquiries(inq.data);
-        if (set.data) renderSettings(set.data);
-        if (pg.data) renderCustomPages(pg.data);
-
+        loadedTabs[tabId] = true;
         refreshIcons();
       } catch (err) {
-        console.error('Error fetching CMS data:', err);
+        console.error('Error loading tab ' + tabId + ':', err);
       }
     }
 
@@ -867,16 +970,16 @@
 
       const tbody = document.getElementById('table-recent-inquiries');
       if (!data.recent_inquiries || data.recent_inquiries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-slate-500 text-center">ยังไม่มีข้อความติดต่อ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-slate-500 text-center">ยังไม่มีข้อความติดต่อใหม่</td></tr>';
         return;
       }
-      tbody.innerHTML = data.recent_inquiries.map(function(inq) {
-        return '<tr class="hover:bg-slate-800/30">' +
-          '<td class="py-3 font-medium text-white">' + escapeHtml(inq.full_name) + '</td>' +
-          '<td class="py-3 text-slate-300">' + escapeHtml(inq.company || '-') + '</td>' +
-          '<td class="py-3 text-slate-300">' + escapeHtml(inq.service_interested || '-') + '</td>' +
-          '<td class="py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">' + escapeHtml(inq.status) + '</span></td>' +
-          '<td class="py-3 text-slate-400">' + new Date(inq.created_at).toLocaleDateString('th-TH') + '</td>' +
+      tbody.innerHTML = data.recent_inquiries.map(function(item) {
+        return '<tr>' +
+          '<td class="py-3 font-semibold text-white">' + escapeHtml(item.full_name) + '</td>' +
+          '<td class="py-3 text-slate-300">' + escapeHtml(item.company || '-') + '</td>' +
+          '<td class="py-3 text-slate-300">' + escapeHtml(item.service_interested || 'General') + '</td>' +
+          '<td class="py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">' + escapeHtml(item.status) + '</span></td>' +
+          '<td class="py-3 text-slate-400">' + (item.created_at ? item.created_at.substring(0, 10) : '-') + '</td>' +
         '</tr>';
       }).join('');
     }
@@ -885,164 +988,185 @@
       appState.navMenus = items;
       const tbody = document.getElementById('table-navigation');
       if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-500 text-center">ยังไม่มีเมนู</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-500 text-center">ยังไม่มีเมนูนำทาง</td></tr>';
         return;
       }
-      tbody.innerHTML = items.map(function(item) {
-        const badgeExt = item.is_external ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-        const labelExt = item.is_external ? 'ภายนอก (Link)' : 'ภายในเว็บ (Page)';
-        const badgeAct = item.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-        const labelAct = item.is_active ? 'เปิดใช้งาน' : 'ปิด';
+      tbody.innerHTML = items.map(function(m) {
+        const isCustomPage = m.path && m.path.startsWith('/p/');
+        const isExt = m.is_external || (m.path && m.path.startsWith('http'));
+        
+        let typeBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">ระบบ</span>';
+        if (isCustomPage) {
+          typeBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">เพจที่สร้าง</span>';
+        } else if (isExt) {
+          typeBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">ภายนอก ↗</span>';
+        }
 
-        return '<tr class="hover:bg-slate-800/30">' +
-          '<td class="p-4 text-slate-400 font-semibold">' + item.sort_order + '</td>' +
-          '<td class="p-4 font-bold text-white">' + escapeHtml(item.label) + '</td>' +
-          '<td class="p-4 text-blue-400 font-mono text-[11px]">' + escapeHtml(item.path) + '</td>' +
-          '<td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ' + badgeExt + '">' + labelExt + '</span></td>' +
-          '<td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ' + badgeAct + '">' + labelAct + '</span></td>' +
+        let editPageBtn = '';
+        if (isCustomPage) {
+          const pageSlug = m.path.replace('/p/', '');
+          editPageBtn = '<button type="button" onclick="editPageBySlug(\'' + escapeQuote(pageSlug) + '\')" class="px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-semibold">🎨 ออกแบบเพจ</button>';
+        }
+
+        return '<tr>' +
+          '<td class="p-4 font-mono text-slate-400">' + m.sort_order + '</td>' +
+          '<td class="p-4 font-bold text-white flex items-center gap-2"><i data-lucide="menu" class="w-3.5 h-3.5 text-slate-500"></i>' + escapeHtml(m.label) + '</td>' +
+          '<td class="p-4 font-mono text-slate-300">' + escapeHtml(m.path) + '</td>' +
+          '<td class="p-4">' + typeBadge + '</td>' +
+          '<td class="p-4">' + (m.is_active ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">เปิดใช้งาน</span>' : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">ปิด</span>') + '</td>' +
           '<td class="p-4 text-right space-x-2">' +
-            '<button type="button" onclick="editNavMenu(' + item.id + ')" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>' +
-            '<button type="button" onclick="deleteNavMenu(' + item.id + ')" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
+            editPageBtn +
+            '<a href="https://ltt-website.pages.dev' + escapeHtml(m.path) + '" target="_blank" rel="noopener noreferrer" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 inline-flex items-center gap-1"><span>เปิดดู ↗</span></a>' +
+            '<button type="button" onclick="editNavMenu(' + m.id + ')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-blue-400">แก้ไขเมนู</button>' +
+            '<button type="button" onclick="deleteNavMenu(' + m.id + ')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-rose-400">ลบ</button>' +
           '</td>' +
         '</tr>';
       }).join('');
+      refreshIcons();
+    }
+
+    function renderCustomPages(pages) {
+      appState.pages = pages || [];
+      const tbody = document.getElementById('table-pages');
+      if (!tbody) return;
+
+      if (!pages || pages.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-slate-500 text-center">ยังไม่มีหน้าเพจที่สร้างไว้ คลิก "✨ สร้างหน้าเพจใหม่ & ผูกเมนู" ด้านบนเพื่อเริ่มสร้าง</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pages.map(function(p) {
+        const link = '/p/' + p.slug;
+        const liveUrl = 'https://ltt-website.pages.dev' + link;
+        const updated = p.updated_at ? p.updated_at.substring(0, 10) : '-';
+        return '<tr class="hover:bg-slate-900/40 transition">' +
+          '<td class="p-4 font-bold text-white flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>' + escapeHtml(p.title || 'Untitled') + '</td>' +
+          '<td class="p-4 font-mono text-slate-300">' + link + '</td>' +
+          '<td class="p-4 text-slate-400">' + escapeHtml(p.template_style || 'visual-columns') + '</td>' +
+          '<td class="p-4 text-slate-400">' + updated + '</td>' +
+          '<td class="p-4">' + (p.is_active ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">เผยแพร่</span>' : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">ฉบับร่าง</span>') + '</td>' +
+          '<td class="p-4 text-right space-x-2">' +
+            '<a href="' + liveUrl + '" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs inline-flex items-center gap-1"><span>เปิดดู ↗</span></a>' +
+            '<button type="button" onclick="editCustomPage(' + p.id + ')" class="px-2.5 py-1 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-semibold">🎨 แก้ไขหน้า</button>' +
+            '<button type="button" onclick="deleteCustomPage(' + p.id + ')" class="px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs">ลบ</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+      refreshIcons();
+    }
+
+    function editPageBySlug(slug) {
+      const p = appState.pages.find(function(x) { return x.slug === slug; });
+      if (p) {
+        editCustomPage(p.id);
+      } else {
+        openPageBuilderModal();
+      }
     }
 
     function renderPortfolios(items) {
       appState.portfolios = items;
       const grid = document.getElementById('grid-portfolios');
       if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-6 text-slate-500 text-xs">ยังไม่มีผลงาน</div>';
+        grid.innerHTML = '<div class="col-span-3 p-8 text-slate-500 text-center text-xs">ยังไม่มีผลงาน</div>';
         return;
       }
-      grid.innerHTML = items.map(function(item) {
-        const cover = item.cover_image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b';
-        return '<div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between group">' +
-          '<div class="relative overflow-hidden">' +
-            '<img src="' + escapeHtml(cover) + '" class="w-full h-44 object-cover group-hover:scale-105 transition duration-300" alt="">' +
-            '<span class="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-950/80 text-white uppercase backdrop-blur">' + escapeHtml(item.template_style || 'case-study') + '</span>' +
-          '</div>' +
-          '<div class="p-5 flex-1 flex flex-col justify-between space-y-3">' +
-            '<div>' +
-              '<h4 class="font-bold text-sm text-white line-clamp-1">' + escapeHtml(item.title) + '</h4>' +
-              '<p class="text-xs text-blue-400 mt-0.5">' + escapeHtml(item.client_name || '') + '</p>' +
-              '<p class="text-xs text-slate-400 mt-2 line-clamp-2">' + escapeHtml(item.summary || '') + '</p>' +
+      grid.innerHTML = items.map(function(p) {
+        return '<div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-blue-500/50 transition">' +
+          '<div>' +
+            '<div class="h-44 overflow-hidden bg-slate-900 relative">' +
+              '<img src="' + escapeHtml(p.cover_image || '') + '" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="">' +
+              '<span class="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur">' + escapeHtml(p.category_slug || 'project') + '</span>' +
             '</div>' +
-            '<div class="pt-3 border-t border-slate-800 flex items-center justify-between">' +
-              '<button type="button" onclick="openRichEditor(\'portfolio\', ' + item.id + ')" class="text-blue-400 hover:text-blue-300 text-xs font-semibold flex items-center gap-1"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i><span>แก้ไขเนื้อหา</span></button>' +
-              '<button type="button" onclick="deletePortfolio(' + item.id + ')" class="text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>ลบ</span></button>' +
+            '<div class="p-5">' +
+              '<span class="text-[11px] font-semibold text-blue-400 block mb-1">' + escapeHtml(p.client_name || 'Client') + '</span>' +
+              '<h4 class="font-bold text-white text-sm line-clamp-1 mb-2">' + escapeHtml(p.title) + '</h4>' +
+              '<p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">' + escapeHtml(p.summary || '') + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="p-5 pt-0 border-t border-slate-800/60 mt-3 flex items-center justify-between">' +
+            '<a href="https://ltt-website.pages.dev/portfolio/' + escapeHtml(p.slug || p.id) + '" target="_blank" rel="noopener noreferrer" class="text-[11px] text-blue-400 hover:text-blue-300 font-semibold">ดูหน้าผลงาน ↗</a>' +
+            '<div class="space-x-1">' +
+              '<button type="button" onclick="openRichEditor(\'portfolio\', ' + p.id + ')" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold">แก้ไข</button>' +
+              '<button type="button" onclick="deletePortfolio(' + p.id + ')" class="px-2.5 py-1 rounded bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs font-semibold">ลบ</button>' +
             '</div>' +
           '</div>' +
         '</div>';
       }).join('');
+      refreshIcons();
     }
 
     function renderServices(items) {
       appState.services = items;
       const grid = document.getElementById('grid-services');
       if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-6 text-slate-500 text-xs">ยังไม่มีบริการ</div>';
+        grid.innerHTML = '<div class="col-span-2 p-8 text-slate-500 text-center text-xs">ยังไม่มีบริการ</div>';
         return;
       }
-      grid.innerHTML = items.map(function(svc) {
-        const bullets = Array.isArray(svc.bullet_points) ? svc.bullet_points : [];
+      grid.innerHTML = items.map(function(s) {
+        const bullets = Array.isArray(s.bullet_points) ? s.bullet_points : [];
         const bulletsHtml = bullets.map(function(b) {
-          return '<div class="flex items-center gap-2">' +
-            '<span class="text-blue-400 text-xs font-bold">✓</span>' +
-            '<input type="text" value="' + escapeHtml(b) + '" class="svc-bullet-' + svc.id + ' flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200">' +
-            '<button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300 text-xs">✕</button>' +
-          '</div>';
+          return '<li class="flex items-center gap-2 text-xs text-slate-300"><span class="text-emerald-400 font-bold">✓</span><span>' + escapeHtml(b) + '</span></li>';
         }).join('');
 
-        return '<div class="glass-card rounded-2xl p-6 space-y-4">' +
-          '<div class="flex items-start justify-between">' +
+        return '<div class="glass-card rounded-2xl p-6 flex flex-col justify-between border border-slate-800/80">' +
+          '<div class="space-y-4">' +
+            (s.image_url ? '<div class="h-36 rounded-xl overflow-hidden mb-3"><img src="' + escapeHtml(s.image_url) + '" class="w-full h-full object-cover" alt=""></div>' : '') +
             '<div>' +
-              '<h4 class="font-bold text-sm text-white">' + escapeHtml(svc.title) + '</h4>' +
-              '<p class="text-xs text-blue-400 mt-0.5 font-mono">' + escapeHtml(svc.slug) + '</p>' +
+              '<span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">Service #' + s.sort_order + '</span>' +
+              '<h4 class="font-bold text-white text-base">' + escapeHtml(s.title) + '</h4>' +
+              '<p class="text-xs text-slate-400 mt-1">' + escapeHtml(s.subtitle || '') + '</p>' +
             '</div>' +
+            '<p class="text-xs text-slate-300 leading-relaxed">' + escapeHtml(s.description || '') + '</p>' +
+            '<ul class="space-y-1.5 pt-2 border-t border-slate-800/60">' + bulletsHtml + '</ul>' +
           '</div>' +
-          '<div>' +
-            '<label class="text-[11px] text-slate-400 block mb-1">รูปภาพบริการ (R2 Image URL)</label>' +
-            '<div class="flex gap-2">' +
-              '<input type="text" id="svc_img_' + svc.id + '" value="' + escapeHtml(svc.image_url || '') + '" placeholder="https://... หรือ /media/uploads/..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">' +
-              '<label class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 cursor-pointer shrink-0">' +
-                '<span>อัปโหลด</span>' +
-                '<input type="file" accept="image/*" class="hidden" onchange="uploadGenericFile(this, \'svc_img_' + svc.id + '\')">' +
-              '</label>' +
-            '</div>' +
-          '</div>' +
-          '<div>' +
-            '<label class="text-[11px] text-slate-400 block mb-1">Subtitle</label>' +
-            '<input type="text" id="svc_subtitle_' + svc.id + '" value="' + escapeHtml(svc.subtitle || '') + '" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">' +
-          '</div>' +
-          '<div>' +
-            '<label class="text-[11px] text-slate-400 block mb-1">รายละเอียดบริการ</label>' +
-            '<textarea rows="2" id="svc_desc_' + svc.id + '" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200">' + escapeHtml(svc.description || '') + '</textarea>' +
-          '</div>' +
-          '<div>' +
-            '<div class="flex items-center justify-between mb-2">' +
-              '<label class="text-[11px] text-slate-400">รายการติ๊กถูก (Checkmark Features)</label>' +
-              '<button type="button" onclick="addServiceBullet(' + svc.id + ')" class="text-[10px] text-blue-400 hover:underline font-bold">+ เพิ่มข้อ</button>' +
-            '</div>' +
-            '<div id="svc_bullets_container_' + svc.id + '" class="space-y-1.5">' + bulletsHtml + '</div>' +
-          '</div>' +
-          '<div class="flex justify-end pt-2 border-t border-slate-800">' +
-            '<button type="button" onclick="saveService(' + svc.id + ')" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20">บันทึกการแก้ไขบริการ</button>' +
+          '<div class="pt-4 border-t border-slate-800/60 mt-4 flex justify-end">' +
+            '<button type="button" onclick="openServiceModal(' + s.id + ')" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">แก้ไขบริการ & Checkmarks</button>' +
           '</div>' +
         '</div>';
       }).join('');
-    }
-
-    function addServiceBullet(svcId) {
-      const container = document.getElementById('svc_bullets_container_' + svcId);
-      if (!container) return;
-      const div = document.createElement('div');
-      div.className = 'flex items-center gap-2';
-      div.innerHTML = '<span class="text-blue-400 text-xs font-bold">✓</span>' +
-        '<input type="text" placeholder="ระบุฟีเจอร์หรือบริการย่อย..." class="svc-bullet-' + svcId + ' flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200">' +
-        '<button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-300 text-xs">✕</button>';
-      container.appendChild(div);
+      refreshIcons();
     }
 
     function renderArticles(items) {
       appState.articles = items;
       const tbody = document.getElementById('table-articles');
       if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-slate-500 text-center">ยังไม่มีบทความ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-slate-500 text-center">ยังไม่มีบทความ</td></tr>';
         return;
       }
-      tbody.innerHTML = items.map(function(art) {
-        const cover = art.cover_image || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643';
-        const stBadge = art.status === 'published' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-
-        return '<tr class="hover:bg-slate-800/30">' +
-          '<td class="p-4"><img src="' + escapeHtml(cover) + '" class="w-12 h-10 object-cover rounded-lg" alt=""></td>' +
-          '<td class="p-4 font-bold text-white">' + escapeHtml(art.title) + '</td>' +
-          '<td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">' + escapeHtml(art.template_style || 'standard') + '</span></td>' +
-          '<td class="p-4 text-slate-400">' + new Date(art.published_at || art.created_at).toLocaleDateString('th-TH') + '</td>' +
-          '<td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ' + stBadge + '">' + escapeHtml(art.status || 'published') + '</span></td>' +
+      tbody.innerHTML = items.map(function(a) {
+        return '<tr class="hover:bg-slate-900/40 transition">' +
+          '<td class="p-4">' + (a.cover_image ? '<img src="' + escapeHtml(a.cover_image) + '" class="w-12 h-12 rounded-lg object-cover" alt="">' : '<div class="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-xs text-slate-500">No img</div>') + '</td>' +
+          '<td class="p-4"><div class="font-bold text-white text-sm">' + escapeHtml(a.title) + '</div><div class="text-[11px] text-slate-400 font-mono mt-0.5">/blog/' + escapeHtml(a.slug || a.id) + '</div></td>' +
+          '<td class="p-4 text-xs text-slate-300">' + escapeHtml(a.template_style || 'standard') + '</td>' +
+          '<td class="p-4 text-xs text-slate-400">' + (a.published_at ? a.published_at.substring(0, 10) : '-') + '</td>' +
+          '<td class="p-4">' + (a.status === 'published' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">เผยแพร่</span>' : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">ร่าง</span>') + '</td>' +
           '<td class="p-4 text-right space-x-2">' +
-            '<button type="button" onclick="openRichEditor(\'article\', ' + art.id + ')" class="p-1.5 rounded-lg hover:bg-slate-800 text-blue-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>' +
-            '<button type="button" onclick="deleteArticle(' + art.id + ')" class="p-1.5 rounded-lg hover:bg-rose-900/30 text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>' +
+            '<a href="https://ltt-website.pages.dev/blog/' + escapeHtml(a.slug || a.id) + '" target="_blank" rel="noopener noreferrer" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 inline-flex items-center gap-1"><span>เปิดดู ↗</span></a>' +
+            '<button type="button" onclick="openRichEditor(\'article\', ' + a.id + ')" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold">แก้ไข</button>' +
+            '<button type="button" onclick="deleteArticle(' + a.id + ')" class="px-2.5 py-1 rounded bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs font-semibold">ลบ</button>' +
           '</td>' +
         '</tr>';
       }).join('');
+      refreshIcons();
     }
 
     function renderClientLogos(items) {
       appState.clientLogos = items;
       const grid = document.getElementById('grid-client-logos');
       if (!items || items.length === 0) {
-        grid.innerHTML = '<div class="p-4 text-slate-500 text-xs">ยังไม่มีโลโก้ลูกค้า</div>';
+        grid.innerHTML = '<div class="col-span-5 p-4 text-slate-500 text-xs text-center">ยังไม่มีโลโก้ลูกค้า ลากไฟล์ภาพมาปล่อยที่กล่องด้านบนเพื่ออัปโหลดทันที</div>';
         return;
       }
       grid.innerHTML = items.map(function(cl) {
-        return '<div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group">' +
-          '<button type="button" onclick="deleteClientLogo(' + cl.id + ')" class="absolute top-2 right-2 text-rose-400 hover:text-rose-300">✕</button>' +
-          '<img src="' + escapeHtml(cl.logo_url) + '" class="h-10 object-contain mb-2 opacity-80 group-hover:opacity-100" alt="">' +
+        return '<div class="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group border border-slate-800/80 hover:border-blue-500/40 transition">' +
+          '<button type="button" onclick="deleteClientLogo(' + cl.id + ')" class="absolute top-2 right-2 text-rose-400 hover:text-rose-300 font-bold p-1" title="ลบ">✕</button>' +
+          '<img src="' + escapeHtml(cl.logo_url) + '" class="h-10 object-contain mb-2 opacity-85 group-hover:opacity-100 transition" alt="">' +
           '<span class="text-xs font-medium text-slate-300">' + escapeHtml(cl.name) + '</span>' +
         '</div>';
       }).join('');
+      refreshIcons();
     }
 
     function renderInquiries(items) {
@@ -1073,6 +1197,7 @@
           '</td>' +
         '</tr>';
       }).join('');
+      refreshIcons();
     }
 
     function renderSettings(items) {
@@ -1107,17 +1232,19 @@
       setVal('setting_fb_pixel_id', map.fb_pixel_id);
     }
 
-    // ==================== RICH CONTENT EDITOR LOGIC (Matching Image 2) ====================
+    // -------------------------------------------------------------
+    // Rich Editor Handling (Portfolios & Articles)
+    // -------------------------------------------------------------
     function openRichEditor(type, id) {
       appState.editingType = type;
       appState.editingItem = null;
-
       document.getElementById('editor_target_type').value = type;
       document.getElementById('editor_item_id').value = id || '';
 
       switchEditorLang('th');
 
       if (id) {
+        updateUrlHash(type + '/edit/' + id);
         const list = type === 'portfolio' ? appState.portfolios : appState.articles;
         const item = list.find(function(x) { return x.id === id; });
         if (item) {
@@ -1126,8 +1253,8 @@
           document.getElementById('editor_title_en').value = item.title_en || '';
           document.getElementById('editor_summary_th').value = item.summary || '';
           document.getElementById('editor_summary_en').value = item.summary_en || '';
-          document.getElementById('editor_content_th').innerHTML = item.details || item.content || '';
-          document.getElementById('editor_content_en').innerHTML = item.details_en || item.content_en || '';
+          document.getElementById('editor_content_th').innerHTML = item.content || item.details || '';
+          document.getElementById('editor_content_en').innerHTML = item.content_en || item.details_en || '';
 
           let tagsMeta = {};
           try {
@@ -1164,6 +1291,7 @@
       }
 
       // New item reset
+      updateUrlHash(type + '/new');
       document.getElementById('editor_title_th').value = '';
       document.getElementById('editor_title_en').value = '';
       document.getElementById('editor_summary_th').value = '';
@@ -1193,9 +1321,11 @@
     function closeRichEditor() {
       document.getElementById('modal-rich-editor').classList.add('hidden');
       document.getElementById('modal-rich-editor').classList.remove('flex');
+      updateUrlHash(appState.currentTab);
     }
 
     function switchEditorLang(lang) {
+      appState.editorLang = lang;
       const thSec = document.getElementById('editor-fields-th');
       const enSec = document.getElementById('editor-fields-en');
       const thBtn = document.getElementById('tab-lang-th');
@@ -1262,7 +1392,9 @@
       alert('บันทึกพิกัดแผนที่เรียบร้อย');
     }
 
-    // Universal Upload with Progress Tracking
+    // -------------------------------------------------------------
+    // File Upload with Real-time Progress Tracking
+    // -------------------------------------------------------------
     function uploadFileWithProgress(file, callbacks) {
       if (!file) return;
       const onProgress = callbacks && callbacks.onProgress;
@@ -1337,7 +1469,7 @@
             document.getElementById('editor_cover_url').value = fileUrl;
             document.getElementById('cover_preview_box').classList.remove('hidden');
             document.getElementById('cover_preview_img').src = fileUrl;
-          }, 400);
+          }, 350);
         },
         onError: function(err) {
           wrap.classList.add('hidden');
@@ -1397,196 +1529,70 @@
       if (pill) pill.classList.add('hidden');
     }
 
-    async function runAiTranslate() {
-      const btn = document.getElementById('btn-ai-translate');
-      btn.innerText = '⏳ กำลังแปลภาษาด้วย AI...';
-      btn.disabled = true;
+    // -------------------------------------------------------------
+    // Client Logos Drag & Drop Handlers
+    // -------------------------------------------------------------
+    function handleClientPageFileSelected(input) {
+      const file = input.files && input.files[0];
+      if (file) uploadClientPageLogo(file);
+    }
 
-      const title = document.getElementById('editor_title_th').value;
-      const summary = document.getElementById('editor_summary_th').value;
-      const content = document.getElementById('editor_content_th').innerText;
-      const tagsMeta = {
-        service: document.getElementById('tag_service').value,
-        industry: document.getElementById('tag_industry').value,
-        platform: document.getElementById('tag_platform').value,
-        target_audience: document.getElementById('tag_target').value,
-        objective: document.getElementById('tag_objective').value,
-        format: document.getElementById('tag_format').value,
-        country: document.getElementById('tag_industry').value,
-        type: document.getElementById('tag_service').value,
-        destination: document.getElementById('tag_platform').value,
-        transportation: document.getElementById('tag_target').value,
-        location_name: document.getElementById('tag_objective').value,
-        activity: document.getElementById('tag_format').value
-      };
+    function uploadClientPageLogo(file) {
+      if (!file) return;
+      const wrap = document.getElementById('client_page_progress');
+      const bar = document.getElementById('client_page_bar');
+      const pct = document.getElementById('client_page_pct');
+      const placeholder = document.getElementById('client_page_placeholder');
 
-      try {
-        const res = await fetch('/api/admin/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { title, summary, content, tags_meta: tagsMeta } })
-        });
-        const resData = await res.json();
-        if (resData.success && resData.data) {
-          const d = resData.data;
-          document.getElementById('editor_title_en').value = d.title_en || '';
-          document.getElementById('editor_summary_en').value = d.summary_en || '';
-          document.getElementById('editor_content_en').innerHTML = (d.content_en || '').replace(/\n/g, '<br>');
-          switchEditorLang('en');
-          alert('แปลภาษาอังกฤษสำเร็จ! คุณสามารถตรวจสอบและปรับแก้คำแปลในแท็บภาษาอังกฤษได้เลยครับ');
-        } else {
-          alert('การแปลล้มเหลว กรุณาลองใหม่อีกครั้ง');
+      wrap.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      bar.style.width = '0%';
+      pct.innerText = '0%';
+
+      uploadFileWithProgress(file, {
+        onProgress: function(percent) {
+          bar.style.width = percent + '%';
+          pct.innerText = percent + '%';
+        },
+        onSuccess: async function(fileUrl) {
+          bar.style.width = '100%';
+          pct.innerText = '100%';
+          setTimeout(async function() {
+            wrap.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+
+            const defaultName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+            const clientName = prompt('ระบุชื่อลูกค้า / แบรนด์ สำหรับโลโก้นี้:', defaultName) || defaultName;
+
+            try {
+              const res = await fetch('/api/admin/client-logos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: clientName,
+                  logo_url: fileUrl,
+                  website_url: '',
+                  sort_order: (appState.clientLogos.length + 1)
+                })
+              });
+              const data = await res.json();
+              if (data.success) {
+                alert('✓ เพิ่มโลโก้ลูกค้าเรียบร้อยแล้ว!');
+                loadTabData('clients', true);
+              } else {
+                alert('บันทึกล้มเหลว: ' + data.error);
+              }
+            } catch(e) {
+              alert('เกิดข้อผิดพลาด: ' + e.message);
+            }
+          }, 400);
+        },
+        onError: function(err) {
+          wrap.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+          alert('อัปโหลดโลโก้ล้มเหลว: ' + err);
         }
-      } catch (e) {
-        alert('เกิดข้อผิดพลาด: ' + e.message);
-      } finally {
-        btn.innerText = '🤖 AI แปลเป็นภาษาอังกฤษอัตโนมัติ';
-        btn.disabled = false;
-      }
-    }
-
-    async function handleSaveRichEditor() {
-      const type = document.getElementById('editor_target_type').value;
-      const id = document.getElementById('editor_item_id').value;
-
-      const title = document.getElementById('editor_title_th').value;
-      if (!title) {
-        alert('กรุณาระบุชื่อบันทึก / หัวข้อ');
-        return;
-      }
-
-      const tagsMeta = {
-        service: document.getElementById('tag_service').value,
-        industry: document.getElementById('tag_industry').value,
-        platform: document.getElementById('tag_platform').value,
-        target_audience: document.getElementById('tag_target').value,
-        objective: document.getElementById('tag_objective').value,
-        format: document.getElementById('tag_format').value,
-        country: document.getElementById('tag_industry').value,
-        type: document.getElementById('tag_service').value,
-        destination: document.getElementById('tag_platform').value,
-        transportation: document.getElementById('tag_target').value,
-        location_name: document.getElementById('tag_objective').value,
-        activity: document.getElementById('tag_format').value
-      };
-
-      const payload = {
-        title: title,
-        title_en: document.getElementById('editor_title_en').value,
-        summary: document.getElementById('editor_summary_th').value,
-        summary_en: document.getElementById('editor_summary_en').value,
-        content: document.getElementById('editor_content_th').innerHTML,
-        content_en: document.getElementById('editor_content_en').innerHTML,
-        details: document.getElementById('editor_content_th').innerHTML,
-        details_en: document.getElementById('editor_content_en').innerHTML,
-        cover_image: document.getElementById('editor_cover_url').value || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b',
-        tags_meta: tagsMeta,
-        travel_date: document.getElementById('editor_travel_date').value,
-        video_url: document.getElementById('editor_video_url').value,
-        map_coords: document.getElementById('editor_map_coords').value,
-        template_style: document.getElementById('editor_template_style').value,
-        custom_instruction: document.getElementById('editor_custom_instruction').value,
-        status: document.getElementById('editor_status').value,
-        client_name: tagsMeta.location_name || 'LTT Client',
-        category_slug: tagsMeta.type ? tagsMeta.type.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'general'
-      };
-
-      const url = type === 'portfolio'
-        ? (id ? '/api/admin/portfolios/' + id : '/api/admin/portfolios')
-        : (id ? '/api/admin/articles/' + id : '/api/admin/articles');
-
-      const method = id ? 'PUT' : 'POST';
-
-      try {
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const d = await res.json();
-        if (d.success) {
-          alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
-          closeRichEditor();
-          await loadAllData();
-      setupDragAndDropHandlers();
-        } else {
-          alert('เกิดข้อผิดพลาด: ' + (d.error || 'กรุณาลองใหม่'));
-        }
-      } catch (err) {
-        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
-      }
-    }
-
-    function previewEditorContent() {
-      const title = document.getElementById('editor_title_th').value || 'หัวข้อตัวอย่าง';
-      const summary = document.getElementById('editor_summary_th').value;
-      const content = document.getElementById('editor_content_th').innerHTML;
-      const cover = document.getElementById('editor_cover_url').value;
-      const date = document.getElementById('editor_travel_date').value;
-      const template = document.getElementById('editor_template_style').value;
-      const video = document.getElementById('editor_video_url').value;
-
-      const container = document.getElementById('preview-container');
-      container.innerHTML = '<div>' +
-        '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-600 text-white uppercase">' + escapeHtml(template) + '</span>' +
-        '<h1 class="text-2xl font-bold text-white mt-3">' + escapeHtml(title) + '</h1>' +
-        (date ? '<p class="text-xs text-slate-400 mt-1">วันที่: ' + escapeHtml(date) + '</p>' : '') +
-      '</div>' +
-      (cover ? '<img src="' + escapeHtml(cover) + '" class="w-full max-h-80 object-cover rounded-2xl shadow" alt="">' : '') +
-      (summary ? '<p class="text-sm text-slate-300 italic border-l-2 border-blue-500 pl-4 py-1">' + escapeHtml(summary) + '</p>' : '') +
-      (video ? '<div class="p-3 bg-slate-900 rounded-xl text-xs text-blue-400">▶️ วิดีโอ: ' + escapeHtml(video) + '</div>' : '') +
-      '<div class="prose prose-invert max-w-none text-sm text-slate-200 leading-relaxed pt-2">' + content + '</div>';
-
-      document.getElementById('modal-preview').classList.remove('hidden');
-      document.getElementById('modal-preview').classList.add('flex');
-    }
-
-    function closePreviewModal() {
-      document.getElementById('modal-preview').classList.add('hidden');
-      document.getElementById('modal-preview').classList.remove('flex');
-    }
-
-    function openNavModal(id) {
-      document.getElementById('modal-nav').classList.remove('hidden');
-      document.getElementById('modal-nav').classList.add('flex');
-      if (id) {
-        const item = appState.navMenus.find(function(m) { return m.id === id; });
-        if (item) {
-          document.getElementById('modal-nav-title').innerText = 'แก้ไขเมนูหลัก';
-          document.getElementById('nav_id').value = item.id;
-          document.getElementById('nav_label').value = item.label;
-          document.getElementById('nav_path').value = item.path;
-          document.getElementById('nav_sort_order').value = item.sort_order;
-          document.getElementById('nav_is_external').value = item.is_external || 0;
-          document.getElementById('nav_is_active').checked = item.is_active == 1;
-          return;
-        }
-      }
-      document.getElementById('modal-nav-title').innerText = 'เพิ่มเมนูหลักใหม่';
-      document.getElementById('nav_id').value = '';
-      document.getElementById('nav_label').value = '';
-      document.getElementById('nav_path').value = '/';
-      document.getElementById('nav_sort_order').value = (appState.navMenus.length + 1);
-      document.getElementById('nav_is_external').value = '0';
-      document.getElementById('nav_is_active').checked = true;
-    }
-    function editNavMenu(id) { openNavModal(id); }
-    function closeNavModal() {
-      document.getElementById('modal-nav').classList.add('hidden');
-      document.getElementById('modal-nav').classList.remove('flex');
-    }
-
-    function openClientModal() {
-      document.getElementById('client_name').value = '';
-      document.getElementById('client_logo_url').value = '';
-      document.getElementById('client_website_url').value = '';
-      document.getElementById('client_logo_preview').classList.add('hidden');
-      document.getElementById('modal-client').classList.remove('hidden');
-      document.getElementById('modal-client').classList.add('flex');
-    }
-    function closeClientModal() {
-      document.getElementById('modal-client').classList.add('hidden');
-      document.getElementById('modal-client').classList.remove('flex');
+      });
     }
 
     function uploadClientLogoFile(input) {
@@ -1631,36 +1637,706 @@
       });
     }
 
-    async function uploadGenericFile(input, targetInputId) {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      try {
-        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success && data.file_url) {
-          const el = document.getElementById(targetInputId);
-          if (el) el.value = data.file_url;
-          alert('อัปโหลดไฟล์ขึ้น R2 สำเร็จ!');
-        } else {
-          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));
+    function setupDragAndDropHandlers() {
+      // Prevent browser default drop behavior (which opens the image file directly)
+      window.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
+      window.addEventListener('drop', function(e) { e.preventDefault(); }, false);
+
+      // 1. Direct Page Client Dropzone
+      const pageClientDrop = document.getElementById('dropzone_client_page');
+      if (pageClientDrop) {
+        ['dragenter', 'dragover'].forEach(function(evt) {
+          pageClientDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pageClientDrop.classList.add('border-blue-500', 'bg-slate-900');
+          });
+        });
+        ['dragleave', 'drop'].forEach(function(evt) {
+          pageClientDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pageClientDrop.classList.remove('border-blue-500', 'bg-slate-900');
+          });
+        });
+        pageClientDrop.addEventListener('drop', function(e) {
+          const files = e.dataTransfer.files;
+          if (files && files[0]) uploadClientPageLogo(files[0]);
+        });
+      }
+
+      // 2. Client Logo Modal Dropzone
+      const clientModalDrop = document.getElementById('dropzone_client_logo');
+      if (clientModalDrop) {
+        ['dragenter', 'dragover'].forEach(function(evt) {
+          clientModalDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            clientModalDrop.classList.add('border-blue-500', 'bg-slate-900');
+          });
+        });
+        ['dragleave', 'drop'].forEach(function(evt) {
+          clientModalDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            clientModalDrop.classList.remove('border-blue-500', 'bg-slate-900');
+          });
+        });
+        clientModalDrop.addEventListener('drop', function(e) {
+          const files = e.dataTransfer.files;
+          if (files && files[0]) uploadClientLogoDrop(files[0]);
+        });
+      }
+
+      // 3. Cover Dropzone
+      const coverDrop = document.getElementById('dropzone_cover');
+      if (coverDrop) {
+        ['dragenter', 'dragover'].forEach(function(evt) {
+          coverDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            coverDrop.classList.add('border-teal-500', 'bg-teal-50/50');
+          });
+        });
+        ['dragleave', 'drop'].forEach(function(evt) {
+          coverDrop.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            coverDrop.classList.remove('border-teal-500', 'bg-teal-50/50');
+          });
+        });
+        coverDrop.addEventListener('drop', function(e) {
+          const files = e.dataTransfer.files;
+          if (files && files[0]) uploadCoverFile(files[0]);
+        });
+      }
+
+      // 4. Content Area Image Drop
+      ['editor_content_th', 'editor_content_en'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        ['dragenter', 'dragover'].forEach(function(evt) {
+          el.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            el.classList.add('ring-2', 'ring-teal-500');
+          });
+        });
+        ['dragleave', 'drop'].forEach(function(evt) {
+          el.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            el.classList.remove('ring-2', 'ring-teal-500');
+          });
+        });
+        el.addEventListener('drop', function(e) {
+          const files = e.dataTransfer.files;
+          if (files && files[0] && files[0].type.startsWith('image/')) {
+            insertImageIntoContent(files[0]);
+          }
+        });
+      });
+    }
+
+    // -------------------------------------------------------------
+    // Page Builder & Custom Pages Logic
+    // -------------------------------------------------------------
+    function openPageBuilderModal(pageId) {
+      appState.builderRows = [];
+      appState.builderMode = 'visual';
+      document.getElementById('builder_page_id').value = '';
+      document.getElementById('builder_page_title').value = '';
+      document.getElementById('builder_page_slug').value = '';
+      document.getElementById('builder_meta_description').value = '';
+      document.getElementById('builder_raw_html').value = '';
+      document.getElementById('builder_add_to_nav').checked = true;
+      document.getElementById('builder_is_active').checked = true;
+      document.getElementById('page-builder-modal-title').innerText = 'สร้างหน้าเพจใหม่ & ผูกเมนู (Page Builder)';
+
+      if (pageId) {
+        updateUrlHash('navigation/pages/edit/' + pageId);
+        const item = appState.pages.find(function(x) { return x.id === pageId; });
+        if (item) {
+          document.getElementById('builder_page_id').value = item.id;
+          document.getElementById('builder_page_title').value = item.title || '';
+          document.getElementById('builder_page_slug').value = item.slug || '';
+          document.getElementById('builder_meta_description').value = item.meta_description || '';
+          document.getElementById('builder_raw_html').value = item.content || '';
+          document.getElementById('builder_is_active').checked = item.is_active !== 0;
+          document.getElementById('page-builder-modal-title').innerText = 'แก้ไขหน้าเพจ: ' + item.title;
+
+          try {
+            appState.builderRows = JSON.parse(item.content_json || '[]');
+          } catch(e) {
+            appState.builderRows = [];
+          }
         }
-      } catch (e) {
+      } else {
+        updateUrlHash('navigation/pages/new');
+      }
+
+      if (appState.builderRows.length === 0) {
+        addBuilderRow(1);
+      } else {
+        renderBuilderRows();
+      }
+
+      switchBuilderMode(appState.builderMode);
+      document.getElementById('modal-page-builder').classList.remove('hidden');
+      document.getElementById('modal-page-builder').classList.add('flex');
+      refreshIcons();
+    }
+
+    function closePageBuilderModal() {
+      document.getElementById('modal-page-builder').classList.add('hidden');
+      document.getElementById('modal-page-builder').classList.remove('flex');
+      updateUrlHash(appState.currentTab);
+    }
+
+    function editCustomPage(id) {
+      openPageBuilderModal(id);
+    }
+
+    async function deleteCustomPage(id) {
+      if (!confirm('คุณต้องการลบหน้าเพจนี้ใช่หรือไม่? ลิงก์เมนูที่ชี้มายังหน้านี้อาจไม่สามารถใช้งานได้')) return;
+      try {
+        const res = await fetch('/api/admin/pages/' + id, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) {
+          alert('ลบหน้าเพจเรียบร้อยแล้ว');
+          loadTabData('navigation', true);
+        } else {
+          alert('ลบล้มเหลว: ' + d.error);
+        }
+      } catch(e) {
         alert('เกิดข้อผิดพลาด: ' + e.message);
       }
     }
 
-    function openNoteModal(id, customerName, notes) {
-      document.getElementById('modal-note').classList.remove('hidden');
-      document.getElementById('modal-note').classList.add('flex');
-      document.getElementById('note_inquiry_id').value = id;
-      document.getElementById('note-customer-name').innerText = 'ลูกค้า: ' + customerName;
-      document.getElementById('note_text').value = notes || '';
+    function autoGeneratePageSlug(val) {
+      const slugInput = document.getElementById('builder_page_slug');
+      if (slugInput && !slugInput.dataset.manual) {
+        slugInput.value = (val || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9ก-๙]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
     }
-    function closeNoteModal() {
-      document.getElementById('modal-note').classList.add('hidden');
-      document.getElementById('modal-note').classList.remove('flex');
+
+    function switchBuilderMode(mode) {
+      appState.builderMode = mode;
+      const visualArea = document.getElementById('builder-visual-area');
+      const htmlArea = document.getElementById('builder-html-area');
+      const btnVisual = document.getElementById('btn-builder-visual');
+      const btnHtml = document.getElementById('btn-builder-html');
+
+      if (mode === 'visual') {
+        visualArea.classList.remove('hidden');
+        htmlArea.classList.add('hidden');
+        btnVisual.className = 'px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5';
+        btnHtml.className = 'px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5';
+      } else {
+        document.getElementById('builder_raw_html').value = compileBuilderHtml();
+        visualArea.classList.add('hidden');
+        htmlArea.classList.remove('hidden');
+        btnHtml.className = 'px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5';
+        btnVisual.className = 'px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5';
+      }
+      refreshIcons();
+    }
+
+    function addBuilderRow(layout) {
+      let cols = [];
+      if (layout === 1) {
+        cols = [{ width: 'w-full', blocks: [{ type: 'text', content: '<h2 class="text-2xl font-bold text-white mb-2">หัวข้อเรื่อง</h2><p class="text-slate-400 text-sm">พิมพ์เนื้อหาของคุณที่นี่...</p>' }] }];
+      } else if (layout === 2) {
+        cols = [
+          { width: 'md:w-1/2', blocks: [{ type: 'text', content: '<h3 class="text-xl font-bold text-white mb-2">คอลัมน์ซ้าย</h3><p class="text-slate-400 text-sm">ข้อความหรือรายละเอียด...</p>' }] },
+          { width: 'md:w-1/2', blocks: [{ type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80', caption: 'ภาพประกอบ' }] }
+        ];
+      } else if (layout === 3) {
+        cols = [
+          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 1</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] },
+          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 2</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] },
+          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 3</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] }
+        ];
+      } else if (layout === '2-1') {
+        cols = [
+          { width: 'md:w-2/3', blocks: [{ type: 'text', content: '<h2 class="text-2xl font-bold text-white mb-3">เนื้อหาหลัก (67%)</h2><p class="text-slate-400 text-sm leading-relaxed">รายละเอียดและเนื้อหาสำคัญของแคมเปญหรือบริการ...</p>' }] },
+          { width: 'md:w-1/3', blocks: [{ type: 'cta', label: 'ติดต่อทีมงานทันที', url: '/contact-us' }] }
+        ];
+      }
+
+      appState.builderRows.push({ layout: String(layout), columns: cols });
+      renderBuilderRows();
+    }
+
+    function removeBuilderRow(rIndex) {
+      if (confirm('คุณต้องการลบแถวนี้ใช่หรือไม่?')) {
+        appState.builderRows.splice(rIndex, 1);
+        renderBuilderRows();
+      }
+    }
+
+    function addBlockToCol(rIndex, cIndex, type) {
+      const row = appState.builderRows[rIndex];
+      if (!row || !row.columns[cIndex]) return;
+
+      if (type === 'text') {
+        row.columns[cIndex].blocks.push({ type: 'text', content: '<p class="text-slate-300 text-sm">พิมพ์ข้อความใหม่ที่นี่...</p>' });
+      } else if (type === 'image') {
+        row.columns[cIndex].blocks.push({ type: 'image', url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80', caption: '' });
+      } else if (type === 'video') {
+        row.columns[cIndex].blocks.push({ type: 'video', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+      } else if (type === 'cta') {
+        row.columns[cIndex].blocks.push({ type: 'cta', label: 'เรียนรู้เพิ่มเติม', url: '/contact-us' });
+      } else if (type === 'html') {
+        row.columns[cIndex].blocks.push({ type: 'html', code: '<div class="p-4 rounded-xl bg-blue-900/20 border border-blue-500/30 text-blue-300 text-xs">Custom HTML Block</div>' });
+      }
+      renderBuilderRows();
+    }
+
+    function removeBlock(rIndex, cIndex, bIndex) {
+      appState.builderRows[rIndex].columns[cIndex].blocks.splice(bIndex, 1);
+      renderBuilderRows();
+    }
+
+    function renderBuilderRows() {
+      const container = document.getElementById('builder-rows-container');
+      if (!container) return;
+
+      if (appState.builderRows.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-slate-500 text-xs">ยังไม่มีแถวเนื้อหา กดปุ่มเพิ่มแถวด้านล่างเพื่อเริ่มต้น</div>';
+        return;
+      }
+
+      container.innerHTML = appState.builderRows.map(function(row, rIdx) {
+        const colsHtml = row.columns.map(function(col, cIdx) {
+          const blocksHtml = col.blocks.map(function(b, bIdx) {
+            let blockContent = '';
+            if (b.type === 'text') {
+              blockContent = '<div contenteditable="true" onblur="updateBlockContent(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.innerHTML)" class="min-h-[60px] p-2 bg-slate-950 rounded-lg border border-slate-800 text-xs text-white focus:outline-none focus:border-blue-500 leading-relaxed">' + b.content + '</div>';
+            } else if (b.type === 'image') {
+              blockContent = '<div class="space-y-1.5">' +
+                '<div class="flex gap-2">' +
+                  '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockUrl(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.value)" placeholder="https://... หรืออัปโหลด R2" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
+                  '<label class="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white cursor-pointer shrink-0">' +
+                    '<span>อัปโหลด R2</span>' +
+                    '<input type="file" accept="image/*" class="hidden" onchange="uploadBlockImage(' + rIdx + ',' + cIdx + ',' + bIdx + ', this)">' +
+                  '</label>' +
+                '</div>' +
+                (b.url ? '<img src="' + b.url + '" class="max-h-36 rounded-lg object-cover mx-auto" alt="">' : '') +
+              '</div>';
+            } else if (b.type === 'video') {
+              blockContent = '<div class="space-y-1">' +
+                '<label class="text-[10px] text-slate-400">YouTube URL:</label>' +
+                '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockUrl(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.value)" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
+              '</div>';
+            } else if (b.type === 'cta') {
+              blockContent = '<div class="grid grid-cols-2 gap-2">' +
+                '<input type="text" value="' + (b.label || '') + '" onchange="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'label\', this.value)" placeholder="ข้อความปุ่ม" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
+                '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'url\', this.value)" placeholder="ลิงก์ปลายทาง" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
+              '</div>';
+            } else if (b.type === 'html') {
+              blockContent = '<textarea rows="3" onblur="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'code\', this.value)" class="w-full bg-slate-950 font-mono text-[11px] text-emerald-400 border border-slate-800 rounded-lg p-2 focus:outline-none">' + (b.code || '') + '</textarea>';
+            }
+
+            return '<div class="bg-slate-900 border border-slate-800/90 rounded-xl p-3 space-y-2 group">' +
+              '<div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800 pb-1.5">' +
+                '<span class="font-bold uppercase tracking-wider text-blue-400">' + b.type + ' Block</span>' +
+                '<button type="button" onclick="removeBlock(' + rIdx + ',' + cIdx + ',' + bIdx + ')" class="text-rose-400 hover:text-rose-300 font-bold">✕</button>' +
+              '</div>' +
+              blockContent +
+            '</div>';
+          }).join('');
+
+          return '<div class="' + col.width + ' space-y-3 p-3 bg-slate-950/70 border border-slate-800/60 rounded-xl flex flex-col justify-between">' +
+            '<div class="space-y-3">' + blocksHtml + '</div>' +
+            '<div class="pt-2 border-t border-slate-800/60 flex flex-wrap gap-1">' +
+              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'text\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ ข้อความ</button>' +
+              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'image\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ รูปภาพ</button>' +
+              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'video\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ วิดีโอ</button>' +
+              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'cta\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ ปุ่ม CTA</button>' +
+              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'html\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ Custom HTML</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        return '<div class="glass-card p-4 rounded-2xl space-y-3 border border-slate-800/80">' +
+          '<div class="flex items-center justify-between text-xs text-slate-400">' +
+            '<span class="font-bold text-white flex items-center gap-1.5"><i data-lucide="columns" class="w-3.5 h-3.5 text-blue-400"></i>แถวที่ ' + (rIdx + 1) + ' (Layout: ' + row.layout + ')</span>' +
+            '<button type="button" onclick="removeBuilderRow(' + rIdx + ')" class="text-rose-400 hover:text-rose-300 font-semibold text-xs flex items-center gap-1"><span>ลบแถว</span>✕</button>' +
+          '</div>' +
+          '<div class="flex flex-col md:flex-row gap-4">' + colsHtml + '</div>' +
+        '</div>';
+      }).join('');
+      refreshIcons();
+    }
+
+    function updateBlockContent(r, c, b, val) {
+      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
+        appState.builderRows[r].columns[c].blocks[b].content = val;
+      }
+    }
+
+    function updateBlockUrl(r, c, b, val) {
+      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
+        appState.builderRows[r].columns[c].blocks[b].url = val;
+      }
+    }
+
+    function updateBlockField(r, c, b, field, val) {
+      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
+        appState.builderRows[r].columns[c].blocks[b][field] = val;
+      }
+    }
+
+    function uploadBlockImage(r, c, b, input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      uploadFileWithProgress(file, {
+        onSuccess: function(url) {
+          updateBlockUrl(r, c, b, url);
+          renderBuilderRows();
+        },
+        onError: function(err) {
+          alert('อัปโหลดรูปล้มเหลว: ' + err);
+        }
+      });
+    }
+
+    function compileBuilderHtml() {
+      if (appState.builderMode === 'html') {
+        return document.getElementById('builder_raw_html').value || '';
+      }
+
+      let html = '<div class="space-y-12">';
+      appState.builderRows.forEach(function(row) {
+        html += '<div class="grid grid-cols-1 md:grid-cols-' + (row.layout === '3' ? '3' : row.layout === '1' ? '1' : '2') + ' gap-8 items-center">';
+        row.columns.forEach(function(col) {
+          html += '<div class="space-y-6">';
+          col.blocks.forEach(function(b) {
+            if (b.type === 'text') {
+              html += '<div>' + (b.content || '') + '</div>';
+            } else if (b.type === 'image') {
+              html += '<figure class="my-4"><img src="' + (b.url || '') + '" class="rounded-2xl max-w-full shadow-lg" alt=""><figcaption class="text-xs text-slate-400 mt-1">' + (b.caption || '') + '</figcaption></figure>';
+            } else if (b.type === 'video') {
+              let ytId = '';
+              if (b.url && b.url.includes('v=')) ytId = b.url.split('v=')[1]?.split('&')[0];
+              else if (b.url && b.url.includes('youtu.be/')) ytId = b.url.split('youtu.be/')[1]?.split('?')[0];
+              if (ytId) {
+                html += '<div class="aspect-video rounded-2xl overflow-hidden shadow-xl"><iframe src="https://www.youtube.com/embed/' + ytId + '" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>';
+              }
+            } else if (b.type === 'cta') {
+              html += '<div><a href="' + (b.url || '#') + '" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-lg shadow-blue-500/25 transition">' + (b.label || 'คลิกที่นี่') + ' &rarr;</a></div>';
+            } else if (b.type === 'html') {
+              html += '<div>' + (b.code || '') + '</div>';
+            }
+          });
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function previewPageBuilder() {
+      const title = document.getElementById('builder_page_title').value || 'หน้าตัวอย่าง';
+      const compiled = compileBuilderHtml();
+      const container = document.getElementById('preview-container');
+      container.innerHTML = '<div class="space-y-6 max-w-4xl mx-auto"><h1 class="text-3xl font-extrabold text-white">' + title + '</h1><div class="prose prose-invert max-w-none">' + compiled + '</div></div>';
+      document.getElementById('modal-preview').classList.remove('hidden');
+      document.getElementById('modal-preview').classList.add('flex');
+    }
+
+    async function handleSavePage() {
+      const id = document.getElementById('builder_page_id').value;
+      const title = document.getElementById('builder_page_title').value;
+      const slug = document.getElementById('builder_page_slug').value;
+      const meta_description = document.getElementById('builder_meta_description').value;
+      const is_active = document.getElementById('builder_is_active').checked;
+      const add_to_nav = document.getElementById('builder_add_to_nav').checked;
+
+      if (!title || !slug) {
+        alert('กรุณากรอกชื่อหน้าเพจและ URL Slug ให้ครบถ้วน');
+        return;
+      }
+
+      const content = compileBuilderHtml();
+      const content_json = JSON.stringify(appState.builderRows);
+
+      const payload = {
+        title: title,
+        slug: slug,
+        content: content,
+        content_json: content_json,
+        meta_description: meta_description,
+        is_active: is_active,
+        add_to_nav: add_to_nav,
+        template_style: appState.builderMode === 'html' ? 'custom-html' : 'visual-columns'
+      };
+
+      try {
+        const url = id ? ('/api/admin/pages/' + id) : '/api/admin/pages';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message || 'บันทึกหน้าเพจสำเร็จ!');
+          closePageBuilderModal();
+          loadTabData('navigation', true);
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + (data.error || 'กรุณาลองใหม่'));
+        }
+      } catch(err) {
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Save Modals & General Handlers
+    // -------------------------------------------------------------
+    async function runAiTranslate() {
+      const btn = document.getElementById('btn-ai-translate');
+      btn.innerText = '⏳ กำลังแปลภาษาด้วย AI...';
+      btn.disabled = true;
+
+      const title = document.getElementById('editor_title_th').value;
+      const summary = document.getElementById('editor_summary_th').value;
+      const content = document.getElementById('editor_content_th').innerText;
+
+      try {
+        const res = await fetch('/api/admin/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { title: title, summary: summary, content: content } })
+        });
+        const d = await res.json();
+        if (d.success && d.data) {
+          if (d.data.title_en) document.getElementById('editor_title_en').value = d.data.title_en;
+          if (d.data.summary_en) document.getElementById('editor_summary_en').value = d.data.summary_en;
+          if (d.data.content_en) document.getElementById('editor_content_en').innerHTML = d.data.content_en;
+          alert('✓ แปลภาษาอังกฤษอัตโนมัติสำเร็จ! สามารถสลับไปที่แท็บ EN เพื่อตรวจสอบหรือแก้ไขได้ครับ');
+        } else {
+          alert('การแปลภาษาล้มเหลว: ' + (d.error || 'กรุณาลองใหม่'));
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการแปล: ' + err.message);
+      } finally {
+        btn.innerText = '🤖 AI แปลเป็นภาษาอังกฤษอัตโนมัติ';
+        btn.disabled = false;
+      }
+    }
+
+    function previewEditorContent() {
+      const title = document.getElementById('editor_title_th').value || 'หัวข้อตัวอย่าง';
+      const summary = document.getElementById('editor_summary_th').value || '';
+      const content = document.getElementById('editor_content_th').innerHTML || '';
+      const cover = document.getElementById('editor_cover_url').value;
+
+      const container = document.getElementById('preview-container');
+      container.innerHTML = '<div class="space-y-6 max-w-4xl mx-auto">' +
+        (cover ? '<img src="' + cover + '" class="w-full h-64 object-cover rounded-2xl shadow" alt="">' : '') +
+        '<h1 class="text-3xl font-extrabold text-white">' + escapeHtml(title) + '</h1>' +
+        (summary ? '<p class="text-base text-slate-300 border-l-2 border-teal-500 pl-4 py-1">' + escapeHtml(summary) + '</p>' : '') +
+        '<div class="prose prose-invert max-w-none text-slate-300 leading-relaxed">' + content + '</div>' +
+      '</div>';
+
+      document.getElementById('modal-preview').classList.remove('hidden');
+      document.getElementById('modal-preview').classList.add('flex');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('modal-preview').classList.add('hidden');
+      document.getElementById('modal-preview').classList.remove('flex');
+    }
+
+    async function handleSaveRichEditor() {
+      const type = document.getElementById('editor_target_type').value;
+      const id = document.getElementById('editor_item_id').value;
+      const titleTh = document.getElementById('editor_title_th').value;
+
+      if (!titleTh) {
+        alert('กรุณาระบุชื่อบันทึก / หัวข้อ');
+        return;
+      }
+
+      const tagsMeta = {
+        service: document.getElementById('tag_service').value,
+        industry: document.getElementById('tag_industry').value,
+        platform: document.getElementById('tag_platform').value,
+        target_audience: document.getElementById('tag_target').value,
+        objective: document.getElementById('tag_objective').value,
+        format: document.getElementById('tag_format').value,
+        country: document.getElementById('tag_industry').value,
+        type: document.getElementById('tag_service').value,
+        destination: document.getElementById('tag_platform').value,
+        transportation: document.getElementById('tag_target').value,
+        location_name: document.getElementById('tag_objective').value,
+        activity: document.getElementById('tag_format').value
+      };
+
+      const payload = {
+        title: titleTh,
+        title_en: document.getElementById('editor_title_en').value,
+        summary: document.getElementById('editor_summary_th').value,
+        summary_en: document.getElementById('editor_summary_en').value,
+        content: document.getElementById('editor_content_th').innerHTML,
+        content_en: document.getElementById('editor_content_en').innerHTML,
+        details: document.getElementById('editor_content_th').innerHTML,
+        details_en: document.getElementById('editor_content_en').innerHTML,
+        cover_image: document.getElementById('editor_cover_url').value,
+        travel_date: document.getElementById('editor_travel_date').value,
+        video_url: document.getElementById('editor_video_url').value,
+        map_coords: document.getElementById('editor_map_coords').value,
+        template_style: document.getElementById('editor_template_style').value,
+        custom_instruction: document.getElementById('editor_custom_instruction').value,
+        status: document.getElementById('editor_status').value,
+        tags_meta: tagsMeta
+      };
+
+      if (type === 'portfolio') {
+        payload.client_name = tagsMeta.objective || tagsMeta.industry || 'Client Showcase';
+        payload.category_slug = (tagsMeta.service || 'marketing').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      }
+
+      try {
+        const endpoint = type === 'portfolio' ? '/api/admin/portfolios' : '/api/admin/articles';
+        const url = id ? (endpoint + '/' + id) : endpoint;
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✓ บันทึกข้อมูลสำเร็จ!');
+          closeRichEditor();
+          loadTabData(type === 'portfolio' ? 'portfolios' : 'articles', true);
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + (data.error || 'กรุณาลองใหม่'));
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+      }
+    }
+
+    async function deletePortfolio(id) {
+      if (!confirm('ต้องการลบผลงานนี้ใช่หรือไม่?')) return;
+      try {
+        const res = await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) loadTabData('portfolios', true);
+      } catch (e) { alert(e.message); }
+    }
+
+    async function deleteArticle(id) {
+      if (!confirm('ต้องการลบบทความนี้ใช่หรือไม่?')) return;
+      try {
+        const res = await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) loadTabData('articles', true);
+      } catch (e) { alert(e.message); }
+    }
+
+    // -------------------------------------------------------------
+    // Service Modal
+    // -------------------------------------------------------------
+    function openServiceModal(id) {
+      const item = appState.services.find(function(s) { return s.id === id; });
+      if (!item) return;
+      document.getElementById('service_id').value = item.id;
+      document.getElementById('service_title').value = item.title || '';
+      document.getElementById('service_subtitle').value = item.subtitle || '';
+      document.getElementById('service_desc').value = item.description || '';
+      document.getElementById('service_image_url').value = item.image_url || '';
+
+      const bullets = Array.isArray(item.bullet_points) ? item.bullet_points : [];
+      document.getElementById('service_bullets').value = bullets.join('\n');
+
+      document.getElementById('modal-service').classList.remove('hidden');
+      document.getElementById('modal-service').classList.add('flex');
+    }
+
+    function closeServiceModal() {
+      document.getElementById('modal-service').classList.add('hidden');
+      document.getElementById('modal-service').classList.remove('flex');
+    }
+
+    async function handleSaveService(e) {
+      e.preventDefault();
+      const id = document.getElementById('service_id').value;
+      const bulletsRaw = document.getElementById('service_bullets').value;
+      const bulletsArr = bulletsRaw.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+
+      const payload = {
+        title: document.getElementById('service_title').value,
+        subtitle: document.getElementById('service_subtitle').value,
+        description: document.getElementById('service_desc').value,
+        image_url: document.getElementById('service_image_url').value,
+        bullet_points: bulletsArr
+      };
+
+      try {
+        const res = await fetch('/api/admin/services/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✓ บันทึกข้อมูลบริการเรียบร้อย');
+          closeServiceModal();
+          loadTabData('services', true);
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + data.error);
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Navigation Modal
+    // -------------------------------------------------------------
+    function openNavModal(id) {
+      document.getElementById('form-nav').reset();
+      document.getElementById('nav_id').value = '';
+      document.getElementById('modal-nav-title').innerText = 'เพิ่มเมนูหลักใหม่';
+
+      if (id) {
+        const item = appState.navMenus.find(function(m) { return m.id === id; });
+        if (item) {
+          document.getElementById('nav_id').value = item.id;
+          document.getElementById('nav_label').value = item.label || '';
+          document.getElementById('nav_path').value = item.path || '';
+          document.getElementById('nav_sort_order').value = item.sort_order || 0;
+          document.getElementById('nav_is_external').value = item.is_external ? '1' : '0';
+          document.getElementById('nav_is_active').checked = item.is_active !== 0;
+          document.getElementById('modal-nav-title').innerText = 'แก้ไขเมนูนำทาง';
+        }
+      } else {
+        document.getElementById('nav_sort_order').value = (appState.navMenus.length + 1);
+        document.getElementById('nav_is_external').value = '0';
+        document.getElementById('nav_is_active').checked = true;
+      }
+
+      document.getElementById('modal-nav').classList.remove('hidden');
+      document.getElementById('modal-nav').classList.add('flex');
+    }
+
+    function editNavMenu(id) { openNavModal(id); }
+    function closeNavModal() {
+      document.getElementById('modal-nav').classList.add('hidden');
+      document.getElementById('modal-nav').classList.remove('flex');
     }
 
     async function handleSaveNav(e) {
@@ -1669,124 +2345,199 @@
       const payload = {
         label: document.getElementById('nav_label').value,
         path: document.getElementById('nav_path').value,
-        sort_order: Number(document.getElementById('nav_sort_order').value) || 1,
-        is_external: Number(document.getElementById('nav_is_external').value),
-        is_active: document.getElementById('nav_is_active').checked ? 1 : 0
+        sort_order: Number(document.getElementById('nav_sort_order').value) || 0,
+        is_external: document.getElementById('nav_is_external').value === '1',
+        is_active: document.getElementById('nav_is_active').checked
       };
-      const url = id ? '/api/admin/navigation/' + id : '/api/admin/navigation';
-      const method = id ? 'PUT' : 'POST';
 
-      await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closeNavModal();
-      await loadAllData();
+      try {
+        const url = id ? ('/api/admin/navigation/' + id) : '/api/admin/navigation';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✓ บันทึกเมนูเรียบร้อย');
+          closeNavModal();
+          loadTabData('navigation', true);
+        } else {
+          alert(data.error);
+        }
+      } catch (err) { alert(err.message); }
     }
 
     async function deleteNavMenu(id) {
-      if (!confirm('ยืนยันลบเมนูนี้ออกจาก Navigation?')) return;
-      await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
-      await loadAllData();
+      if (!confirm('ต้องการลบเมนูนี้ใช่หรือไม่?')) return;
+      try {
+        const res = await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) loadTabData('navigation', true);
+      } catch (e) { alert(e.message); }
     }
 
-    async function deletePortfolio(id) {
-      if (!confirm('ยืนยันลบผลงานนี้?')) return;
-      await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
-      await loadAllData();
+    // -------------------------------------------------------------
+    // Client Logo Modal
+    // -------------------------------------------------------------
+    function openClientModal() {
+      document.getElementById('client_name').value = '';
+      document.getElementById('client_logo_url').value = '';
+      document.getElementById('client_website_url').value = '';
+      document.getElementById('client_logo_preview').classList.add('hidden');
+      document.getElementById('client_logo_placeholder').classList.remove('hidden');
+      document.getElementById('client_logo_progress_wrap').classList.add('hidden');
+      document.getElementById('modal-client').classList.remove('hidden');
+      document.getElementById('modal-client').classList.add('flex');
     }
 
-    async function saveService(id) {
-      const subtitle = document.getElementById('svc_subtitle_' + id).value;
-      const desc = document.getElementById('svc_desc_' + id).value;
-      const img = document.getElementById('svc_img_' + id).value;
-
-      const bulletInputs = document.querySelectorAll('.svc-bullet-' + id);
-      const bullets = [];
-      bulletInputs.forEach(function(i) { if (i.value.trim()) bullets.push(i.value.trim()); });
-
-      await fetch('/api/admin/services/' + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtitle, description: desc, image_url: img, bullet_points: bullets })
-      });
-      alert('บันทึกข้อมูลบริการเรียบร้อย');
-      await loadAllData();
-    }
-
-    async function deleteArticle(id) {
-      if (!confirm('ยืนยันลบบทความนี้?')) return;
-      await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
-      await loadAllData();
+    function closeClientModal() {
+      document.getElementById('modal-client').classList.add('hidden');
+      document.getElementById('modal-client').classList.remove('flex');
     }
 
     async function handleSaveClient(e) {
       e.preventDefault();
-      const payload = {
-        name: document.getElementById('client_name').value,
-        logo_url: document.getElementById('client_logo_url').value,
-        website_url: document.getElementById('client_website_url').value,
-        sort_order: appState.clientLogos.length + 1
-      };
-      await fetch('/api/admin/client-logos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      closeClientModal();
-      await loadAllData();
+      const name = document.getElementById('client_name').value;
+      const logo_url = document.getElementById('client_logo_url').value;
+      const website_url = document.getElementById('client_website_url').value;
+
+      if (!name || !logo_url) {
+        alert('กรุณากรอกชื่อแบรนด์และอัปโหลดโลโก้');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/client-logos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            logo_url: logo_url,
+            website_url: website_url,
+            sort_order: (appState.clientLogos.length + 1)
+          })
+        });
+        const d = await res.json();
+        if (d.success) {
+          alert('✓ บันทึกโลโก้ลูกค้าสำเร็จ');
+          closeClientModal();
+          loadTabData('clients', true);
+        } else {
+          alert(d.error);
+        }
+      } catch (err) { alert(err.message); }
     }
 
     async function deleteClientLogo(id) {
-      if (!confirm('ยืนยันลบลูกค้ารายนี้?')) return;
-      await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
-      await loadAllData();
+      if (!confirm('ต้องการลบโลโก้นี้ใช่หรือไม่?')) return;
+      try {
+        const res = await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) loadTabData('clients', true);
+      } catch (e) { alert(e.message); }
+    }
+
+    // -------------------------------------------------------------
+    // Note Modal & Inquiry Status
+    // -------------------------------------------------------------
+    function openNoteModal(id, customerName, currentNotes) {
+      document.getElementById('note_inquiry_id').value = id;
+      document.getElementById('note-customer-name').innerText = customerName;
+      document.getElementById('note_text').value = currentNotes || '';
+      document.getElementById('modal-note').classList.remove('hidden');
+      document.getElementById('modal-note').classList.add('flex');
+    }
+
+    function closeNoteModal() {
+      document.getElementById('modal-note').classList.add('hidden');
+      document.getElementById('modal-note').classList.remove('flex');
     }
 
     async function handleSaveNote(e) {
       e.preventDefault();
       const id = document.getElementById('note_inquiry_id').value;
-      const note = document.getElementById('note_text').value;
-      await fetch('/api/admin/inquiries/' + id + '/notes', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: note })
-      });
-      closeNoteModal();
-      await loadAllData();
+      const text = document.getElementById('note_text').value;
+      try {
+        const res = await fetch('/api/admin/inquiries/' + id + '/notes', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes: text })
+        });
+        const d = await res.json();
+        if (d.success) {
+          closeNoteModal();
+          loadTabData('inquiries', true);
+        }
+      } catch (err) { alert(err.message); }
     }
 
-    async function updateInquiryStatus(id, st) {
-      await fetch('/api/admin/inquiries/' + id + '/status', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: st })
-      });
-      await loadAllData();
+    async function updateInquiryStatus(id, newStatus) {
+      try {
+        await fetch('/api/admin/inquiries/' + id + '/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        loadTabData('inquiries', true);
+      } catch (err) { alert(err.message); }
     }
 
+    // -------------------------------------------------------------
+    // Site Settings Save
+    // -------------------------------------------------------------
     async function handleSaveSettings(e) {
       e.preventDefault();
-      const fields = [
-        'company_name', 'phone', 'email', 'line_oa', 'address', 'working_hours',
-        'social_facebook', 'social_instagram', 'social_tiktok', 'social_youtube',
-        'site_title', 'site_description', 'og_image', 'google_verification',
-        'gtm_id', 'ga4_id', 'fb_pixel_id'
+      const settings = [
+        { key: 'company_name', value: document.getElementById('setting_company_name').value },
+        { key: 'phone', value: document.getElementById('setting_phone').value },
+        { key: 'email', value: document.getElementById('setting_email').value },
+        { key: 'line_oa', value: document.getElementById('setting_line_oa').value },
+        { key: 'address', value: document.getElementById('setting_address').value },
+        { key: 'working_hours', value: document.getElementById('setting_working_hours').value },
+        { key: 'social_facebook', value: document.getElementById('setting_social_facebook').value },
+        { key: 'social_instagram', value: document.getElementById('setting_social_instagram').value },
+        { key: 'social_tiktok', value: document.getElementById('setting_social_tiktok').value },
+        { key: 'social_youtube', value: document.getElementById('setting_social_youtube').value },
+        { key: 'site_title', value: document.getElementById('setting_site_title').value },
+        { key: 'site_description', value: document.getElementById('setting_site_description').value },
+        { key: 'og_image', value: document.getElementById('setting_og_image').value },
+        { key: 'google_verification', value: document.getElementById('setting_google_verification').value },
+        { key: 'gtm_id', value: document.getElementById('setting_gtm_id').value },
+        { key: 'ga4_id', value: document.getElementById('setting_ga4_id').value },
+        { key: 'fb_pixel_id', value: document.getElementById('setting_fb_pixel_id').value }
       ];
-      const list = fields.map(function(k) {
-        return {
-          key: k,
-          value: (document.getElementById('setting_' + k) ? document.getElementById('setting_' + k).value : '')
-        };
-      });
 
-      await fetch('/api/admin/site-settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: list })
+      try {
+        const res = await fetch('/api/admin/site-settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: settings })
+        });
+        const d = await res.json();
+        if (d.success) {
+          alert('✓ บันทึกการตั้งค่าเว็บไซต์เรียบร้อยแล้ว');
+          loadTabData('settings', true);
+        } else {
+          alert('บันทึกล้มเหลว: ' + d.error);
+        }
+      } catch (err) { alert(err.message); }
+    }
+
+    async function uploadGenericFile(input, targetInputId) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      uploadFileWithProgress(file, {
+        onSuccess: function(fileUrl) {
+          const el = document.getElementById(targetInputId);
+          if (el) el.value = fileUrl;
+          alert('✓ อัปโหลดไฟล์ขึ้น R2 สำเร็จ!');
+        },
+        onError: function(err) {
+          alert('อัปโหลดล้มเหลว: ' + err);
+        }
       });
-      alert('บันทึกการตั้งค่าเว็บไซต์เรียบร้อย');
     }
 
     function escapeHtml(str) {
@@ -1804,8 +2555,14 @@
       return String(str).replace(/'/g, "\\'");
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      loadAllData();
+    // -------------------------------------------------------------
+    // App Initialization
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', function() {
+      setupDragAndDropHandlers();
+      handleRoute();
+      window.addEventListener('hashchange', handleRoute);
+      window.addEventListener('popstate', handleRoute);
     });
   </script>
   <!-- ==================== PAGE BUILDER MODAL ==================== -->

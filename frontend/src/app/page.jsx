@@ -32,6 +32,10 @@ export default function HomePage() {
       .then(d => { if (d.success) setArticles(d.data); }).catch(() => {});
   }, []);
 
+  const heroBadge = language === 'en' ? (settings.hero_badge_en || t('hero_badge')) : (settings.hero_badge || t('hero_badge'));
+  const heroHeadline = language === 'en' ? (settings.hero_headline_en || t('hero_title')) : (settings.hero_headline || t('hero_title'));
+  const heroSubheadline = language === 'en' ? (settings.hero_subheadline_en || t('hero_subtitle')) : (settings.hero_subheadline || t('hero_subtitle'));
+
   return (
     <div className="flex-1 flex flex-col bg-slate-950 text-slate-100">
       <Navbar />
@@ -42,15 +46,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-6">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{settings.hero_badge || t('hero_badge')}</span>
+            <span>{heroBadge}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
-            {settings.hero_headline || t('hero_title')}
+            {heroHeadline}
           </h1>
 
           <p className="mt-6 text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            {settings.hero_subheadline || t('hero_subtitle')}
+            {heroSubheadline}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -95,7 +99,9 @@ export default function HomePage() {
       <section className="py-20 border-t border-slate-900 bg-slate-950/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">OUR SERVICES</span>
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+              {language === 'en' ? 'OUR SERVICES' : 'บริการของเรา'}
+            </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2">{t('services_title')}</h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-3">{t('services_subtitle')}</p>
           </div>
@@ -132,7 +138,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">SHOWCASE</span>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                {language === 'en' ? 'SELECTED PORTFOLIO' : 'ผลงานที่โดดเด่น'}
+              </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2">{t('portfolio_title')}</h2>
             </div>
             <Link href="/portfolio" className="mt-4 md:mt-0 text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
@@ -177,11 +185,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">INSIGHTS & TRENDS</span>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                {language === 'en' ? 'INSIGHTS & TRENDS' : 'บทความ & ข่าวสาร'}
+              </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2">{t('blog_title')}</h2>
             </div>
             <Link href="/blog" className="mt-4 md:mt-0 text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-              <span>{t('portfolio_view_all')}</span>
+              <span>{language === 'en' ? 'View All Articles' : 'ดูบทความทั้งหมด'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

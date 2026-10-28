@@ -33,6 +33,23 @@ export default function Navbar() {
       .catch(() => {});
   }, []);
 
+  const pathToDictKey = {
+    '/': 'nav_home',
+    '/our-service': 'nav_services',
+    '/portfolio': 'nav_portfolio',
+    '/about-us': 'nav_about',
+    '/blog': 'nav_blog',
+    '/contact-us': 'nav_contact'
+  };
+
+  const getMenuLabel = (item) => {
+    if (language === 'en') {
+      if (item.label_en) return item.label_en;
+      if (pathToDictKey[item.path]) return t(pathToDictKey[item.path]);
+    }
+    return item.label;
+  };
+
   return (
     <header className="sticky top-0 z-50 glass-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -46,7 +63,7 @@ export default function Navbar() {
               LTT Ma getThink
             </span>
             <span className="text-[11px] text-blue-400 font-semibold tracking-wider uppercase block">
-              Creative & Marketing
+              {language === 'en' ? 'Creative & Marketing' : 'การตลาด & ครีเอทีฟ'}
             </span>
           </div>
         </Link>
@@ -56,6 +73,8 @@ export default function Navbar() {
           {menus.map((item) => {
             const isActive = pathname === item.path;
             const isExternal = item.is_external || item.path.startsWith('http');
+            const displayLabel = getMenuLabel(item);
+
             if (isExternal) {
               return (
                 <a
@@ -65,7 +84,7 @@ export default function Navbar() {
                   rel="noopener noreferrer"
                   className="px-4 py-2 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition"
                 >
-                  {item.label}
+                  {displayLabel}
                 </a>
               );
             }
@@ -79,7 +98,7 @@ export default function Navbar() {
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                {item.label}
+                {displayLabel}
               </Link>
             );
           })}
@@ -138,6 +157,8 @@ export default function Navbar() {
           {menus.map((item) => {
             const isActive = pathname === item.path;
             const isExternal = item.is_external || item.path.startsWith('http');
+            const displayLabel = getMenuLabel(item);
+
             if (isExternal) {
               return (
                 <a
@@ -148,7 +169,7 @@ export default function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="block px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-900"
                 >
-                  {item.label}
+                  {displayLabel}
                 </a>
               );
             }
@@ -163,7 +184,7 @@ export default function Navbar() {
                     : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                 }`}
               >
-                {item.label}
+                {displayLabel}
               </Link>
             );
           })}
