@@ -803,6 +803,23 @@
 
   <!-- ==================== CLIENT SCRIPTS (Pure DOM JS - Zero unsafe-eval) ==================== -->
   <script>
+    // -------------------------------------------------------------
+    // Zero-Cache CMS Fetch Helper (Always queries D1 & R2 fresh)
+    // -------------------------------------------------------------
+    async function adminFetch(url, options = {}) {
+      const sep = url.includes('?') ? '&' : '?';
+      const freshUrl = url + sep + '_t=' + Date.now();
+      const headers = Object.assign({
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Expires': '0'
+      }, options.headers || {});
+      return fetch(freshUrl, Object.assign({}, options, {
+        headers: headers,
+        cache: 'no-store'
+      }));
+    }
+
     const appState = {
       currentTab: 'dashboard',
       navMenus: [],
@@ -817,7 +834,7 @@
       builderMode: 'visual'
     };
 
-    const loadedTabs = {};
+    // Zero-cache CMS: No memory caching on client or server. All data queries directly from D1 / R2.
 
     // -------------------------------------------------------------
     // URL Routing & Hash State (Changes path when opening menus/articles)
@@ -906,47 +923,45 @@
     }
 
     async function loadTabData(tabId, force = false) {
-      if (loadedTabs[tabId] && !force) return;
-
       try {
         if (tabId === 'dashboard') {
-          const res = await fetch('/api/admin/dashboard/stats');
+          const res = await adminFetch('/api/admin/dashboard/stats'));
           const data = await res.json();
           if (data.data) renderDashboard(data.data);
         } else if (tabId === 'navigation') {
           const [nav, pg] = await Promise.all([
-            fetch('/api/admin/navigation').then(r => r.json()).catch(() => ({})),
-            fetch('/api/admin/pages').then(r => r.json()).catch(() => ({}))
+            adminFetch('/api/admin/navigation')).then(r => r.json()).catch(() => ({})),
+            adminFetch('/api/admin/pages')).then(r => r.json()).catch(() => ({}))
           ]);
           if (nav.data) renderNavigation(nav.data);
           if (pg.data) renderCustomPages(pg.data);
         } else if (tabId === 'portfolios') {
-          const res = await fetch('/api/admin/portfolios');
+          const res = await adminFetch('/api/admin/portfolios'));
           const data = await res.json();
           if (data.data) renderPortfolios(data.data);
         } else if (tabId === 'services') {
-          const res = await fetch('/api/admin/services');
+          const res = await adminFetch('/api/admin/services'));
           const data = await res.json();
           if (data.data) renderServices(data.data);
         } else if (tabId === 'articles') {
-          const res = await fetch('/api/admin/articles');
+          const res = await adminFetch('/api/admin/articles'));
           const data = await res.json();
           if (data.data) renderArticles(data.data);
         } else if (tabId === 'clients') {
-          const res = await fetch('/api/admin/client-logos');
+          const res = await adminFetch('/api/admin/client-logos'));
           const data = await res.json();
           if (data.data) renderClientLogos(data.data);
         } else if (tabId === 'inquiries') {
-          const res = await fetch('/api/admin/inquiries');
+          const res = await adminFetch('/api/admin/inquiries'));
           const data = await res.json();
           if (data.data) renderInquiries(data.data);
         } else if (tabId === 'settings') {
-          const res = await fetch('/api/admin/site-settings');
+          const res = await adminFetch('/api/admin/site-settings'));
           const data = await res.json();
           if (data.data) renderSettings(data.data);
         }
 
-        loadedTabs[tabId] = true;
+        // Tab loaded fresh from D1
         refreshIcons();
       } catch (err) {
         console.error('Error loading tab ' + tabId + ':', err);
@@ -1565,14 +1580,14 @@
             const clientName = prompt('ระบุชื่อลูกค้า / แบรนด์ สำหรับโลโก้นี้:', defaultName) || defaultName;
 
             try {
-              const res = await fetch('/api/admin/client-logos', {
+              const res = await adminFetch('/api/admin/client-logos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   name: clientName,
                   logo_url: fileUrl,
                   website_url: '',
-                  sort_order: (appState.clientLogos.length + 1)
+                  sort_order: (appState.clientLogos.length + 1))
                 })
               });
               const data = await res.json();
@@ -1739,11 +1754,17 @@
     }
 
     // -------------------------------------------------------------
-    // Page Builder & Custom Pages Logic
     // -------------------------------------------------------------
+    // Elementor-Inspired Visual Page Builder Logic
+    // -------------------------------------------------------------
+    let builderActiveRowIdx = 0;
+    let builderActiveColIdx = 0;
+
     function openPageBuilderModal(pageId) {
       appState.builderRows = [];
       appState.builderMode = 'visual';
+      appState.builderViewport = 'desktop';
+
       document.getElementById('builder_page_id').value = '';
       document.getElementById('builder_page_title').value = '';
       document.getElementById('builder_page_slug').value = '';
@@ -1751,7 +1772,11 @@
       document.getElementById('builder_raw_html').value = '';
       document.getElementById('builder_add_to_nav').checked = true;
       document.getElementById('builder_is_active').checked = true;
-      document.getElementById('page-builder-modal-title').innerText = 'สร้างหน้าเพจใหม่ & ผูกเมนู (Page Builder)';
+      document.getElementById('builder-url-preview').innerText = 'your-slug';
+      document.getElementById('page-builder-modal-title').innerText = 'Elementor Page Builder';
+
+      switchSidebarTab('widgets');
+      setBuilderViewport('desktop');
 
       if (pageId) {
         updateUrlHash('navigation/pages/edit/' + pageId);
@@ -1760,10 +1785,15 @@
           document.getElementById('builder_page_id').value = item.id;
           document.getElementById('builder_page_title').value = item.title || '';
           document.getElementById('builder_page_slug').value = item.slug || '';
+          document.getElementById('builder-url-preview').innerText = item.slug || 'your-slug';
           document.getElementById('builder_meta_description').value = item.meta_description || '';
           document.getElementById('builder_raw_html').value = item.content || '';
           document.getElementById('builder_is_active').checked = item.is_active !== 0;
           document.getElementById('page-builder-modal-title').innerText = 'แก้ไขหน้าเพจ: ' + item.title;
+
+          // Check if already in navbar
+          const inNav = appState.navigation.some(function(n) { return n.path === '/p/' + item.slug; });
+          document.getElementById('builder_add_to_nav').checked = inNav;
 
           try {
             appState.builderRows = JSON.parse(item.content_json || '[]');
@@ -1776,20 +1806,50 @@
       }
 
       if (appState.builderRows.length === 0) {
-        addBuilderRow(1);
-      } else {
-        renderBuilderRows();
+        // Initialize with default Container and Heading widget
+        appState.builderRows = [
+          {
+            id: 'row_' + Date.now(),
+            layout: '1',
+            columns: [
+              {
+                blocks: [
+                  {
+                    id: 'w_' + Date.now(),
+                    type: 'heading',
+                    title: 'ยินดีต้อนรับสู่หน้าเพจใหม่',
+                    tag: 'h1',
+                    align: 'center',
+                    color: 'white',
+                    size: '4xl'
+                  },
+                  {
+                    id: 'w_' + (Date.now() + 1),
+                    type: 'text',
+                    content: 'ออกแบบหน้าเว็บของคุณได้อย่างอิสระด้วย Elementor Widgets ทางซ้ายมือ สามารถเพิ่มรูปภาพ วิดีโอ ปุ่มกด แผนที่ และปรับแต่งเลย์เอาต์ได้ตามต้องการ',
+                    align: 'center',
+                    size: 'base'
+                  }
+                ]
+              }
+            ]
+          }
+        ];
       }
 
-      switchBuilderMode(appState.builderMode);
-      document.getElementById('modal-page-builder').classList.remove('hidden');
-      document.getElementById('modal-page-builder').classList.add('flex');
+      renderBuilderRows();
+      switchBuilderMode('visual');
+
+      const modal = document.getElementById('modal-page-builder');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
       refreshIcons();
     }
 
     function closePageBuilderModal() {
-      document.getElementById('modal-page-builder').classList.add('hidden');
-      document.getElementById('modal-page-builder').classList.remove('flex');
+      const modal = document.getElementById('modal-page-builder');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
       updateUrlHash(appState.currentTab);
     }
 
@@ -1798,30 +1858,76 @@
     }
 
     async function deleteCustomPage(id) {
-      if (!confirm('คุณต้องการลบหน้าเพจนี้ใช่หรือไม่? ลิงก์เมนูที่ชี้มายังหน้านี้อาจไม่สามารถใช้งานได้')) return;
+      if (!confirm('คุณต้องการลบหน้าเพจนี้ใช่หรือไม่? ลิงก์ที่ผูกอยู่ในเมนูจะถูกลบออกด้วย')) return;
       try {
-        const res = await fetch('/api/admin/pages/' + id, { method: 'DELETE' });
+        const res = await adminFetch('/api/admin/pages/' + id, { method: 'DELETE' });
         const d = await res.json();
         if (d.success) {
           alert('ลบหน้าเพจเรียบร้อยแล้ว');
-          loadTabData('navigation', true);
+          loadTabData('navigation');
         } else {
-          alert('ลบล้มเหลว: ' + d.error);
+          alert('ลบล้มเหลว: ' + (d.error || 'กรุณาลองใหม่'));
         }
       } catch(e) {
         alert('เกิดข้อผิดพลาด: ' + e.message);
       }
     }
 
-    function autoGeneratePageSlug(val) {
-      const slugInput = document.getElementById('builder_page_slug');
-      if (slugInput && !slugInput.dataset.manual) {
-        slugInput.value = (val || '')
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9ก-๙]+/g, '-')
-          .replace(/^-+|-+$/g, '');
+    function switchSidebarTab(tab) {
+      const tabWidgets = document.getElementById('sidebar-tab-widgets');
+      const tabSettings = document.getElementById('sidebar-tab-settings');
+      const btnWidgets = document.getElementById('btn-sidebar-tab-widgets');
+      const btnSettings = document.getElementById('btn-sidebar-tab-settings');
+
+      if (tab === 'widgets') {
+        tabWidgets.classList.remove('hidden');
+        tabSettings.classList.add('hidden');
+        btnWidgets.className = 'py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition';
+        btnSettings.className = 'py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition';
+      } else {
+        tabWidgets.classList.add('hidden');
+        tabSettings.classList.remove('hidden');
+        btnSettings.className = 'py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition';
+        btnWidgets.className = 'py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition';
       }
+      refreshIcons();
+    }
+
+    function filterWidgets(query) {
+      const q = (query || '').toLowerCase().trim();
+      const cards = document.querySelectorAll('.widget-card');
+      cards.forEach(function(card) {
+        const name = (card.dataset.name || '').toLowerCase();
+        if (!q || name.includes(q)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function setBuilderViewport(vp) {
+      appState.builderViewport = vp;
+      const viewport = document.getElementById('builder-canvas-viewport');
+      const btnDesk = document.getElementById('btn-viewport-desktop');
+      const btnTab = document.getElementById('btn-viewport-tablet');
+      const btnMob = document.getElementById('btn-viewport-mobile');
+
+      btnDesk.className = 'p-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1';
+      btnTab.className = 'p-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1';
+      btnMob.className = 'p-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1';
+
+      if (vp === 'desktop') {
+        viewport.className = 'w-full max-w-5xl transition-all duration-300 space-y-6';
+        btnDesk.className = 'p-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition flex items-center gap-1';
+      } else if (vp === 'tablet') {
+        viewport.className = 'w-[768px] mx-auto border-x border-slate-800 bg-slate-950/80 p-6 rounded-2xl shadow-2xl transition-all duration-300 space-y-6';
+        btnTab.className = 'p-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition flex items-center gap-1';
+      } else if (vp === 'mobile') {
+        viewport.className = 'w-[390px] mx-auto border-4 border-slate-800 bg-slate-950 p-4 rounded-[40px] shadow-2xl transition-all duration-300 space-y-6';
+        btnMob.className = 'p-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition flex items-center gap-1';
+      }
+      refreshIcons();
     }
 
     function switchBuilderMode(mode) {
@@ -1834,210 +1940,446 @@
       if (mode === 'visual') {
         visualArea.classList.remove('hidden');
         htmlArea.classList.add('hidden');
-        btnVisual.className = 'px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5';
-        btnHtml.className = 'px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5';
+        btnVisual.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition flex items-center gap-1.5';
+        btnHtml.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5';
       } else {
         document.getElementById('builder_raw_html').value = compileBuilderHtml();
         visualArea.classList.add('hidden');
         htmlArea.classList.remove('hidden');
-        btnHtml.className = 'px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5';
-        btnVisual.className = 'px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5';
+        btnHtml.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition flex items-center gap-1.5';
+        btnVisual.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5';
       }
       refreshIcons();
     }
 
-    function addBuilderRow(layout) {
-      let cols = [];
-      if (layout === 1) {
-        cols = [{ width: 'w-full', blocks: [{ type: 'text', content: '<h2 class="text-2xl font-bold text-white mb-2">หัวข้อเรื่อง</h2><p class="text-slate-400 text-sm">พิมพ์เนื้อหาของคุณที่นี่...</p>' }] }];
-      } else if (layout === 2) {
-        cols = [
-          { width: 'md:w-1/2', blocks: [{ type: 'text', content: '<h3 class="text-xl font-bold text-white mb-2">คอลัมน์ซ้าย</h3><p class="text-slate-400 text-sm">ข้อความหรือรายละเอียด...</p>' }] },
-          { width: 'md:w-1/2', blocks: [{ type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80', caption: 'ภาพประกอบ' }] }
-        ];
-      } else if (layout === 3) {
-        cols = [
-          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 1</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] },
-          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 2</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] },
-          { width: 'md:w-1/3', blocks: [{ type: 'text', content: '<h4 class="text-lg font-bold text-white mb-1">จุดเด่น 3</h4><p class="text-slate-400 text-xs">คำอธิบายย่อ...</p>' }] }
-        ];
-      } else if (layout === '2-1') {
-        cols = [
-          { width: 'md:w-2/3', blocks: [{ type: 'text', content: '<h2 class="text-2xl font-bold text-white mb-3">เนื้อหาหลัก (67%)</h2><p class="text-slate-400 text-sm leading-relaxed">รายละเอียดและเนื้อหาสำคัญของแคมเปญหรือบริการ...</p>' }] },
-          { width: 'md:w-1/3', blocks: [{ type: 'cta', label: 'ติดต่อทีมงานทันที', url: '/contact-us' }] }
-        ];
+    function handleBuilderTitleChange(val) {
+      const slugInput = document.getElementById('builder_page_slug');
+      if (slugInput && !slugInput.dataset.manual) {
+        const slug = (val || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9ก-๙]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        slugInput.value = slug;
+        document.getElementById('builder-url-preview').innerText = slug || 'your-slug';
       }
+    }
 
-      appState.builderRows.push({ layout: String(layout), columns: cols });
+    function handleBuilderSlugChange(val) {
+      const slugInput = document.getElementById('builder_page_slug');
+      slugInput.dataset.manual = 'true';
+      document.getElementById('builder-url-preview').innerText = (val || '').trim() || 'your-slug';
+    }
+
+    // -------------------------------------------------------------
+    // Layout and Widget Addition
+    // -------------------------------------------------------------
+    function addLayoutContainer(type) {
+      appState.builderRows.push({
+        id: 'row_' + Date.now(),
+        layout: '1',
+        columns: [{ blocks: [] }]
+      });
+      builderActiveRowIdx = appState.builderRows.length - 1;
+      builderActiveColIdx = 0;
       renderBuilderRows();
     }
 
-    function removeBuilderRow(rIndex) {
-      if (confirm('คุณต้องการลบแถวนี้ใช่หรือไม่?')) {
-        appState.builderRows.splice(rIndex, 1);
+    function addBuilderGrid(layout) {
+      let count = 2;
+      if (layout === '3') count = 3;
+      if (layout === '4') count = 4;
+      if (layout === '1') count = 1;
+
+      const cols = [];
+      for (let i = 0; i < count; i++) {
+        cols.push({ blocks: [] });
+      }
+
+      appState.builderRows.push({
+        id: 'row_' + Date.now(),
+        layout: layout,
+        columns: cols
+      });
+      builderActiveRowIdx = appState.builderRows.length - 1;
+      builderActiveColIdx = 0;
+      renderBuilderRows();
+    }
+
+    function addWidget(type, targetRow = null, targetCol = null) {
+      if (appState.builderRows.length === 0) {
+        addLayoutContainer('container');
+      }
+
+      const r = (targetRow !== null) ? targetRow : (appState.builderRows.length - 1);
+      const c = (targetCol !== null) ? targetCol : 0;
+
+      if (!appState.builderRows[r] || !appState.builderRows[r].columns[c]) {
+        return;
+      }
+
+      const id = 'w_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      let block = null;
+
+      if (type === 'heading') {
+        block = { id, type: 'heading', title: 'เพิ่มหัวข้อของคุณที่นี่', tag: 'h2', align: 'left', color: 'white', size: '3xl' };
+      } else if (type === 'image') {
+        block = { id, type: 'image', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80', alt: 'รูปภาพประกอบ', align: 'center', rounded: 'rounded-2xl', caption: '' };
+      } else if (type === 'text') {
+        block = { id, type: 'text', content: 'พิมพ์ข้อความหรือเนื้อหาของคุณที่นี่ สามารถจัดรูปแบบได้ตามใจชอบ พร้อมรองรับการแสดงผลทุกขนาดหน้าจอ...', align: 'left', size: 'base' };
+      } else if (type === 'video') {
+        block = { id, type: 'video', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', ratio: '16:9' };
+      } else if (type === 'button') {
+        block = { id, type: 'button', label: 'คลิกเพื่อติดต่อเรา', url: '/contact-us', style: 'primary', align: 'left', newTab: false };
+      } else if (type === 'divider') {
+        block = { id, type: 'divider', style: 'solid', width: '100', color: 'slate' };
+      } else if (type === 'spacer') {
+        block = { id, type: 'spacer', height: '48' };
+      } else if (type === 'maps') {
+        block = { id, type: 'maps', query: 'Bangkok Thailand', height: '350' };
+      } else if (type === 'icon') {
+        block = { id, type: 'icon', icon: 'sparkles', title: 'บริการคุณภาพระดับสากล', description: 'ส่งมอบผลงานมาตรฐานสูงสุดด้วยเทคโนโลยีที่ทันสมัยและการบริการที่ใส่ใจ', color: 'blue' };
+      }
+
+      if (block) {
+        appState.builderRows[r].columns[c].blocks.push(block);
         renderBuilderRows();
       }
     }
 
-    function addBlockToCol(rIndex, cIndex, type) {
-      const row = appState.builderRows[rIndex];
-      if (!row || !row.columns[cIndex]) return;
-
-      if (type === 'text') {
-        row.columns[cIndex].blocks.push({ type: 'text', content: '<p class="text-slate-300 text-sm">พิมพ์ข้อความใหม่ที่นี่...</p>' });
-      } else if (type === 'image') {
-        row.columns[cIndex].blocks.push({ type: 'image', url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80', caption: '' });
-      } else if (type === 'video') {
-        row.columns[cIndex].blocks.push({ type: 'video', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
-      } else if (type === 'cta') {
-        row.columns[cIndex].blocks.push({ type: 'cta', label: 'เรียนรู้เพิ่มเติม', url: '/contact-us' });
-      } else if (type === 'html') {
-        row.columns[cIndex].blocks.push({ type: 'html', code: '<div class="p-4 rounded-xl bg-blue-900/20 border border-blue-500/30 text-blue-300 text-xs">Custom HTML Block</div>' });
-      }
+    function removeBuilderRow(rIdx) {
+      if (!confirm('ลบแถว/Container นี้และวิดเจ็ตทั้งหมดด้านในใช่หรือไม่?')) return;
+      appState.builderRows.splice(rIdx, 1);
       renderBuilderRows();
     }
 
-    function removeBlock(rIndex, cIndex, bIndex) {
-      appState.builderRows[rIndex].columns[cIndex].blocks.splice(bIndex, 1);
+    function moveBuilderRow(rIdx, dir) {
+      const target = rIdx + dir;
+      if (target < 0 || target >= appState.builderRows.length) return;
+      const temp = appState.builderRows[rIdx];
+      appState.builderRows[rIdx] = appState.builderRows[target];
+      appState.builderRows[target] = temp;
       renderBuilderRows();
     }
 
-    function renderBuilderRows() {
-      const container = document.getElementById('builder-rows-container');
-      if (!container) return;
-
-      if (appState.builderRows.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-slate-500 text-xs">ยังไม่มีแถวเนื้อหา กดปุ่มเพิ่มแถวด้านล่างเพื่อเริ่มต้น</div>';
-        return;
-      }
-
-      container.innerHTML = appState.builderRows.map(function(row, rIdx) {
-        const colsHtml = row.columns.map(function(col, cIdx) {
-          const blocksHtml = col.blocks.map(function(b, bIdx) {
-            let blockContent = '';
-            if (b.type === 'text') {
-              blockContent = '<div contenteditable="true" onblur="updateBlockContent(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.innerHTML)" class="min-h-[60px] p-2 bg-slate-950 rounded-lg border border-slate-800 text-xs text-white focus:outline-none focus:border-blue-500 leading-relaxed">' + b.content + '</div>';
-            } else if (b.type === 'image') {
-              blockContent = '<div class="space-y-1.5">' +
-                '<div class="flex gap-2">' +
-                  '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockUrl(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.value)" placeholder="https://... หรืออัปโหลด R2" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
-                  '<label class="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white cursor-pointer shrink-0">' +
-                    '<span>อัปโหลด R2</span>' +
-                    '<input type="file" accept="image/*" class="hidden" onchange="uploadBlockImage(' + rIdx + ',' + cIdx + ',' + bIdx + ', this)">' +
-                  '</label>' +
-                '</div>' +
-                (b.url ? '<img src="' + b.url + '" class="max-h-36 rounded-lg object-cover mx-auto" alt="">' : '') +
-              '</div>';
-            } else if (b.type === 'video') {
-              blockContent = '<div class="space-y-1">' +
-                '<label class="text-[10px] text-slate-400">YouTube URL:</label>' +
-                '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockUrl(' + rIdx + ',' + cIdx + ',' + bIdx + ', this.value)" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
-              '</div>';
-            } else if (b.type === 'cta') {
-              blockContent = '<div class="grid grid-cols-2 gap-2">' +
-                '<input type="text" value="' + (b.label || '') + '" onchange="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'label\', this.value)" placeholder="ข้อความปุ่ม" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
-                '<input type="text" value="' + (b.url || '') + '" onchange="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'url\', this.value)" placeholder="ลิงก์ปลายทาง" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white">' +
-              '</div>';
-            } else if (b.type === 'html') {
-              blockContent = '<textarea rows="3" onblur="updateBlockField(' + rIdx + ',' + cIdx + ',' + bIdx + ', \'code\', this.value)" class="w-full bg-slate-950 font-mono text-[11px] text-emerald-400 border border-slate-800 rounded-lg p-2 focus:outline-none">' + (b.code || '') + '</textarea>';
-            }
-
-            return '<div class="bg-slate-900 border border-slate-800/90 rounded-xl p-3 space-y-2 group">' +
-              '<div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800 pb-1.5">' +
-                '<span class="font-bold uppercase tracking-wider text-blue-400">' + b.type + ' Block</span>' +
-                '<button type="button" onclick="removeBlock(' + rIdx + ',' + cIdx + ',' + bIdx + ')" class="text-rose-400 hover:text-rose-300 font-bold">✕</button>' +
-              '</div>' +
-              blockContent +
-            '</div>';
-          }).join('');
-
-          return '<div class="' + col.width + ' space-y-3 p-3 bg-slate-950/70 border border-slate-800/60 rounded-xl flex flex-col justify-between">' +
-            '<div class="space-y-3">' + blocksHtml + '</div>' +
-            '<div class="pt-2 border-t border-slate-800/60 flex flex-wrap gap-1">' +
-              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'text\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ ข้อความ</button>' +
-              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'image\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ รูปภาพ</button>' +
-              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'video\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ วิดีโอ</button>' +
-              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'cta\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ ปุ่ม CTA</button>' +
-              '<button type="button" onclick="addBlockToCol(' + rIdx + ',' + cIdx + ', \'html\')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300">+ Custom HTML</button>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-
-        return '<div class="glass-card p-4 rounded-2xl space-y-3 border border-slate-800/80">' +
-          '<div class="flex items-center justify-between text-xs text-slate-400">' +
-            '<span class="font-bold text-white flex items-center gap-1.5"><i data-lucide="columns" class="w-3.5 h-3.5 text-blue-400"></i>แถวที่ ' + (rIdx + 1) + ' (Layout: ' + row.layout + ')</span>' +
-            '<button type="button" onclick="removeBuilderRow(' + rIdx + ')" class="text-rose-400 hover:text-rose-300 font-semibold text-xs flex items-center gap-1"><span>ลบแถว</span>✕</button>' +
-          '</div>' +
-          '<div class="flex flex-col md:flex-row gap-4">' + colsHtml + '</div>' +
-        '</div>';
-      }).join('');
-      refreshIcons();
+    function removeBuilderBlock(rIdx, cIdx, bIdx) {
+      appState.builderRows[rIdx].columns[cIdx].blocks.splice(bIdx, 1);
+      renderBuilderRows();
     }
 
-    function updateBlockContent(r, c, b, val) {
-      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
-        appState.builderRows[r].columns[c].blocks[b].content = val;
+    function moveBuilderBlock(rIdx, cIdx, bIdx, dir) {
+      const blocks = appState.builderRows[rIdx].columns[cIdx].blocks;
+      const target = bIdx + dir;
+      if (target < 0 || target >= blocks.length) return;
+      const temp = blocks[bIdx];
+      blocks[bIdx] = blocks[target];
+      blocks[target] = temp;
+      renderBuilderRows();
+    }
+
+    // -------------------------------------------------------------
+    // Inline Block Updaters
+    // -------------------------------------------------------------
+    function updateBlockProp(rIdx, cIdx, bIdx, prop, val) {
+      const block = appState.builderRows[rIdx].columns[cIdx].blocks[bIdx];
+      if (block) {
+        block[prop] = val;
+        renderBuilderRows();
       }
     }
 
-    function updateBlockUrl(r, c, b, val) {
-      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
-        appState.builderRows[r].columns[c].blocks[b].url = val;
-      }
-    }
-
-    function updateBlockField(r, c, b, field, val) {
-      if (appState.builderRows[r] && appState.builderRows[r].columns[c] && appState.builderRows[r].columns[c].blocks[b]) {
-        appState.builderRows[r].columns[c].blocks[b][field] = val;
-      }
-    }
-
-    function uploadBlockImage(r, c, b, input) {
-      const file = input.files && input.files[0];
+    function uploadBlockImage(rIdx, cIdx, bIdx, input) {
+      const file = input.files[0];
       if (!file) return;
-      uploadFileWithProgress(file, {
-        onSuccess: function(url) {
-          updateBlockUrl(r, c, b, url);
-          renderBuilderRows();
-        },
-        onError: function(err) {
-          alert('อัปโหลดรูปล้มเหลว: ' + err);
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      showUploadProgress('กำลังอัปโหลดภาพลง R2... 25%');
+
+      adminFetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: fd
+      })
+      .then(r => r.json())
+      .then(d => {
+        hideUploadProgress();
+        if (d.success && d.file_url) {
+          updateBlockProp(rIdx, cIdx, bIdx, 'url', d.file_url);
+        } else {
+          alert('อัปโหลดรูปล้มเหลว: ' + (d.error || 'กรุณาลองใหม่'));
         }
+      })
+      .catch(err => {
+        hideUploadProgress();
+        alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + err.message);
       });
     }
 
+    // -------------------------------------------------------------
+    // Canvas Renderer
+    // -------------------------------------------------------------
+    function renderBuilderRows() {
+      const container = document.getElementById('builder-canvas-container');
+      if (!container) return;
+
+      if (appState.builderRows.length === 0) {
+        container.innerHTML = '<div class="py-12 text-center text-slate-500 text-xs">ยังไม่มี Layout ในหน้านี้ คลิกเพิ่ม Layout ด้านล่าง หรือเลือก Widgets ทางซ้ายมือได้เลยครับ</div>';
+        refreshIcons();
+        return;
+      }
+
+      let html = '';
+
+      appState.builderRows.forEach(function(row, rIdx) {
+        let gridCols = 'grid-cols-1';
+        if (row.layout === '2') gridCols = 'grid-cols-1 md:grid-cols-2';
+        if (row.layout === '3') gridCols = 'grid-cols-1 md:grid-cols-3';
+        if (row.layout === '4') gridCols = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4';
+        if (row.layout === '2-1') gridCols = 'grid-cols-1 md:grid-cols-3';
+
+        html += '<div class="glass-card rounded-3xl p-5 border border-slate-800 relative group/row transition">';
+        
+        // Row Toolbar
+        html += '<div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800/80 text-xs text-slate-400">';
+        html += '  <div class="flex items-center gap-2">';
+        html += '    <span class="bg-blue-600/20 text-blue-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase font-mono">Row #' + (rIdx + 1) + ' [' + row.layout + ']</span>';
+        html += '    <span class="text-[11px] text-slate-500">Container Section</span>';
+        html += '  </div>';
+        html += '  <div class="flex items-center gap-1 opacity-60 group-hover/row:opacity-100 transition">';
+        html += '    <button type="button" onclick="moveBuilderRow(' + rIdx + ', -1)" class="p-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white" title="ย้ายขึ้น">▲</button>';
+        html += '    <button type="button" onclick="moveBuilderRow(' + rIdx + ', 1)" class="p-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white" title="ย้ายลง">▼</button>';
+        html += '    <button type="button" onclick="removeBuilderRow(' + rIdx + ')" class="p-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400" title="ลบ Row">✕</button>';
+        html += '  </div>';
+        html += '</div>';
+
+        // Columns Grid
+        html += '<div class="grid ' + gridCols + ' gap-6 items-start">';
+        
+        row.columns.forEach(function(col, cIdx) {
+          const colSpan = (row.layout === '2-1' && cIdx === 0) ? 'md:col-span-2' : '';
+          html += '<div class="' + colSpan + ' bg-slate-950/40 border border-slate-800/60 rounded-2xl p-4 space-y-4 min-h-[140px] flex flex-col justify-between">';
+          
+          // Blocks List
+          html += '<div class="space-y-4">';
+          if (!col.blocks || col.blocks.length === 0) {
+            html += '<div class="py-6 text-center text-slate-600 text-xs border border-dashed border-slate-800/80 rounded-xl">ลากหรือคลิก Widget จากฝั่งซ้ายมาวางที่นี่</div>';
+          } else {
+            col.blocks.forEach(function(b, bIdx) {
+              html += renderWidgetCanvasBlock(b, rIdx, cIdx, bIdx);
+            });
+          }
+          html += '</div>';
+
+          // Add Widget to this Column button
+          html += '<div class="pt-2 border-t border-slate-800/40 text-center">';
+          html += '  <button type="button" onclick="promptAddWidgetToCol(' + rIdx + ', ' + cIdx + ')" class="text-[11px] text-blue-400 hover:text-blue-300 font-semibold flex items-center justify-center gap-1 w-full py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 transition">';
+          html += '    <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>เพิ่ม Widget ในคอลัมน์นี้</span>';
+          html += '  </button>';
+          html += '</div>';
+
+          html += '</div>';
+        });
+
+        html += '</div>'; // End Grid
+        html += '</div>'; // End Row
+      });
+
+      container.innerHTML = html;
+      refreshIcons();
+    }
+
+    function renderWidgetCanvasBlock(b, r, c, bIdx) {
+      let h = '<div class="bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-xl p-3.5 relative group/block transition shadow-md">';
+      
+      // Block Header Controls
+      h += '<div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[10px] text-slate-400">';
+      h += '  <span class="font-bold text-slate-300 flex items-center gap-1.5">';
+      h += '    <span class="w-2 h-2 rounded-full bg-blue-500"></span>';
+      h += '    <span class="uppercase tracking-wider">' + b.type + '</span>';
+      h += '  </span>';
+      h += '  <div class="flex items-center gap-1 opacity-70 group-hover/block:opacity-100 transition">';
+      h += '    <button type="button" onclick="moveBuilderBlock(' + r + ', ' + c + ', ' + bIdx + ', -1)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="ย้ายขึ้น">▲</button>';
+      h += '    <button type="button" onclick="moveBuilderBlock(' + r + ', ' + c + ', ' + bIdx + ', 1)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="ย้ายลง">▼</button>';
+      h += '    <button type="button" onclick="removeBuilderBlock(' + r + ', ' + c + ', ' + bIdx + ')" class="p-1 rounded bg-rose-500/20 hover:bg-rose-500/40 text-rose-300" title="ลบ">✕</button>';
+      h += '  </div>';
+      h += '</div>';
+
+      // Widget Body based on type
+      if (b.type === 'heading') {
+        h += '<div class="space-y-2">';
+        h += '  <input type="text" value="' + escapeHtml(b.title || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'title', this.value)" placeholder="หัวข้อของคุณ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-blue-500">';
+        h += '  <div class="flex items-center gap-2 text-[11px] text-slate-400">';
+        h += '    <span>Tag:</span>';
+        h += '    <select onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'tag', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-slate-200">';
+        ['h1', 'h2', 'h3', 'h4'].forEach(function(t) {
+          h += '<option value="' + t + '" ' + (b.tag === t ? 'selected' : '') + '>' + t.toUpperCase() + '</option>';
+        });
+        h += '    </select>';
+        h += '    <span>จัดแนว:</span>';
+        h += '    <select onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'align', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-slate-200">';
+        ['left', 'center', 'right'].forEach(function(a) {
+          h += '<option value="' + a + '" ' + (b.align === a ? 'selected' : '') + '>' + a + '</option>';
+        });
+        h += '    </select>';
+        h += '  </div>';
+        h += '</div>';
+      } else if (b.type === 'image') {
+        h += '<div class="space-y-2">';
+        if (b.url) {
+          h += '<div class="relative rounded-xl overflow-hidden max-h-48 border border-slate-800 bg-black">';
+          h += '  <img src="' + b.url + '" alt="' + escapeHtml(b.alt || '') + '" class="w-full object-cover max-h-48">';
+          h += '</div>';
+        }
+        h += '<div class="flex gap-2">';
+        h += '  <input type="text" value="' + escapeHtml(b.url || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'url', this.value)" placeholder="Image URL..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none">';
+        h += '  <label class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg cursor-pointer flex items-center gap-1 shrink-0">';
+        h += '    <i data-lucide="upload" class="w-3 h-3"></i><span>อัปโหลด R2</span>';
+        h += '    <input type="file" accept="image/*" class="hidden" onchange="uploadBlockImage(' + r + ', ' + c + ', ' + bIdx + ', this)">';
+        h += '  </label>';
+        h += '</div>';
+        h += '</div>';
+      } else if (b.type === 'text') {
+        h += '<div class="space-y-1.5">';
+        h += '  <textarea rows="3" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'content', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500 leading-relaxed">' + escapeHtml(b.content || '') + '</textarea>';
+        h += '</div>';
+      } else if (b.type === 'video') {
+        h += '<div class="space-y-2">';
+        h += '  <input type="text" value="' + escapeHtml(b.url || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'url', this.value)" placeholder="YouTube / Vimeo Video URL..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">';
+        h += '  <p class="text-[10px] text-slate-500">รองรับ YouTube (Watch / Shorts / Embed) และ Vimeo</p>';
+        h += '</div>';
+      } else if (b.type === 'button') {
+        h += '<div class="space-y-2">';
+        h += '  <div class="grid grid-cols-2 gap-2">';
+        h += '    <input type="text" value="' + escapeHtml(b.label || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'label', this.value)" placeholder="ข้อความบนปุ่ม..." class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white">';
+        h += '    <input type="text" value="' + escapeHtml(b.url || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'url', this.value)" placeholder="ลิงก์ URL..." class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white">';
+        h += '  </div>';
+        h += '  <div class="flex items-center gap-2 text-[11px] text-slate-400">';
+        h += '    <span>สไตล์:</span>';
+        h += '    <select onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'style', this.value)" class="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-slate-200">';
+        ['primary', 'emerald', 'dark', 'outline'].forEach(function(st) {
+          h += '<option value="' + st + '" ' + (b.style === st ? 'selected' : '') + '>' + st + '</option>';
+        });
+        h += '    </select>';
+        h += '  </div>';
+        h += '</div>';
+      } else if (b.type === 'divider') {
+        h += '<div class="py-2"><hr class="border-slate-700"></div>';
+      } else if (b.type === 'spacer') {
+        h += '<div class="py-2 bg-slate-950/40 rounded border border-dashed border-slate-800 text-center text-[10px] text-slate-500">Spacer: ' + (b.height || 48) + 'px</div>';
+      } else if (b.type === 'maps') {
+        h += '<div class="space-y-1.5">';
+        h += '  <input type="text" value="' + escapeHtml(b.query || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'query', this.value)" placeholder="ที่อยู่ หรือ พิกัด Google Maps..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white">';
+        h += '</div>';
+      } else if (b.type === 'icon') {
+        h += '<div class="space-y-2">';
+        h += '  <input type="text" value="' + escapeHtml(b.title || '') + '" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'title', this.value)" placeholder="หัวข้อบริการ / การ์ด..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs font-bold text-white">';
+        h += '  <textarea rows="2" onchange="updateBlockProp(' + r + ', ' + c + ', ' + bIdx + ', 'description', this.value)" placeholder="รายละเอียด..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300">' + escapeHtml(b.description || '') + '</textarea>';
+        h += '</div>';
+      }
+
+      h += '</div>';
+      return h;
+    }
+
+    function promptAddWidgetToCol(r, c) {
+      builderActiveRowIdx = r;
+      builderActiveColIdx = c;
+      switchSidebarTab('widgets');
+      // Scroll sidebar to top
+      const tab = document.getElementById('sidebar-tab-widgets');
+      if (tab) tab.scrollTop = 0;
+    }
+
+    // -------------------------------------------------------------
+    // Compile Builder Rows to Clean HTML for Frontend
+    // -------------------------------------------------------------
     function compileBuilderHtml() {
       if (appState.builderMode === 'html') {
         return document.getElementById('builder_raw_html').value || '';
       }
 
       let html = '<div class="space-y-12">';
+      
       appState.builderRows.forEach(function(row) {
-        html += '<div class="grid grid-cols-1 md:grid-cols-' + (row.layout === '3' ? '3' : row.layout === '1' ? '1' : '2') + ' gap-8 items-center">';
-        row.columns.forEach(function(col) {
-          html += '<div class="space-y-6">';
-          col.blocks.forEach(function(b) {
-            if (b.type === 'text') {
-              html += '<div>' + (b.content || '') + '</div>';
+        let gridCls = 'grid grid-cols-1 gap-8';
+        if (row.layout === '2') gridCls = 'grid grid-cols-1 md:grid-cols-2 gap-8';
+        if (row.layout === '3') gridCls = 'grid grid-cols-1 md:grid-cols-3 gap-8';
+        if (row.layout === '4') gridCls = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6';
+        if (row.layout === '2-1') gridCls = 'grid grid-cols-1 md:grid-cols-3 gap-8';
+
+        html += '<div class="' + gridCls + ' items-start">';
+        
+        row.columns.forEach(function(col, cIdx) {
+          const colSpan = (row.layout === '2-1' && cIdx === 0) ? 'md:col-span-2' : '';
+          html += '<div class="' + colSpan + ' space-y-6">';
+          
+          (col.blocks || []).forEach(function(b) {
+            if (b.type === 'heading') {
+              const tag = b.tag || 'h2';
+              const align = b.align === 'center' ? 'text-center' : b.align === 'right' ? 'text-right' : 'text-left';
+              const size = tag === 'h1' ? 'text-4xl sm:text-5xl font-black' : tag === 'h2' ? 'text-2xl sm:text-3xl font-bold' : 'text-xl font-bold';
+              html += '<' + tag + ' class="' + size + ' text-white tracking-tight ' + align + '">' + escapeHtml(b.title || '') + '</' + tag + '>';
             } else if (b.type === 'image') {
-              html += '<figure class="my-4"><img src="' + (b.url || '') + '" class="rounded-2xl max-w-full shadow-lg" alt=""><figcaption class="text-xs text-slate-400 mt-1">' + (b.caption || '') + '</figcaption></figure>';
-            } else if (b.type === 'video') {
-              let ytId = '';
-              if (b.url && b.url.includes('v=')) ytId = b.url.split('v=')[1]?.split('&')[0];
-              else if (b.url && b.url.includes('youtu.be/')) ytId = b.url.split('youtu.be/')[1]?.split('?')[0];
-              if (ytId) {
-                html += '<div class="aspect-video rounded-2xl overflow-hidden shadow-xl"><iframe src="https://www.youtube.com/embed/' + ytId + '" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>';
+              if (b.url) {
+                const align = b.align === 'center' ? 'mx-auto' : b.align === 'right' ? 'ml-auto' : 'mr-auto';
+                html += '<div class="overflow-hidden rounded-2xl shadow-xl ' + align + '">';
+                html += '  <img src="' + b.url + '" alt="' + escapeHtml(b.alt || '') + '" class="w-full h-auto object-cover rounded-2xl" loading="lazy">';
+                html += '</div>';
               }
-            } else if (b.type === 'cta') {
-              html += '<div><a href="' + (b.url || '#') + '" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-lg shadow-blue-500/25 transition">' + (b.label || 'คลิกที่นี่') + ' &rarr;</a></div>';
-            } else if (b.type === 'html') {
-              html += '<div>' + (b.code || '') + '</div>';
+            } else if (b.type === 'text') {
+              const align = b.align === 'center' ? 'text-center' : b.align === 'right' ? 'text-right' : 'text-left';
+              html += '<div class="prose prose-invert max-w-none text-slate-300 leading-relaxed text-base ' + align + '">';
+              html += '  <p>' + (b.content || '').replace(/\n/g, '<br>') + '</p>';
+              html += '</div>';
+            } else if (b.type === 'video') {
+              let embedUrl = b.url || '';
+              if (embedUrl.includes('youtube.com/watch?v=')) {
+                embedUrl = embedUrl.replace('watch?v=', 'embed/');
+              } else if (embedUrl.includes('youtu.be/')) {
+                embedUrl = embedUrl.replace('youtu.be/', 'youtube.com/embed/');
+              }
+              html += '<div class="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800">';
+              html += '  <iframe src="' + embedUrl + '" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+              html += '</div>';
+            } else if (b.type === 'button') {
+              let btnCls = 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25';
+              if (b.style === 'emerald') btnCls = 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25';
+              if (b.style === 'dark') btnCls = 'bg-slate-900 border border-slate-700 text-white hover:bg-slate-800';
+              if (b.style === 'outline') btnCls = 'border border-blue-500 text-blue-400 hover:bg-blue-500/10';
+              const align = b.align === 'center' ? 'text-center' : b.align === 'right' ? 'text-right' : 'text-left';
+
+              html += '<div class="' + align + '">';
+              html += '  <a href="' + (b.url || '#') + '" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition transform hover:-translate-y-0.5 ' + btnCls + '">';
+              html += '    <span>' + escapeHtml(b.label || 'คลิกที่นี่') + '</span>';
+              html += '    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+              html += '  </a>';
+              html += '</div>';
+            } else if (b.type === 'divider') {
+              html += '<hr class="border-slate-800 my-6">';
+            } else if (b.type === 'spacer') {
+              const h = b.height || 48;
+              html += '<div style="height: ' + h + 'px;" class="w-full"></div>';
+            } else if (b.type === 'maps') {
+              const q = encodeURIComponent(b.query || 'Bangkok');
+              html += '<div class="rounded-2xl overflow-hidden border border-slate-800 shadow-xl">';
+              html += '  <iframe width="100%" height="' + (b.height || 350) + '" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=' + q + '&t=&z=14&ie=UTF8&iwloc=&output=embed" allowfullscreen></iframe>';
+              html += '</div>';
+            } else if (b.type === 'icon') {
+              html += '<div class="glass-card p-6 rounded-2xl border border-slate-800/80 hover:border-blue-500/40 transition space-y-3">';
+              html += '  <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg">★</div>';
+              html += '  <h3 class="text-lg font-bold text-white">' + escapeHtml(b.title || '') + '</h3>';
+              html += '  <p class="text-sm text-slate-400 leading-relaxed">' + escapeHtml(b.description || '') + '</p>';
+              html += '</div>';
             }
           });
+
           html += '</div>';
         });
+
         html += '</div>';
       });
+
       html += '</div>';
       return html;
     }
@@ -2046,21 +2388,25 @@
       const title = document.getElementById('builder_page_title').value || 'หน้าตัวอย่าง';
       const compiled = compileBuilderHtml();
       const container = document.getElementById('preview-container');
-      container.innerHTML = '<div class="space-y-6 max-w-4xl mx-auto"><h1 class="text-3xl font-extrabold text-white">' + title + '</h1><div class="prose prose-invert max-w-none">' + compiled + '</div></div>';
+      container.innerHTML = '<div class="space-y-6 max-w-4xl mx-auto"><h1 class="text-3xl font-extrabold text-white">' + escapeHtml(title) + '</h1><div class="prose prose-invert max-w-none">' + compiled + '</div></div>';
       document.getElementById('modal-preview').classList.remove('hidden');
       document.getElementById('modal-preview').classList.add('flex');
     }
 
+    // -------------------------------------------------------------
+    // Save Page & Auto Navbar Sync (Zero-Cache)
+    // -------------------------------------------------------------
     async function handleSavePage() {
       const id = document.getElementById('builder_page_id').value;
-      const title = document.getElementById('builder_page_title').value;
-      const slug = document.getElementById('builder_page_slug').value;
-      const meta_description = document.getElementById('builder_meta_description').value;
+      const title = document.getElementById('builder_page_title').value.trim();
+      const slug = document.getElementById('builder_page_slug').value.trim();
+      const meta_description = document.getElementById('builder_meta_description').value.trim();
       const is_active = document.getElementById('builder_is_active').checked;
       const add_to_nav = document.getElementById('builder_add_to_nav').checked;
 
       if (!title || !slug) {
         alert('กรุณากรอกชื่อหน้าเพจและ URL Slug ให้ครบถ้วน');
+        switchSidebarTab('settings');
         return;
       }
 
@@ -2075,13 +2421,13 @@
         meta_description: meta_description,
         is_active: is_active,
         add_to_nav: add_to_nav,
-        template_style: appState.builderMode === 'html' ? 'custom-html' : 'visual-columns'
+        template_style: 'elementor-builder'
       };
 
       try {
         const url = id ? ('/api/admin/pages/' + id) : '/api/admin/pages';
         const method = id ? 'PUT' : 'POST';
-        const res = await fetch(url, {
+        const res = await adminFetch(url, {
           method: method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2090,7 +2436,8 @@
         if (data.success) {
           alert(data.message || 'บันทึกหน้าเพจสำเร็จ!');
           closePageBuilderModal();
-          loadTabData('navigation', true);
+          // Immediately reload navigation tab fresh from D1 (No cache)
+          loadTabData('navigation');
         } else {
           alert('เกิดข้อผิดพลาด: ' + (data.error || 'กรุณาลองใหม่'));
         }
@@ -2099,7 +2446,6 @@
       }
     }
 
-    // -------------------------------------------------------------
     // Save Modals & General Handlers
     // -------------------------------------------------------------
     async function runAiTranslate() {
@@ -2112,10 +2458,10 @@
       const content = document.getElementById('editor_content_th').innerText;
 
       try {
-        const res = await fetch('/api/admin/translate', {
+        const res = await adminFetch('/api/admin/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { title: title, summary: summary, content: content } })
+          body: JSON.stringify({ fields: { title: title, summary: summary, content: content } }))
         });
         const d = await res.json();
         if (d.success && d.data) {
@@ -2211,7 +2557,7 @@
         const url = id ? (endpoint + '/' + id) : endpoint;
         const method = id ? 'PUT' : 'POST';
 
-        const res = await fetch(url, {
+        const res = await adminFetch(url, {)
           method: method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2232,7 +2578,7 @@
     async function deletePortfolio(id) {
       if (!confirm('ต้องการลบผลงานนี้ใช่หรือไม่?')) return;
       try {
-        const res = await fetch('/api/admin/portfolios/' + id, { method: 'DELETE' });
+        const res = await adminFetch('/api/admin/portfolios/' + id, { method: 'DELETE' }));
         const d = await res.json();
         if (d.success) loadTabData('portfolios', true);
       } catch (e) { alert(e.message); }
@@ -2241,7 +2587,7 @@
     async function deleteArticle(id) {
       if (!confirm('ต้องการลบบทความนี้ใช่หรือไม่?')) return;
       try {
-        const res = await fetch('/api/admin/articles/' + id, { method: 'DELETE' });
+        const res = await adminFetch('/api/admin/articles/' + id, { method: 'DELETE' }));
         const d = await res.json();
         if (d.success) loadTabData('articles', true);
       } catch (e) { alert(e.message); }
@@ -2286,10 +2632,10 @@
       };
 
       try {
-        const res = await fetch('/api/admin/services/' + id, {
+        const res = await adminFetch('/api/admin/services/' + id, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload))
         });
         const data = await res.json();
         if (data.success) {
@@ -2353,7 +2699,7 @@
       try {
         const url = id ? ('/api/admin/navigation/' + id) : '/api/admin/navigation';
         const method = id ? 'PUT' : 'POST';
-        const res = await fetch(url, {
+        const res = await adminFetch(url, {)
           method: method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2372,7 +2718,7 @@
     async function deleteNavMenu(id) {
       if (!confirm('ต้องการลบเมนูนี้ใช่หรือไม่?')) return;
       try {
-        const res = await fetch('/api/admin/navigation/' + id, { method: 'DELETE' });
+        const res = await adminFetch('/api/admin/navigation/' + id, { method: 'DELETE' }));
         const d = await res.json();
         if (d.success) loadTabData('navigation', true);
       } catch (e) { alert(e.message); }
@@ -2409,14 +2755,14 @@
       }
 
       try {
-        const res = await fetch('/api/admin/client-logos', {
+        const res = await adminFetch('/api/admin/client-logos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: name,
             logo_url: logo_url,
             website_url: website_url,
-            sort_order: (appState.clientLogos.length + 1)
+            sort_order: (appState.clientLogos.length + 1))
           })
         });
         const d = await res.json();
@@ -2433,7 +2779,7 @@
     async function deleteClientLogo(id) {
       if (!confirm('ต้องการลบโลโก้นี้ใช่หรือไม่?')) return;
       try {
-        const res = await fetch('/api/admin/client-logos/' + id, { method: 'DELETE' });
+        const res = await adminFetch('/api/admin/client-logos/' + id, { method: 'DELETE' }));
         const d = await res.json();
         if (d.success) loadTabData('clients', true);
       } catch (e) { alert(e.message); }
@@ -2460,10 +2806,10 @@
       const id = document.getElementById('note_inquiry_id').value;
       const text = document.getElementById('note_text').value;
       try {
-        const res = await fetch('/api/admin/inquiries/' + id + '/notes', {
+        const res = await adminFetch('/api/admin/inquiries/' + id + '/notes', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notes: text })
+          body: JSON.stringify({ notes: text }))
         });
         const d = await res.json();
         if (d.success) {
@@ -2475,10 +2821,10 @@
 
     async function updateInquiryStatus(id, newStatus) {
       try {
-        await fetch('/api/admin/inquiries/' + id + '/status', {
+        await adminFetch('/api/admin/inquiries/' + id + '/status', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
+          body: JSON.stringify({ status: newStatus }))
         });
         loadTabData('inquiries', true);
       } catch (err) { alert(err.message); }
@@ -2510,10 +2856,10 @@
       ];
 
       try {
-        const res = await fetch('/api/admin/site-settings', {
+        const res = await adminFetch('/api/admin/site-settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ settings: settings })
+          body: JSON.stringify({ settings: settings }))
         });
         const d = await res.json();
         if (d.success) {
@@ -2565,116 +2911,321 @@
       window.addEventListener('popstate', handleRoute);
     });
   </script>
-  <!-- ==================== PAGE BUILDER MODAL ==================== -->
-  <div id="modal-page-builder" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/85 backdrop-blur-sm hidden overflow-y-auto">
-    <div class="bg-slate-900 text-slate-100 border border-slate-800 rounded-2xl w-full max-w-5xl my-8 shadow-2xl flex flex-col overflow-hidden max-h-[94vh]">
+  <!-- ==================== ELEMENTOR-STYLE VISUAL PAGE BUILDER ==================== -->
+  <div id="modal-page-builder" class="fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100 hidden overflow-hidden select-none">
+    
+    <!-- TOP WORKSPACE BAR -->
+    <header class="h-14 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 z-30">
+      <!-- Left: Logo & Breadcrumbs -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/25">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-white" id="page-builder-modal-title">Elementor Page Builder</span>
+            <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full font-mono border border-blue-500/20">Custom Page</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <span>URL:</span>
+            <span class="font-mono text-emerald-400">/p/</span><span id="builder-url-preview" class="font-mono text-emerald-400 font-bold">your-slug</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Viewport & Mode Switchers -->
+      <div class="flex items-center gap-2">
+        <!-- Viewport Switcher -->
+        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1">
+          <button type="button" onclick="setBuilderViewport('desktop')" id="btn-viewport-desktop" class="p-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition flex items-center gap-1" title="Desktop View (100%)">
+            <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline text-[10px]">Desktop</span>
+          </button>
+          <button type="button" onclick="setBuilderViewport('tablet')" id="btn-viewport-tablet" class="p-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1" title="Tablet View (768px)">
+            <i data-lucide="tablet" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline text-[10px]">Tablet</span>
+          </button>
+          <button type="button" onclick="setBuilderViewport('mobile')" id="btn-viewport-mobile" class="p-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1" title="Mobile View (390px)">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline text-[10px]">Mobile</span>
+          </button>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1">
+          <button type="button" onclick="switchBuilderMode('visual')" id="btn-builder-visual" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition flex items-center gap-1.5">
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+            <span>Visual Builder</span>
+          </button>
+          <button type="button" onclick="switchBuilderMode('html')" id="btn-builder-html" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="code" class="w-3.5 h-3.5"></i>
+            <span>Custom HTML</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="previewPageBuilder()" class="px-3.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-slate-200 transition flex items-center gap-1.5">
+          <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+          <span>Live Preview</span>
+        </button>
+        <button type="button" onclick="handleSavePage()" class="px-5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/25 transition flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>💾 บันทึกและเผยแพร่</span>
+        </button>
+        <button type="button" onclick="closePageBuilderModal()" class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center ml-1">
+          ✕
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN BUILDER WORKSPACE -->
+    <div class="flex-1 flex overflow-hidden">
       
-      <!-- Top Action Bar -->
-      <div class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
-            <i data-lucide="layers" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h4 id="page-builder-modal-title" class="text-sm font-bold text-white">สร้างหน้าเพจใหม่ (Page Builder)</h4>
-            <p class="text-[11px] text-slate-400">สร้างเลย์เอาต์ จัดวางคอลัมน์ หรือเขียน Custom HTML ได้ตามต้องการ</p>
+      <!-- LEFT SIDEBAR: ELEMENTS PANEL (Exact Reference match to Elementor UI) -->
+      <aside class="w-80 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 select-none">
+        
+        <!-- Elements Panel Header -->
+        <div class="p-3 border-b border-slate-800 bg-slate-950">
+          <div class="text-center font-bold text-xs text-slate-200 tracking-wider mb-2">Elements</div>
+          <div class="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <button type="button" onclick="switchSidebarTab('widgets')" id="btn-sidebar-tab-widgets" class="py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition">Widgets</button>
+            <button type="button" onclick="switchSidebarTab('settings')" id="btn-sidebar-tab-settings" class="py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">Page & SEO</button>
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button type="button" onclick="previewPageBuilder()" class="px-3.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1.5">
-            <i data-lucide="eye" class="w-3.5 h-3.5"></i><span>Live Preview</span>
-          </button>
-          <button type="button" onclick="handleSavePage()" class="px-5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-1.5">
-            <i data-lucide="check" class="w-3.5 h-3.5"></i><span>บันทึกหน้าเพจ</span>
-          </button>
-          <button type="button" onclick="closePageBuilderModal()" class="text-slate-400 hover:text-white p-1 text-base">✕</button>
-        </div>
-      </div>
-
-      <!-- Builder Body -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-6">
-        <input type="hidden" id="builder_page_id" value="">
-
-        <!-- Basic Info -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800/80">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">ชื่อหน้าเพจ (Page Title) *</label>
-            <input type="text" id="builder_page_title" oninput="autoGeneratePageSlug(this.value)" placeholder="เช่น บริการโปรดักชันภาพถ่าย 2026" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        <!-- TAB 1: WIDGETS -->
+        <div id="sidebar-tab-widgets" class="flex-1 overflow-y-auto p-3 space-y-4">
+          
+          <!-- Search Widget Input -->
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500"></i>
+            <input type="text" id="builder-widget-search" oninput="filterWidgets(this.value)" placeholder="Search Widget..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">URL Slug / Path * (จะแสดงผลที่ /p/your-slug)</label>
-            <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-400">
-              <span class="shrink-0 text-slate-500">/p/</span>
-              <input type="text" id="builder_page_slug" placeholder="commercial-production" class="flex-1 bg-transparent text-white focus:outline-none ml-1">
+
+          <!-- Atomic Elements Banner (Matching Elementor Promo Banner) -->
+          <div class="p-3 rounded-2xl bg-gradient-to-br from-pink-600/20 via-purple-600/20 to-indigo-600/20 border border-purple-500/30 text-xs space-y-2">
+            <div class="flex items-center justify-between font-bold text-slate-200">
+              <span class="flex items-center gap-1.5">
+                <span>Atomic Elements</span>
+                <span class="bg-purple-500/30 text-purple-300 text-[10px] px-1.5 py-0.5 rounded font-mono">New</span>
+              </span>
             </div>
-          </div>
-          <div class="md:col-span-2">
-            <label class="block text-xs font-bold text-slate-300 mb-1">คำอธิบายหน้าเพจสำหรับ SEO (Meta Description)</label>
-            <input type="text" id="builder_meta_description" placeholder="สรุปเนื้อหาหน้าเพจ 1-2 ประโยคสำหรับ Google Search และ Social Share..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none">
-          </div>
-          <div class="md:col-span-2 flex items-center justify-between pt-2 border-t border-slate-800/60">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="builder_add_to_nav" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-              <span class="text-xs font-medium text-slate-300">เพิ่มลิงก์หน้านี้ลงในแถบนำทาง (Navbar) อัตโนมัติ</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="builder_is_active" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-              <span class="text-xs font-medium text-slate-300">เปิดเผยแพร่ (Published)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Mode Switcher Tabs -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div class="flex gap-2">
-            <button type="button" onclick="switchBuilderMode('visual')" id="btn-builder-visual" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5">
-              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i><span>Visual Block Builder (โครงสร้างคอลัมน์)</span>
-            </button>
-            <button type="button" onclick="switchBuilderMode('html')" id="btn-builder-html" class="px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
-              <i data-lucide="code" class="w-3.5 h-3.5"></i><span>Custom HTML & Tailwind Mode</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Visual Block Builder Area -->
-        <div id="builder-visual-area" class="space-y-4">
-          <div id="builder-rows-container" class="space-y-4">
-            <!-- Dynamic rows will be rendered here -->
+            <p class="text-[11px] text-slate-400 leading-snug">
+              Build with modern, flexible elements designed for reusable styles and cleaner layouts.
+            </p>
           </div>
 
-          <div class="p-6 border-2 border-dashed border-slate-800 rounded-2xl text-center bg-slate-950/40">
-            <p class="text-xs text-slate-400 mb-3">เพิ่มแถวใหม่เพื่อแบ่งคอลัมน์และใส่เนื้อหา</p>
-            <div class="flex flex-wrap items-center justify-center gap-2">
-              <button type="button" onclick="addBuilderRow(1)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
-                <span>[ 1 คอลัมน์เต็ม ]</span>
+          <!-- Section: Layout -->
+          <div class="space-y-2 widget-group" data-group="layout">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500"></i>
+              <span>Layout</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="addLayoutContainer('container')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="container section box">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="box" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Container</span>
               </button>
-              <button type="button" onclick="addBuilderRow(2)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
-                <span>[ 2 คอลัมน์ 50/50 ]</span>
-              </button>
-              <button type="button" onclick="addBuilderRow(3)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
-                <span>[ 3 คอลัมน์ 33/33/33 ]</span>
-              </button>
-              <button type="button" onclick="addBuilderRow('2-1')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
-                <span>[ 2 คอลัมน์ คอนเทนต์ 67% + ด้านข้าง 33% ]</span>
+              <button type="button" onclick="addBuilderGrid('2')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="grid columns layout">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="grid" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Grid</span>
               </button>
             </div>
           </div>
+
+          <!-- Section: Basic Widgets (Exact match to 9 widgets in the user's reference image) -->
+          <div class="space-y-2 widget-group" data-group="basic">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500"></i>
+              <span>Basic</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              
+              <!-- 1. Heading -->
+              <button type="button" onclick="addWidget('heading')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="heading title header typography text">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-serif text-lg font-bold group-hover:scale-110 transition">
+                  T
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Heading</span>
+              </button>
+
+              <!-- 2. Image -->
+              <button type="button" onclick="addWidget('image')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="image photo picture media cover">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="image" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Image</span>
+              </button>
+
+              <!-- 3. Text Editor -->
+              <button type="button" onclick="addWidget('text')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="text editor paragraph content wysiwyg">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="align-left" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Text Editor</span>
+              </button>
+
+              <!-- 4. Video -->
+              <button type="button" onclick="addWidget('video')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="video youtube vimeo mp4 player embed">
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="play" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Video</span>
+              </button>
+
+              <!-- 5. Button -->
+              <button type="button" onclick="addWidget('button')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="button link cta click action">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Button</span>
+              </button>
+
+              <!-- 6. Divider -->
+              <button type="button" onclick="addWidget('divider')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="divider line separator hr rule">
+                <div class="w-8 h-8 rounded-lg bg-slate-500/10 text-slate-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="minus" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Divider</span>
+              </button>
+
+              <!-- 7. Spacer -->
+              <button type="button" onclick="addWidget('spacer')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="spacer blank space gap height padding">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="move-vertical" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Spacer</span>
+              </button>
+
+              <!-- 8. Google Maps -->
+              <button type="button" onclick="addWidget('maps')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="google maps location pin address map">
+                <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="map-pin" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Google Maps</span>
+              </button>
+
+              <!-- 9. Icon / Feature Card -->
+              <button type="button" onclick="addWidget('icon')" class="widget-card p-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-blue-500/50 transition flex flex-col items-center justify-center gap-2 group text-center" data-name="icon feature card star badge box">
+                <div class="w-8 h-8 rounded-lg bg-yellow-500/10 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition">
+                  <i data-lucide="star" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-slate-300 group-hover:text-white">Icon</span>
+              </button>
+
+            </div>
+          </div>
         </div>
 
-        <!-- Custom HTML / Code Area -->
-        <div id="builder-html-area" class="space-y-3 hidden">
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span>พิมพ์โค้ด HTML หรือ Tailwind CSS ได้อิสระ:</span>
-            <span class="text-[11px] text-blue-400 font-mono">HTML5 / Tailwind v3 Supported</span>
+        <!-- TAB 2: PAGE & SEO SETTINGS -->
+        <div id="sidebar-tab-settings" class="flex-1 overflow-y-auto p-4 space-y-5 hidden">
+          <input type="hidden" id="builder_page_id" value="">
+          
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">ชื่อหน้าเพจ (Page Title) *</label>
+            <input type="text" id="builder_page_title" oninput="handleBuilderTitleChange(this.value)" placeholder="เช่น บริการพิเศษ 2026" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
           </div>
-          <textarea id="builder_raw_html" rows="18" placeholder="<div class=&quot;max-w-4xl mx-auto py-12&quot;>&#10;  <h1 class=&quot;text-3xl font-bold text-white&quot;>หัวข้อของคุณ</h1>&#10;  <p class=&quot;text-slate-400 mt-4 leading-relaxed&quot;>เนื้อหา...</p>&#10;</div>" class="w-full bg-slate-950 font-mono text-xs text-emerald-400 border border-slate-800 rounded-2xl p-4 focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">URL Slug (Path) *</label>
+            <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-400">
+              <span class="text-slate-500 font-mono">/p/</span>
+              <input type="text" id="builder_page_slug" oninput="handleBuilderSlugChange(this.value)" placeholder="custom-service" class="flex-1 bg-transparent text-white font-mono focus:outline-none ml-1">
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">ใช้เป็น URL สำหรับเข้าชมหน้าเพจนี้</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">คำอธิบาย SEO (Meta Description)</label>
+            <textarea id="builder_meta_description" rows="3" placeholder="ระบุสรุปเนื้อหาสำหรับ Search Engine และการแชร์บนโซเชียลมีเดีย..." class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-slate-800/80">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="builder_add_to_nav" checked class="mt-0.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+              <div>
+                <span class="text-xs font-bold text-slate-200 block">ผูกเข้าแถบนำทาง (Navbar) ทันที</span>
+                <span class="text-[11px] text-slate-400 block mt-0.5">ระบบจะเพิ่มเมนูนี้ลงใน Navigation Bar บนหน้าเว็บให้อัตโนมัติ</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" id="builder_is_active" checked class="mt-0.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+              <div>
+                <span class="text-xs font-bold text-slate-200 block">เปิดเผยแพร่ (Published)</span>
+                <span class="text-[11px] text-slate-400 block mt-0.5">เปิดให้ผู้เข้าชมทั่วไปสามารถเข้าดูหน้าเพจนี้ได้</span>
+              </div>
+            </label>
+          </div>
         </div>
-      </div>
+
+      </aside>
+
+      <!-- RIGHT CANVAS AREA -->
+      <main class="flex-1 bg-slate-900/60 overflow-y-auto p-8 relative flex flex-col items-center">
+        
+        <!-- Viewport Container Frame -->
+        <div id="builder-canvas-viewport" class="w-full max-w-5xl transition-all duration-300 space-y-6">
+          
+          <!-- Visual Builder Area -->
+          <div id="builder-visual-area" class="space-y-6">
+            <div id="builder-canvas-container" class="space-y-6 min-h-[400px]">
+              <!-- Dynamic Rows and Columns Rendered Here -->
+            </div>
+
+            <!-- Add Section / Grid Dropzone -->
+            <div class="p-8 border-2 border-dashed border-slate-800 hover:border-blue-500/50 rounded-3xl text-center bg-slate-950/40 transition">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-blue-600/10 text-blue-400 flex items-center justify-center mb-3">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+              </div>
+              <p class="text-xs font-bold text-white mb-1">เพิ่ม Layout หรือ Grid คอลัมน์ใหม่</p>
+              <p class="text-[11px] text-slate-400 mb-4">เลือกโครงสร้างแถวเพื่อจัดวาง Widgets</p>
+              
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onclick="addLayoutContainer('container')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                  <i data-lucide="box" class="w-3.5 h-3.5 text-blue-400"></i>
+                  <span>[ 1 คอลัมน์เต็ม ]</span>
+                </button>
+                <button type="button" onclick="addBuilderGrid('2')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                  <i data-lucide="columns-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>[ 2 คอลัมน์ 50/50 ]</span>
+                </button>
+                <button type="button" onclick="addBuilderGrid('3')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                  <i data-lucide="columns-3" class="w-3.5 h-3.5 text-purple-400"></i>
+                  <span>[ 3 คอลัมน์ 33/33/33 ]</span>
+                </button>
+                <button type="button" onclick="addBuilderGrid('4')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                  <i data-lucide="grid-2x2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>[ 4 คอลัมน์ 25/25/25/25 ]</span>
+                </button>
+                <button type="button" onclick="addBuilderGrid('2-1')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                  <i data-lucide="sidebar" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>[ 2 คอลัมน์ 67% + 33% ]</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom HTML / Code Area (Hidden by default) -->
+          <div id="builder-html-area" class="space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="font-bold text-white">Custom HTML & Tailwind CSS Editor:</span>
+              <span class="text-[11px] text-blue-400 font-mono">HTML5 / Tailwind v3 Ready</span>
+            </div>
+            <textarea id="builder_raw_html" rows="22" placeholder="<div class=&quot;max-w-5xl mx-auto py-12 px-4&quot;>&#10;  <h1 class=&quot;text-4xl font-extrabold text-white&quot;>หัวข้อของคุณ</h1>&#10;  <p class=&quot;text-slate-400 mt-4 leading-relaxed&quot;>เนื้อหา...</p>&#10;</div>" class="w-full bg-slate-950 font-mono text-xs text-emerald-400 border border-slate-800 rounded-2xl p-5 focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
+          </div>
+
+        </div>
+      </main>
+
     </div>
-  </div>
-
-  <!-- Floating Image Upload Pill -->
+  </div><!-- Floating Image Upload Pill -->
   <div id="editor_upload_pill" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 text-xs flex items-center gap-2 z-[99] hidden">
     <div class="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
     <span id="editor_upload_pill_text">กำลังอัปโหลดภาพลงบทความ... 0%</span>
