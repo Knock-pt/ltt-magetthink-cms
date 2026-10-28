@@ -39,6 +39,9 @@
       <button type="button" onclick="switchTab('navigation')" id="btn-tab-navigation" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
         <i data-lucide="compass" class="w-4 h-4 shrink-0"></i><span>Navigation เมนูหลัก</span>
       </button>
+      <button type="button" onclick="switchTab('pages')" id="btn-tab-pages" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
+        <i data-lucide="layers" class="w-4 h-4 shrink-0"></i><span>สร้างเพจใหม่ (Page Builder)</span>
+      </button>
       <button type="button" onclick="switchTab('portfolios')" id="btn-tab-portfolios" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-900">
         <i data-lucide="briefcase" class="w-4 h-4 shrink-0"></i><span>Portfolios ผลงาน</span>
       </button>
@@ -149,6 +152,36 @@
             </thead>
             <tbody id="table-navigation" class="divide-y divide-slate-800/60">
               <tr><td colspan="6" class="p-4 text-slate-500 text-center">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 2.5: PAGES (PAGE BUILDER) -->
+      <section id="section-pages" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white">จัดการหน้าเพจ & ตัวสร้างเพจใหม่ (Page Builder)</h3>
+            <p class="text-xs text-slate-400 mt-0.5">สร้างหน้าเพจใหม่ด้วยโครงสร้างคอลัมน์ (1-3 Columns), บล็อกข้อความ, รูปภาพ, วิดีโอ หรือเขียนโค้ด HTML/Tailwind โดยตรง</p>
+          </div>
+          <button type="button" onclick="openPageBuilderModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i><span>+ สร้างหน้าเพจใหม่</span>
+          </button>
+        </div>
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+              <tr>
+                <th class="p-4">ชื่อหน้าเพจ (Page Title)</th>
+                <th class="p-4">URL Slug / Path</th>
+                <th class="p-4">สไตล์การสร้าง</th>
+                <th class="p-4">แก้ไขล่าสุด</th>
+                <th class="p-4">สถานะ</th>
+                <th class="p-4 text-right">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="table-pages" class="divide-y divide-slate-800/60">
+              <tr><td colspan="6" class="p-4 text-slate-500 text-center">กำลังโหลดข้อมูลหน้าเพจ...</td></tr>
             </tbody>
           </table>
         </div>
@@ -454,37 +487,37 @@
             <input type="text" id="editor_title_th" placeholder="พิมพ์ชื่อผลงาน หรือชื่อหัวข้อบทความ..." class="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-teal-500">
           </div>
 
-          <!-- 2. Tags 6 มิติ (Matching Image 2) -->
+          <!-- 2. Marketing Agency Tags (6 มิติสำหรับ Agency & ผลงานการตลาด) -->
           <div>
             <div class="flex items-center gap-1.5 mb-2">
-              <span class="text-xs font-bold text-slate-700">Tags</span>
+              <span class="text-xs font-bold text-slate-700">Tags (Marketing Agency 6 มิติ)</span>
               <span class="text-[11px] text-slate-400">ⓘ</span>
-              <span class="text-[11px] text-rose-500 font-medium">*กรุณาใส่ Tags ให้ครบถ้วน</span>
+              <span class="text-[11px] text-teal-600 font-medium">*ระบุแท็กเพื่อจัดหมวดหมู่และคัดกรองผลงาน</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">ประเทศ:</span>
-                <input type="text" id="tag_country" placeholder="ไทย, จีน, ฮ่องกง ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">🚀 บริการ/แคมเปญ:</span>
+                <input type="text" id="tag_service" placeholder="Social Media, Video Production, Ads ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">ประเภท:</span>
-                <input type="text" id="tag_type" placeholder="ร้านอาหาร, รีสอร์ท, การตลาด ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">🏢 ธุรกิจลูกค้า:</span>
+                <input type="text" id="tag_industry" placeholder="Hospitality, Real Estate, F&B, Beauty ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">จุดหมาย:</span>
-                <input type="text" id="tag_destination" placeholder="กรุงเทพ, พัทยา, ภูเก็ต ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">📱 แพลตฟอร์ม:</span>
+                <input type="text" id="tag_platform" placeholder="TikTok, Facebook, Instagram, YouTube, LINE ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">การเดินทาง:</span>
-                <input type="text" id="tag_transport" placeholder="รถยนต์, รถไฟ, เครื่องบิน ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">👥 กลุ่มเป้าหมาย:</span>
+                <input type="text" id="tag_target" placeholder="Gen Z, Millennials, Luxury, B2B, Family ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">ชื่อสถานที่:</span>
-                <input type="text" id="tag_location" placeholder="Cross Pattaya, W Hotel ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">🎯 วัตถุประสงค์:</span>
+                <input type="text" id="tag_objective" placeholder="Brand Awareness, Lead Gen, Engagement ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
               <div class="flex border border-slate-300 rounded-xl overflow-hidden bg-white">
-                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-24 shrink-0">กิจกรรม:</span>
-                <input type="text" id="tag_activity" placeholder="ถ่ายภาพสถาปัตยกรรม, รีวิว ..." class="flex-1 px-3 py-2 focus:outline-none">
+                <span class="bg-slate-100 text-slate-600 px-3 py-2 border-r border-slate-300 font-medium w-32 shrink-0">📦 รูปแบบผลงาน:</span>
+                <input type="text" id="tag_format" placeholder="Short Video, Photo Shoot, Case Study ..." class="flex-1 px-3 py-2 focus:outline-none">
               </div>
             </div>
           </div>
@@ -499,9 +532,24 @@
                 <p class="text-xs font-semibold text-slate-700">คลิกหรือลากไฟล์ภาพมาวางที่นี่เพื่ออัปโหลดขึ้น R2</p>
                 <p class="text-[11px] text-slate-400">รองรับไฟล์ JPG, PNG, WebP ขนาดไม่เกิน 10MB</p>
               </div>
+
+              <!-- Upload Progress Indicator Bar -->
+              <div id="cover_progress_wrap" class="hidden max-w-xs mx-auto py-3 space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-teal-700">
+                  <span id="cover_progress_label">กำลังอัปโหลดไปยัง Cloudflare R2...</span>
+                  <span id="cover_progress_pct">0%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div id="cover_progress_bar" class="bg-teal-600 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+                </div>
+              </div>
+
               <div id="cover_preview_box" class="hidden">
                 <img id="cover_preview_img" src="" class="max-h-52 mx-auto rounded-xl object-cover shadow" alt="Cover Preview">
-                <button type="button" onclick="event.stopPropagation(); removeCoverImage();" class="mt-2 text-xs text-rose-500 font-semibold hover:underline">เปลี่ยนภาพปก</button>
+                <div class="mt-2 flex items-center justify-center gap-3">
+                  <span class="text-[11px] font-bold text-emerald-600">✓ อัปโหลดบน Cloudflare R2 สำเร็จ</span>
+                  <button type="button" onclick="event.stopPropagation(); removeCoverImage();" class="text-xs text-rose-500 font-semibold hover:underline">เปลี่ยนภาพปก</button>
+                </div>
               </div>
             </div>
             <input type="hidden" id="editor_cover_url" value="">
@@ -647,16 +695,31 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">อัปโหลดไฟล์โลโก้ขึ้น Cloudflare R2 *</label>
-          <div class="flex gap-2">
-            <input type="text" id="client_logo_url" required placeholder="https://... หรือ /media/uploads/..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-            <label class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white cursor-pointer shrink-0">
-              <span>เลือกไฟล์</span>
-              <input type="file" accept="image/*" class="hidden" onchange="uploadClientLogoFile(this)">
-            </label>
+          <div id="dropzone_client_logo" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl p-5 text-center bg-slate-950/60 transition cursor-pointer relative" onclick="document.getElementById('input_client_logo_file').click()">
+            <input type="file" id="input_client_logo_file" accept="image/*" class="hidden" onchange="uploadClientLogoFile(this)">
+            <div id="client_logo_placeholder" class="space-y-1.5">
+              <div class="text-2xl">🏢</div>
+              <p class="text-xs font-semibold text-slate-300">คลิกหรือลากไฟล์ภาพโลโก้มาวางที่นี่เพื่ออัปโหลด</p>
+              <p class="text-[11px] text-slate-500">รองรับ SVG, PNG, WebP ขนาดไม่เกิน 5MB</p>
+            </div>
+            
+            <!-- Upload Progress Indicator Bar -->
+            <div id="client_logo_progress_wrap" class="hidden py-3 space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-blue-400 font-bold">
+                <span id="client_logo_progress_label">กำลังอัปโหลดขึ้น Cloudflare R2...</span>
+                <span id="client_logo_progress_pct">0%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div id="client_logo_progress_bar" class="bg-blue-600 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div id="client_logo_preview" class="mt-2 hidden">
+              <img src="" id="client_logo_preview_img" class="h-12 max-w-full mx-auto object-contain p-2 rounded-lg bg-slate-900 border border-slate-800" alt="Logo Preview">
+              <div class="mt-1.5 text-[11px] font-bold text-emerald-400">✓ อัปโหลดบน Cloudflare R2 สำเร็จ</div>
+            </div>
           </div>
-          <div id="client_logo_preview" class="mt-2 hidden">
-            <img src="" id="client_logo_preview_img" class="h-10 object-contain p-2 rounded bg-slate-800 border border-slate-700" alt="">
-          </div>
+          <input type="hidden" id="client_logo_url" required value="">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1">เว็บไซต์ของลูกค้า (ถ้ามี)</label>
@@ -706,11 +769,14 @@
       inquiries: [],
       settingsMap: {},
       editingType: null,
-      editingItem: null
+      editingItem: null,
+      pages: [],
+      builderRows: [],
+      builderMode: 'visual'
     };
 
     function switchTab(tabId) {
-      const tabs = ['dashboard', 'navigation', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
+      const tabs = ['dashboard', 'navigation', 'pages', 'portfolios', 'services', 'articles', 'clients', 'inquiries', 'settings'];
       tabs.forEach(function(t) {
         const sec = document.getElementById('section-' + t);
         const btn = document.getElementById('btn-tab-' + t);
@@ -733,6 +799,7 @@
       const titles = {
         'dashboard': 'Dashboard ภาพรวม',
         'navigation': 'Navigation เมนูหลัก',
+        'pages': 'สร้างเพจใหม่ (Page Builder)',
         'portfolios': 'Portfolios ผลงาน',
         'services': 'Services บริการ',
         'articles': 'บทความ & ข่าวสาร (Blog & Events)',
@@ -755,7 +822,7 @@
 
     async function loadAllData() {
       try {
-        const [s, p, sv, a, cl, inq, nav, set] = await Promise.all([
+        const [s, p, sv, a, cl, inq, nav, set, pg] = await Promise.all([
           fetch('/api/admin/dashboard/stats').then(function(r) { return r.json(); }).catch(function() { return {}; }),
           fetch('/api/admin/portfolios').then(function(r) { return r.json(); }).catch(function() { return {}; }),
           fetch('/api/admin/services').then(function(r) { return r.json(); }).catch(function() { return {}; }),
@@ -763,7 +830,8 @@
           fetch('/api/admin/client-logos').then(function(r) { return r.json(); }).catch(function() { return {}; }),
           fetch('/api/admin/inquiries').then(function(r) { return r.json(); }).catch(function() { return {}; }),
           fetch('/api/admin/navigation').then(function(r) { return r.json(); }).catch(function() { return {}; }),
-          fetch('/api/admin/site-settings').then(function(r) { return r.json(); }).catch(function() { return {}; })
+          fetch('/api/admin/site-settings').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+          fetch('/api/admin/pages').then(function(r) { return r.json(); }).catch(function() { return {}; })
         ]);
 
         if (s.data) renderDashboard(s.data);
@@ -774,6 +842,7 @@
         if (cl.data) renderClientLogos(cl.data);
         if (inq.data) renderInquiries(inq.data);
         if (set.data) renderSettings(set.data);
+        if (pg.data) renderCustomPages(pg.data);
 
         refreshIcons();
       } catch (err) {
@@ -1065,12 +1134,12 @@
             tagsMeta = typeof item.tags_meta === 'object' ? item.tags_meta : JSON.parse(item.tags_meta || '{}');
           } catch(e) {}
 
-          document.getElementById('tag_country').value = tagsMeta.country || '';
-          document.getElementById('tag_type').value = tagsMeta.type || '';
-          document.getElementById('tag_destination').value = tagsMeta.destination || '';
-          document.getElementById('tag_transport').value = tagsMeta.transportation || '';
-          document.getElementById('tag_location').value = tagsMeta.location_name || '';
-          document.getElementById('tag_activity').value = tagsMeta.activity || '';
+          document.getElementById('tag_service').value = tagsMeta.service || tagsMeta.type || '';
+          document.getElementById('tag_industry').value = tagsMeta.industry || tagsMeta.country || '';
+          document.getElementById('tag_platform').value = tagsMeta.platform || tagsMeta.destination || '';
+          document.getElementById('tag_target').value = tagsMeta.target_audience || tagsMeta.transportation || '';
+          document.getElementById('tag_objective').value = tagsMeta.objective || tagsMeta.location_name || '';
+          document.getElementById('tag_format').value = tagsMeta.format || tagsMeta.activity || '';
 
           document.getElementById('editor_cover_url').value = item.cover_image || '';
           if (item.cover_image) {
@@ -1102,12 +1171,12 @@
       document.getElementById('editor_content_th').innerHTML = '';
       document.getElementById('editor_content_en').innerHTML = '';
 
-      document.getElementById('tag_country').value = '';
-      document.getElementById('tag_type').value = '';
-      document.getElementById('tag_destination').value = '';
-      document.getElementById('tag_transport').value = '';
-      document.getElementById('tag_location').value = '';
-      document.getElementById('tag_activity').value = '';
+      document.getElementById('tag_service').value = '';
+      document.getElementById('tag_industry').value = '';
+      document.getElementById('tag_platform').value = '';
+      document.getElementById('tag_target').value = '';
+      document.getElementById('tag_objective').value = '';
+      document.getElementById('tag_format').value = '';
 
       removeCoverImage();
       document.getElementById('editor_travel_date').value = new Date().toISOString().substring(0, 10);
@@ -1193,25 +1262,89 @@
       alert('บันทึกพิกัดแผนที่เรียบร้อย');
     }
 
-    async function uploadCoverImage(input) {
-      const file = input.files && input.files[0];
+    // Universal Upload with Progress Tracking
+    function uploadFileWithProgress(file, callbacks) {
       if (!file) return;
+      const onProgress = callbacks && callbacks.onProgress;
+      const onSuccess = callbacks && callbacks.onSuccess;
+      const onError = callbacks && callbacks.onError;
+
+      const xhr = new XMLHttpRequest();
       const fd = new FormData();
       fd.append('file', file);
-      try {
-        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success && data.file_url) {
-          document.getElementById('editor_cover_url').value = data.file_url;
-          document.getElementById('cover_placeholder').classList.add('hidden');
-          document.getElementById('cover_preview_box').classList.remove('hidden');
-          document.getElementById('cover_preview_img').src = data.file_url;
-        } else {
-          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));
+
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable && onProgress) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          onProgress(percent);
         }
-      } catch (err) {
-        alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + err.message);
-      }
+      });
+
+      xhr.addEventListener('load', function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success && data.file_url) {
+              if (onSuccess) onSuccess(data.file_url, data);
+            } else {
+              if (onError) onError(data.error || 'อัปโหลดล้มเหลว');
+            }
+          } catch (e) {
+            if (onError) onError('รูปแบบการตอบกลับไม่ถูกต้อง');
+          }
+        } else {
+          if (onError) onError('HTTP ' + xhr.status + ': อัปโหลดล้มเหลว');
+        }
+      });
+
+      xhr.addEventListener('error', function() {
+        if (onError) onError('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
+      });
+
+      xhr.open('POST', '/api/admin/media/upload');
+      xhr.send(fd);
+    }
+
+    function uploadCoverImage(input) {
+      const file = input.files && input.files[0];
+      if (file) uploadCoverFile(file);
+    }
+
+    function uploadCoverFile(file) {
+      if (!file) return;
+      const wrap = document.getElementById('cover_progress_wrap');
+      const bar = document.getElementById('cover_progress_bar');
+      const pct = document.getElementById('cover_progress_pct');
+      const placeholder = document.getElementById('cover_placeholder');
+      const previewBox = document.getElementById('cover_preview_box');
+
+      wrap.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      previewBox.classList.add('hidden');
+      bar.style.width = '0%';
+      pct.innerText = '0%';
+
+      uploadFileWithProgress(file, {
+        onProgress: function(percent) {
+          bar.style.width = percent + '%';
+          pct.innerText = percent + '%';
+        },
+        onSuccess: function(fileUrl) {
+          bar.style.width = '100%';
+          pct.innerText = '100%';
+          setTimeout(function() {
+            wrap.classList.add('hidden');
+            document.getElementById('editor_cover_url').value = fileUrl;
+            document.getElementById('cover_preview_box').classList.remove('hidden');
+            document.getElementById('cover_preview_img').src = fileUrl;
+          }, 400);
+        },
+        onError: function(err) {
+          wrap.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+          alert('อัปโหลดภาพปกไม่สำเร็จ: ' + err);
+        }
+      });
     }
 
     function removeCoverImage() {
@@ -1221,24 +1354,47 @@
       document.getElementById('cover_placeholder').classList.remove('hidden');
     }
 
-    async function uploadAndInsertImage(input) {
+    function uploadAndInsertImage(input) {
       const file = input.files && input.files[0];
+      if (file) insertImageIntoContent(file);
+    }
+
+    function insertImageIntoContent(file) {
       if (!file) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      try {
-        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success && data.file_url) {
-          const imgHtml = '<figure class="my-4"><img src="' + data.file_url + '" class="rounded-2xl max-w-full mx-auto shadow" alt=""><figcaption class="text-xs text-center text-slate-400 mt-1.5"></figcaption></figure><p><br></p>';
-          document.getElementById('editor_content_th').focus();
+      showEditorUploadPill('กำลังอัปโหลดภาพลงเนื้อหา... 0%');
+
+      uploadFileWithProgress(file, {
+        onProgress: function(percent) {
+          showEditorUploadPill('กำลังอัปโหลดภาพลงเนื้อหา... ' + percent + '%');
+        },
+        onSuccess: function(fileUrl) {
+          showEditorUploadPill('✓ อัปโหลดภาพสำเร็จ!');
+          setTimeout(hideEditorUploadPill, 1200);
+
+          const imgHtml = '<figure class="my-4"><img src="' + fileUrl + '" class="rounded-2xl max-w-full mx-auto shadow" alt=""><figcaption class="text-xs text-center text-slate-400 mt-1.5"></figcaption></figure><p><br></p>';
+          const target = appState.editorLang === 'en' ? document.getElementById('editor_content_en') : document.getElementById('editor_content_th');
+          target.focus();
           execCmd('insertHTML', imgHtml);
-        } else {
-          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));
+        },
+        onError: function(err) {
+          hideEditorUploadPill();
+          alert('อัปโหลดภาพลงบทความล้มเหลว: ' + err);
         }
-      } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+      });
+    }
+
+    function showEditorUploadPill(text) {
+      const pill = document.getElementById('editor_upload_pill');
+      const pillText = document.getElementById('editor_upload_pill_text');
+      if (pill && pillText) {
+        pillText.innerText = text;
+        pill.classList.remove('hidden');
       }
+    }
+
+    function hideEditorUploadPill() {
+      const pill = document.getElementById('editor_upload_pill');
+      if (pill) pill.classList.add('hidden');
     }
 
     async function runAiTranslate() {
@@ -1250,12 +1406,18 @@
       const summary = document.getElementById('editor_summary_th').value;
       const content = document.getElementById('editor_content_th').innerText;
       const tagsMeta = {
-        country: document.getElementById('tag_country').value,
-        type: document.getElementById('tag_type').value,
-        destination: document.getElementById('tag_destination').value,
-        transportation: document.getElementById('tag_transport').value,
-        location_name: document.getElementById('tag_location').value,
-        activity: document.getElementById('tag_activity').value
+        service: document.getElementById('tag_service').value,
+        industry: document.getElementById('tag_industry').value,
+        platform: document.getElementById('tag_platform').value,
+        target_audience: document.getElementById('tag_target').value,
+        objective: document.getElementById('tag_objective').value,
+        format: document.getElementById('tag_format').value,
+        country: document.getElementById('tag_industry').value,
+        type: document.getElementById('tag_service').value,
+        destination: document.getElementById('tag_platform').value,
+        transportation: document.getElementById('tag_target').value,
+        location_name: document.getElementById('tag_objective').value,
+        activity: document.getElementById('tag_format').value
       };
 
       try {
@@ -1294,12 +1456,18 @@
       }
 
       const tagsMeta = {
-        country: document.getElementById('tag_country').value,
-        type: document.getElementById('tag_type').value,
-        destination: document.getElementById('tag_destination').value,
-        transportation: document.getElementById('tag_transport').value,
-        location_name: document.getElementById('tag_location').value,
-        activity: document.getElementById('tag_activity').value
+        service: document.getElementById('tag_service').value,
+        industry: document.getElementById('tag_industry').value,
+        platform: document.getElementById('tag_platform').value,
+        target_audience: document.getElementById('tag_target').value,
+        objective: document.getElementById('tag_objective').value,
+        format: document.getElementById('tag_format').value,
+        country: document.getElementById('tag_industry').value,
+        type: document.getElementById('tag_service').value,
+        destination: document.getElementById('tag_platform').value,
+        transportation: document.getElementById('tag_target').value,
+        location_name: document.getElementById('tag_objective').value,
+        activity: document.getElementById('tag_format').value
       };
 
       const payload = {
@@ -1340,6 +1508,7 @@
           alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
           closeRichEditor();
           await loadAllData();
+      setupDragAndDropHandlers();
         } else {
           alert('เกิดข้อผิดพลาด: ' + (d.error || 'กรุณาลองใหม่'));
         }
@@ -1420,24 +1589,46 @@
       document.getElementById('modal-client').classList.remove('flex');
     }
 
-    async function uploadClientLogoFile(input) {
+    function uploadClientLogoFile(input) {
       const file = input.files && input.files[0];
+      if (file) uploadClientLogoDrop(file);
+    }
+
+    function uploadClientLogoDrop(file) {
       if (!file) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      try {
-        const res = await fetch('/api/admin/media/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success && data.file_url) {
-          document.getElementById('client_logo_url').value = data.file_url;
-          document.getElementById('client_logo_preview').classList.remove('hidden');
-          document.getElementById('client_logo_preview_img').src = data.file_url;
-        } else {
-          alert('อัปโหลดล้มเหลว: ' + (data.error || 'กรุณาลองใหม่'));
+      const wrap = document.getElementById('client_logo_progress_wrap');
+      const bar = document.getElementById('client_logo_progress_bar');
+      const pct = document.getElementById('client_logo_progress_pct');
+      const placeholder = document.getElementById('client_logo_placeholder');
+      const previewBox = document.getElementById('client_logo_preview');
+
+      wrap.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      previewBox.classList.add('hidden');
+      bar.style.width = '0%';
+      pct.innerText = '0%';
+
+      uploadFileWithProgress(file, {
+        onProgress: function(percent) {
+          bar.style.width = percent + '%';
+          pct.innerText = percent + '%';
+        },
+        onSuccess: function(fileUrl) {
+          bar.style.width = '100%';
+          pct.innerText = '100%';
+          setTimeout(function() {
+            wrap.classList.add('hidden');
+            document.getElementById('client_logo_url').value = fileUrl;
+            previewBox.classList.remove('hidden');
+            document.getElementById('client_logo_preview_img').src = fileUrl;
+          }, 350);
+        },
+        onError: function(err) {
+          wrap.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+          alert('อัปโหลดโลโก้ล้มเหลว: ' + err);
         }
-      } catch (e) {
-        alert('เกิดข้อผิดพลาด: ' + e.message);
-      }
+      });
     }
 
     async function uploadGenericFile(input, targetInputId) {
@@ -1617,5 +1808,120 @@
       loadAllData();
     });
   </script>
+  <!-- ==================== PAGE BUILDER MODAL ==================== -->
+  <div id="modal-page-builder" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/85 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="bg-slate-900 text-slate-100 border border-slate-800 rounded-2xl w-full max-w-5xl my-8 shadow-2xl flex flex-col overflow-hidden max-h-[94vh]">
+      
+      <!-- Top Action Bar -->
+      <div class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 id="page-builder-modal-title" class="text-sm font-bold text-white">สร้างหน้าเพจใหม่ (Page Builder)</h4>
+            <p class="text-[11px] text-slate-400">สร้างเลย์เอาต์ จัดวางคอลัมน์ หรือเขียน Custom HTML ได้ตามต้องการ</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="previewPageBuilder()" class="px-3.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1.5">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i><span>Live Preview</span>
+          </button>
+          <button type="button" onclick="handleSavePage()" class="px-5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition flex items-center gap-1.5">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i><span>บันทึกหน้าเพจ</span>
+          </button>
+          <button type="button" onclick="closePageBuilderModal()" class="text-slate-400 hover:text-white p-1 text-base">✕</button>
+        </div>
+      </div>
+
+      <!-- Builder Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <input type="hidden" id="builder_page_id" value="">
+
+        <!-- Basic Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800/80">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">ชื่อหน้าเพจ (Page Title) *</label>
+            <input type="text" id="builder_page_title" oninput="autoGeneratePageSlug(this.value)" placeholder="เช่น บริการโปรดักชันภาพถ่าย 2026" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">URL Slug / Path * (จะแสดงผลที่ /p/your-slug)</label>
+            <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-400">
+              <span class="shrink-0 text-slate-500">/p/</span>
+              <input type="text" id="builder_page_slug" placeholder="commercial-production" class="flex-1 bg-transparent text-white focus:outline-none ml-1">
+            </div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-300 mb-1">คำอธิบายหน้าเพจสำหรับ SEO (Meta Description)</label>
+            <input type="text" id="builder_meta_description" placeholder="สรุปเนื้อหาหน้าเพจ 1-2 ประโยคสำหรับ Google Search และ Social Share..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none">
+          </div>
+          <div class="md:col-span-2 flex items-center justify-between pt-2 border-t border-slate-800/60">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="builder_add_to_nav" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+              <span class="text-xs font-medium text-slate-300">เพิ่มลิงก์หน้านี้ลงในแถบนำทาง (Navbar) อัตโนมัติ</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="builder_is_active" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+              <span class="text-xs font-medium text-slate-300">เปิดเผยแพร่ (Published)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div class="flex gap-2">
+            <button type="button" onclick="switchBuilderMode('visual')" id="btn-builder-visual" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i><span>Visual Block Builder (โครงสร้างคอลัมน์)</span>
+            </button>
+            <button type="button" onclick="switchBuilderMode('html')" id="btn-builder-html" class="px-4 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+              <i data-lucide="code" class="w-3.5 h-3.5"></i><span>Custom HTML & Tailwind Mode</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Block Builder Area -->
+        <div id="builder-visual-area" class="space-y-4">
+          <div id="builder-rows-container" class="space-y-4">
+            <!-- Dynamic rows will be rendered here -->
+          </div>
+
+          <div class="p-6 border-2 border-dashed border-slate-800 rounded-2xl text-center bg-slate-950/40">
+            <p class="text-xs text-slate-400 mb-3">เพิ่มแถวใหม่เพื่อแบ่งคอลัมน์และใส่เนื้อหา</p>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onclick="addBuilderRow(1)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
+                <span>[ 1 คอลัมน์เต็ม ]</span>
+              </button>
+              <button type="button" onclick="addBuilderRow(2)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
+                <span>[ 2 คอลัมน์ 50/50 ]</span>
+              </button>
+              <button type="button" onclick="addBuilderRow(3)" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
+                <span>[ 3 คอลัมน์ 33/33/33 ]</span>
+              </button>
+              <button type="button" onclick="addBuilderRow('2-1')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-white flex items-center gap-1.5">
+                <span>[ 2 คอลัมน์ คอนเทนต์ 67% + ด้านข้าง 33% ]</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom HTML / Code Area -->
+        <div id="builder-html-area" class="space-y-3 hidden">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span>พิมพ์โค้ด HTML หรือ Tailwind CSS ได้อิสระ:</span>
+            <span class="text-[11px] text-blue-400 font-mono">HTML5 / Tailwind v3 Supported</span>
+          </div>
+          <textarea id="builder_raw_html" rows="18" placeholder="<div class=&quot;max-w-4xl mx-auto py-12&quot;>&#10;  <h1 class=&quot;text-3xl font-bold text-white&quot;>หัวข้อของคุณ</h1>&#10;  <p class=&quot;text-slate-400 mt-4 leading-relaxed&quot;>เนื้อหา...</p>&#10;</div>" class="w-full bg-slate-950 font-mono text-xs text-emerald-400 border border-slate-800 rounded-2xl p-4 focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Image Upload Pill -->
+  <div id="editor_upload_pill" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 text-xs flex items-center gap-2 z-[99] hidden">
+    <div class="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+    <span id="editor_upload_pill_text">กำลังอัปโหลดภาพลงบทความ... 0%</span>
+  </div>
+
 </body>
 </html>

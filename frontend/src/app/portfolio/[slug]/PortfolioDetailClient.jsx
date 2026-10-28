@@ -96,32 +96,37 @@ export default function PortfolioDetailClient({ slug }) {
                 </p>
               )}
 
-              {/* Tags 6 Dimensions Bar */}
-              {(tagsMeta.country || tagsMeta.type || tagsMeta.destination || tagsMeta.location_name || tagsMeta.activity) && (
+              {/* Marketing Agency Tags Bar */}
+              {(tagsMeta.service || tagsMeta.industry || tagsMeta.platform || tagsMeta.target_audience || tagsMeta.objective || tagsMeta.format || tagsMeta.country || tagsMeta.type) && (
                 <div className="pt-2 flex flex-wrap gap-2 text-xs">
-                  {tagsMeta.country && (
+                  {(tagsMeta.service || tagsMeta.type) && (
+                    <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-blue-400 font-semibold">
+                      🚀 {tagsMeta.service || tagsMeta.type}
+                    </span>
+                  )}
+                  {(tagsMeta.industry || tagsMeta.country) && (
                     <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300">
-                      🌍 {tagsMeta.country}
+                      🏢 {tagsMeta.industry || tagsMeta.country}
                     </span>
                   )}
-                  {tagsMeta.destination && (
+                  {(tagsMeta.platform || tagsMeta.destination) && (
+                    <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-indigo-400 font-medium">
+                      📱 {tagsMeta.platform || tagsMeta.destination}
+                    </span>
+                  )}
+                  {(tagsMeta.target_audience || tagsMeta.transportation) && (
                     <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300">
-                      📍 {tagsMeta.destination}
+                      👥 {tagsMeta.target_audience || tagsMeta.transportation}
                     </span>
                   )}
-                  {tagsMeta.location_name && (
-                    <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-blue-400 font-medium">
-                      🏢 {tagsMeta.location_name}
-                    </span>
-                  )}
-                  {tagsMeta.transportation && (
-                    <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300">
-                      🚗 {tagsMeta.transportation}
-                    </span>
-                  )}
-                  {tagsMeta.activity && (
+                  {(tagsMeta.objective || tagsMeta.location_name) && (
                     <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-emerald-400 font-medium">
-                      ✨ {tagsMeta.activity}
+                      🎯 {tagsMeta.objective || tagsMeta.location_name}
+                    </span>
+                  )}
+                  {(tagsMeta.format || tagsMeta.activity) && (
+                    <span className="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-800 text-purple-400 font-medium">
+                      📦 {tagsMeta.format || tagsMeta.activity}
                     </span>
                   )}
                 </div>

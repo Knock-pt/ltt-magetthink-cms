@@ -92,13 +92,15 @@ export default function BlogDetailClient({ slug }) {
                 </p>
               )}
 
-              {/* Tags 6 Dimensions */}
-              {(tagsMeta.country || tagsMeta.type || tagsMeta.destination || tagsMeta.location_name || tagsMeta.activity) && (
+              {/* Marketing Agency Tags */}
+              {(tagsMeta.service || tagsMeta.industry || tagsMeta.platform || tagsMeta.target_audience || tagsMeta.objective || tagsMeta.format || tagsMeta.country || tagsMeta.type) && (
                 <div className="pt-2 flex flex-wrap gap-2 text-xs">
-                  {tagsMeta.country && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">🌍 {tagsMeta.country}</span>}
-                  {tagsMeta.destination && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">📍 {tagsMeta.destination}</span>}
-                  {tagsMeta.location_name && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-blue-400 font-medium">🏢 {tagsMeta.location_name}</span>}
-                  {tagsMeta.activity && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-medium">✨ {tagsMeta.activity}</span>}
+                  {(tagsMeta.service || tagsMeta.type) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-blue-400 font-semibold">🚀 {tagsMeta.service || tagsMeta.type}</span>}
+                  {(tagsMeta.industry || tagsMeta.country) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">🏢 {tagsMeta.industry || tagsMeta.country}</span>}
+                  {(tagsMeta.platform || tagsMeta.destination) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 font-medium">📱 {tagsMeta.platform || tagsMeta.destination}</span>}
+                  {(tagsMeta.target_audience || tagsMeta.transportation) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">👥 {tagsMeta.target_audience || tagsMeta.transportation}</span>}
+                  {(tagsMeta.objective || tagsMeta.location_name) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-medium">🎯 {tagsMeta.objective || tagsMeta.location_name}</span>}
+                  {(tagsMeta.format || tagsMeta.activity) && <span className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-purple-400 font-medium">📦 {tagsMeta.format || tagsMeta.activity}</span>}
                 </div>
               )}
             </div>
