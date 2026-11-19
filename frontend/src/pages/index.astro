@@ -1,25 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getLanguageContext, setPublicCacheHeaders } from '../lib/i18n.js';
-import {
-  getSiteSettings,
-  getServices,
-  getPortfolios,
-  getArticles,
-  getClientLogos,
-  resolveMediaUrl,
-} from '../lib/api.js';
+import { getHomePageBundle, resolveMediaUrl } from '../lib/api.js';
 
 setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 
-const [settings, services, portfolios, articles, clientLogos] = await Promise.all([
-  getSiteSettings(Astro),
-  getServices(Astro),
-  getPortfolios(Astro),
-  getArticles(Astro),
-  getClientLogos(Astro),
-]);
+const { settings, menus, services, portfolios, articles, clientLogos } = await getHomePageBundle(Astro);
 
 const heroBadge =
   language === 'en'
@@ -35,7 +22,7 @@ const heroSubheadline =
     : settings.hero_subheadline || t('hero_subtitle');
 ---
 
-<BaseLayout language={language} t={t} settings={settings}>
+<BaseLayout language={language} t={t} settings={settings} menus={menus}>
   <!-- Hero Section -->
   <section class="relative pt-24 pb-20 md:pt-36 md:pb-32 overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.18),rgba(255,255,255,0))]"></div>

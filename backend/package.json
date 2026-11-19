@@ -8,7 +8,6 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "build": "node ../build_worker.cjs",
     "db:init:remote": "wrangler d1 execute ltt-cms-db --remote --file=./schema.sql",
     "db:seed:remote": "wrangler d1 execute ltt-cms-db --remote --file=./seed.sql"
   },

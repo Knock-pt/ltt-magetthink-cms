@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-import { getNavigation, getSiteSettings, resolveMediaUrl } from '../lib/api.js';
+import { getLayoutBundle, getNavigation, getSiteSettings, resolveMediaUrl } from '../lib/api.js';
 
 const {
   title,
@@ -14,10 +14,16 @@ const {
   menus: passedMenus,
 } = Astro.props;
 
-const [settings, menus] = await Promise.all([
-  passedSettings ? Promise.resolve(passedSettings) : getSiteSettings(Astro),
-  passedMenus ? Promise.resolve(passedMenus) : getNavigation(Astro),
-]);
+let settings = passedSettings;
+let menus = passedMenus;
+if (!settings && !menus) {
+  const bundle = await getLayoutBundle(Astro);
+  settings = bundle.settings;
+  menus = bundle.menus;
+} else {
+  if (!settings) settings = await getSiteSettings(Astro);
+  if (!menus) menus = await getNavigation(Astro);
+}
 
 const siteTitle = settings.site_title || 'LTT Ma getThink — One-Stop Marketing & Creative Agency';
 const metaTitle = title ? `${title} | LTT Ma getThink` : siteTitle;
@@ -39,6 +45,7 @@ const fbPixelId = settings.fb_pixel_id || '';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold' font-size='18'>L</text></svg>" />
     <title>{metaTitle}</title>
     <meta name="description" content={metaDesc} />
     <link rel="canonical" href={canonicalUrl} />

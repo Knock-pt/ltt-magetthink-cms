@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold' font-size='18'>L</text></svg>">
   <title>LTT Ma getThink — Edge CMS Backoffice</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.474.0/dist/umd/lucide.min.js" defer></script>
   <style>
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', sans-serif; }
     .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
@@ -777,6 +778,49 @@
     </div>
   </div>
 
+  <!-- Service Modal -->
+  <div id="modal-service" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-white text-sm">แก้ไขข้อมูลบริการ &amp; Checkmarks</h4>
+        <button type="button" onclick="closeServiceModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <form id="form-service" onsubmit="handleSaveService(event)" class="space-y-3">
+        <input type="hidden" id="service_id">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อบริการ (Title) *</label>
+          <input type="text" id="service_title" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">คำโปรยย่อย (Subtitle)</label>
+          <input type="text" id="service_subtitle" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">รายละเอียด (Description)</label>
+          <textarea rows="3" id="service_desc" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">รูปภาพบริการ (Image URL / R2)</label>
+          <div class="flex gap-2">
+            <input type="text" id="service_image_url" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            <label class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 cursor-pointer flex items-center gap-1.5 shrink-0">
+              <span>อัปโหลด R2</span>
+              <input type="file" accept="image/*" class="hidden" onchange="uploadGenericFile(this, 'service_image_url')">
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">รายการติ๊กถูก Checkmarks (บรรทัดละ 1 รายการ)</label>
+          <textarea rows="4" id="service_bullets" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeServiceModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-500/20">บันทึกบริการ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Note Modal -->
   <div id="modal-note" class="fixed inset-0 z-50 items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
@@ -925,16 +969,20 @@
     async function loadTabData(tabId, force = false) {
       try {
         if (tabId === 'dashboard') {
-          const res = await adminFetch('/api/admin/dashboard/stats');
-          const data = await res.json();
-          if (data.data) renderDashboard(data.data);
+          if (!force && window.__INITIAL_DASHBOARD__) {
+            const initData = window.__INITIAL_DASHBOARD__;
+            delete window.__INITIAL_DASHBOARD__;
+            renderDashboard(initData);
+          } else {
+            const res = await adminFetch('/api/admin/dashboard/stats');
+            const data = await res.json();
+            if (data.data) renderDashboard(data.data);
+          }
         } else if (tabId === 'navigation') {
-          const [nav, pg] = await Promise.all([
-            adminFetch('/api/admin/navigation').then(r => r.json()).catch(() => ({})),
-            adminFetch('/api/admin/pages').then(r => r.json()).catch(() => ({}))
-          ]);
-          if (nav.data) renderNavigation(nav.data);
-          if (pg.data) renderCustomPages(pg.data);
+          const res = await adminFetch('/api/admin/navigation?include_pages=1');
+          const d = await res.json();
+          if (d.data) renderNavigation(d.data);
+          if (d.pages) renderCustomPages(d.pages);
         } else if (tabId === 'portfolios') {
           const res = await adminFetch('/api/admin/portfolios');
           const data = await res.json();
@@ -2095,7 +2143,7 @@
       const fd = new FormData();
       fd.append('file', file);
 
-      showUploadProgress('กำลังอัปโหลดภาพลง R2... 25%');
+      showEditorUploadPill('กำลังอัปโหลดภาพลง R2... 25%');
 
       adminFetch('/api/admin/media/upload', {
         method: 'POST',
@@ -2103,7 +2151,7 @@
       })
       .then(r => r.json())
       .then(d => {
-        hideUploadProgress();
+        hideEditorUploadPill();
         if (d.success && d.file_url) {
           updateBlockProp(rIdx, cIdx, bIdx, 'url', d.file_url);
         } else {
@@ -2111,7 +2159,7 @@
         }
       })
       .catch(err => {
-        hideUploadProgress();
+        hideEditorUploadPill();
         alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + err.message);
       });
     }
