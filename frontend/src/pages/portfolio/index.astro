@@ -32,19 +32,25 @@ const hotelPhotos = [
 ];
 ---
 
-<BaseLayout title="PORTFOLIO — ผลงานที่ผ่านมา" language={language} t={t}>
+<BaseLayout
+  title={language === 'en' ? 'PORTFOLIO — Selected Works & Photography Showcase' : 'PORTFOLIO — ผลงานที่ผ่านมา'}
+  language={language}
+  t={t}
+>
   <!-- Hero Banner -->
   <section class="ltt-hero-bg py-14 md:py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
       <div class="lg:col-span-6 space-y-3">
         <h1 class="text-4xl sm:text-5xl font-extrabold text-[#5b2d82]">PORTFOLIO</h1>
         <div class="space-y-1 text-xl sm:text-2xl font-extrabold text-[#2F2F2F]">
-          <p>รับดูแลการตลาดออนไลน์</p>
-          <p>รับผลิตคอนเทนต์รีวิว</p>
-          <p>รับถ่ายภาพสินค้า</p>
+          <p>{language === 'en' ? 'Online Marketing Management' : 'รับดูแลการตลาดออนไลน์'}</p>
+          <p>{language === 'en' ? 'Review Content Production' : 'รับผลิตคอนเทนต์รีวิว'}</p>
+          <p>{language === 'en' ? 'Product & Hotel Photography' : 'รับถ่ายภาพสินค้า'}</p>
         </div>
         <p class="text-sm text-[#3a284e] font-medium">
-          LTT Ma getThink เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ
+          {language === 'en'
+            ? 'LTT Ma getThink — We provide ONE STOP SERVICE for your brand.'
+            : 'LTT Ma getThink เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ'}
         </p>
       </div>
       <div class="lg:col-span-6 flex justify-center">
@@ -63,7 +69,11 @@ const hotelPhotos = [
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div class="text-center space-y-2">
           <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">FEATURED CASE STUDIES</h2>
-          <p class="text-xs sm:text-sm text-slate-500">คลิกที่การ์ดผลงานเพื่อดูรายละเอียดและแกลเลอรีของแต่ละโปรเจกต์</p>
+          <p class="text-xs sm:text-sm text-slate-500">
+            {language === 'en'
+              ? 'Click on any project card below to explore full campaign details and photo gallery'
+              : 'คลิกที่การ์ดผลงานเพื่อดูรายละเอียดและแกลเลอรีของแต่ละโปรเจกต์'}
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -9,7 +9,10 @@ const { language, t } = getLanguageContext(Astro);
 const { settings, services, portfolios, articles, clientLogos } = await getHomePageBundle(Astro);
 const phone = settings.phone || '0960429083';
 const email = settings.email || 'contact@lttmagetthink.co';
-const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
+const address =
+  language === 'en'
+    ? 'LTT Ma getThink Co., Ltd. 65/73 Moo 6, Lam Luk Ka, Pathum Thani 12150, Thailand'
+    : settings.address || '65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
 ---
 
 <BaseLayout language={language} t={t} settings={settings}>
@@ -20,13 +23,13 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
         <!-- Left Hero Text & Lead Box -->
         <div class="lg:col-span-6 space-y-5">
           <div class="space-y-1.5 sm:space-y-2">
-            <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+            <h1 class={`${language === 'en' ? 'text-2xl sm:text-4xl lg:text-[42px]' : 'text-3xl sm:text-5xl'} font-extrabold text-[#5b2d82] tracking-tight leading-snug`}>
               {language === 'en' ? 'Online Marketing Management' : 'รับดูแลการตลาดออนไลน์'}
             </h1>
-            <h2 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+            <h2 class={`${language === 'en' ? 'text-2xl sm:text-4xl lg:text-[42px]' : 'text-3xl sm:text-5xl'} font-extrabold text-[#5b2d82] tracking-tight leading-snug`}>
               {language === 'en' ? 'Review Content Production' : 'รับผลิตคอนเทนต์รีวิว'}
             </h2>
-            <h2 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+            <h2 class={`${language === 'en' ? 'text-2xl sm:text-4xl lg:text-[42px]' : 'text-3xl sm:text-5xl'} font-extrabold text-[#5b2d82] tracking-tight leading-snug`}>
               {language === 'en' ? 'Product & Hotel Photography' : 'รับถ่ายภาพสินค้า'}
             </h2>
           </div>
@@ -131,28 +134,48 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
           <ul class="space-y-3 text-sm sm:text-base text-[#3d3d3d]">
             <li class="flex items-start gap-3">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-              <span>มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร</span>
+              <span>
+                {language === 'en'
+                  ? 'Want to promote your brand online, but do not know where to start?'
+                  : 'มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร'}
+              </span>
             </li>
             <li class="flex items-start gap-3">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-              <span>ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา</span>
+              <span>
+                {language === 'en'
+                  ? 'Need standout photography and creative design, but lack a dedicated professional team?'
+                  : 'ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา'}
+              </span>
             </li>
             <li class="flex items-start gap-3">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-              <span>ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง</span>
+              <span>
+                {language === 'en'
+                  ? 'Do not have enough time to plan, manage, and execute digital marketing by yourself?'
+                  : 'ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง'}
+              </span>
             </li>
             <li class="flex items-start gap-3">
               <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-              <span>อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ</span>
+              <span>
+                {language === 'en'
+                  ? 'Looking for the right Influencers or KOLs who genuinely match your brand identity and reach your target audience accurately?'
+                  : 'อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ'}
+              </span>
             </li>
           </ul>
 
           <div class="pt-3 space-y-2">
             <p class="text-lg sm:text-xl font-extrabold text-[#633583]">
-              LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!
+              {language === 'en'
+                ? 'LTT Ma getThink is here to consult, manage, and solve all these marketing challenges for you!'
+                : 'LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!'}
             </p>
             <p class="text-base sm:text-lg font-extrabold ltt-heading-gradient">
-              "เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"
+              {language === 'en'
+                ? '"Because great marketing is the heart of building a successful brand."'
+                : '"เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"'}
             </p>
           </div>
         </div>
@@ -166,10 +189,13 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
       <!-- 3 Core Pillars -->
       <div class="text-center space-y-3">
         <h2 class="text-3xl sm:text-4xl font-extrabold text-[#633583]">
-          บริการจาก <span class="ltt-heading-gradient">LTT Ma getThink</span>
+          {language === 'en' ? 'Our Services at ' : 'บริการจาก '}
+          <span class="ltt-heading-gradient">LTT Ma getThink</span>
         </h2>
         <p class="text-sm text-slate-600 max-w-2xl mx-auto">
-          เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ พร้อมช่วยยกระดับแบรนด์ให้โดดเด่นและแตกต่างในหลากหลายธุรกิจ
+          {language === 'en'
+            ? 'We provide ONE STOP SERVICE for your brand, helping elevate your business to stand out and succeed across diverse industries.'
+            : 'เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ พร้อมช่วยยกระดับแบรนด์ให้โดดเด่นและแตกต่างในหลากหลายธุรกิจ'}
         </p>
       </div>
 
@@ -183,7 +209,9 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
           />
           <h3 class="text-xl font-extrabold text-[#633583]">Influencer Marketing</h3>
           <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            รับผลิตคอนเทนต์รีวิว บ้าน คอนโด ที่พัก โรงแรม อสังหาริมทรัพย์ ร้านอาหาร คาเฟ่ อาหาร เครื่องดื่ม สินค้า อื่น ๆ
+            {language === 'en'
+              ? 'Review content production for houses, condos, hotels, resorts, real estate, restaurants, cafes, food & beverage, and lifestyle products.'
+              : 'รับผลิตคอนเทนต์รีวิว บ้าน คอนโด ที่พัก โรงแรม อสังหาริมทรัพย์ ร้านอาหาร คาเฟ่ อาหาร เครื่องดื่ม สินค้า อื่น ๆ'}
           </p>
         </a>
 
@@ -196,7 +224,9 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
           />
           <h3 class="text-xl font-extrabold text-[#633583]">Digital Marketing</h3>
           <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            รับดูแลการตลาดออนไลน์ เพจ Facebook Instagram และ Line OA วางแพลน คิดคอนเทนต์ ออกแบบภาพกราฟิกโฆษณา Video และ Reels
+            {language === 'en'
+              ? 'Full-service social media management for Facebook, Instagram, and LINE OA — content planning, copywriting, ad graphics, videos, and Reels.'
+              : 'รับดูแลการตลาดออนไลน์ เพจ Facebook Instagram และ Line OA วางแพลน คิดคอนเทนต์ ออกแบบภาพกราฟิกโฆษณา Video และ Reels'}
           </p>
         </a>
 
@@ -209,7 +239,9 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
           />
           <h3 class="text-xl font-extrabold text-[#633583]">Photography</h3>
           <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            รับถ่ายภาพสินค้า ร้านอาหาร อาหาร เครื่องดื่ม ขนมหวาน ผลิตภัณฑ์ Interior Exterior (โรงแรม รีสอร์ท คอนโด หอพัก บ้านเช่า)
+            {language === 'en'
+              ? 'Commercial photography for products, restaurants, food, drinks, desserts, and Interior & Exterior architecture (hotels, resorts, condos, residences).'
+              : 'รับถ่ายภาพสินค้า ร้านอาหาร อาหาร เครื่องดื่ม ขนมหวาน ผลิตภัณฑ์ Interior Exterior (โรงแรม รีสอร์ท คอนโด หอพัก บ้านเช่า)'}
           </p>
         </a>
       </div>
@@ -225,7 +257,12 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           {services.map((pkg, idx) => {
             const title = language === 'en' && pkg.title_en ? pkg.title_en : pkg.title;
-            const bullets = Array.isArray(pkg.bullet_points) ? pkg.bullet_points : [];
+            const bullets =
+              language === 'en' && Array.isArray(pkg.bullet_points_en) && pkg.bullet_points_en.length > 0
+                ? pkg.bullet_points_en
+                : Array.isArray(pkg.bullet_points)
+                  ? pkg.bullet_points
+                  : [];
             const isPopular = idx === 1;
 
             return (
@@ -270,7 +307,7 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
                     rel="noopener noreferrer"
                     class="w-full py-3 rounded-full ltt-btn-gradient text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition"
                   >
-                    <span>ขอราคาแพกเกจ</span>
+                    <span>{language === 'en' ? 'Request Package Price' : 'ขอราคาแพกเกจ'}</span>
                   </a>
                 </div>
               </div>
@@ -290,15 +327,17 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
             Our Latest Articles &amp; Blog
           </h2>
           <p class="text-xs sm:text-sm text-slate-500 mt-1">
-            อัปเดตข่าวสาร งานอีเวนต์ และเทรนด์การตลาดดิจิทัลล่าสุดจากทีมงาน LTT Ma getThink
+            {language === 'en'
+              ? 'Latest marketing trends, event highlights, and digital insights from the LTT Ma getThink team'
+              : 'อัปเดตข่าวสาร งานอีเวนต์ และเทรนด์การตลาดดิจิทัลล่าสุดจากทีมงาน LTT Ma getThink'}
           </p>
         </div>
         <div class="flex items-center gap-3">
           <a href="/blog" class="px-4 py-2 rounded-full bg-purple-100 text-[#633583] hover:bg-purple-200 text-xs font-bold transition">
-            ดู BLOG ทั้งหมด
+            {language === 'en' ? 'View All BLOG' : 'ดู BLOG ทั้งหมด'}
           </a>
           <a href="/event" class="px-4 py-2 rounded-full ltt-btn-gradient text-white text-xs font-bold shadow transition">
-            ดู EVENT ทั้งหมด
+            {language === 'en' ? 'View All EVENT' : 'ดู EVENT ทั้งหมด'}
           </a>
         </div>
       </div>
@@ -398,7 +437,7 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
               📍
             </div>
             <div>
-              <h3 class="font-extrabold text-sm text-[#633583]">ที่อยู่</h3>
+              <h3 class="font-extrabold text-sm text-[#633583]">{language === 'en' ? 'Address' : 'ที่อยู่'}</h3>
               <p class="text-xs sm:text-sm text-slate-600 mt-1">{address}</p>
             </div>
           </div>
@@ -408,7 +447,7 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
               ✉️
             </div>
             <div>
-              <h3 class="font-extrabold text-sm text-[#633583]">อีเมล</h3>
+              <h3 class="font-extrabold text-sm text-[#633583]">{language === 'en' ? 'Email' : 'อีเมล'}</h3>
               <p class="text-xs sm:text-sm text-slate-600 mt-1">{email}</p>
             </div>
           </div>
@@ -418,7 +457,7 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
               📞
             </div>
             <div>
-              <h3 class="font-extrabold text-sm text-[#633583]">เบอร์โทรศัพท์</h3>
+              <h3 class="font-extrabold text-sm text-[#633583]">{language === 'en' ? 'Phone' : 'เบอร์โทรศัพท์'}</h3>
               <p class="text-xs sm:text-sm text-slate-600 mt-1">{phone}</p>
             </div>
           </div>
@@ -442,7 +481,7 @@ const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.�
                 href={`tel:${phone}`}
                 class="px-5 py-2 rounded-full ltt-btn-gradient text-white text-xs font-bold shadow"
               >
-                📞 โทรติดต่อ
+                📞 {language === 'en' ? 'Call Now' : 'โทรติดต่อ'}
               </a>
               <a
                 href="https://lin.ee/mDp0CMk"

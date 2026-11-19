@@ -59,7 +59,7 @@ const gallery = Array.isArray(item?.gallery_images) ? item.gallery_images : [];
         </a>
       </div>
     ) : (
-      <article class="glass-card rounded-3xl p-6 sm:p-10 space-y-8">
+      <article class="space-y-8">
         <div class="space-y-4">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-[#633583] text-white uppercase">
@@ -77,14 +77,14 @@ const gallery = Array.isArray(item?.gallery_images) ? item.gallery_images : [];
           </h1>
 
           {displaySummary && (
-            <p class="text-sm sm:text-base text-slate-600 leading-relaxed border-l-4 border-[#8D56EC] pl-4 py-1 bg-purple-50/50 rounded-r-xl">
+            <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
               {displaySummary}
             </p>
           )}
         </div>
 
         {item.cover_image && (
-          <div class="rounded-2xl overflow-hidden shadow-lg border border-purple-100">
+          <div class="rounded-xl overflow-hidden">
             <img
               src={resolveMediaUrl(item.cover_image)}
               alt={displayTitle}
@@ -96,7 +96,7 @@ const gallery = Array.isArray(item?.gallery_images) ? item.gallery_images : [];
         {youtubeEmbed && (
           <div class="space-y-3">
             <h3 class="text-sm font-extrabold text-[#633583] uppercase">Video Showcase</h3>
-            <div class="aspect-video rounded-2xl overflow-hidden border border-purple-200 shadow-lg">
+            <div class="aspect-video rounded-xl overflow-hidden shadow">
               <iframe
                 class="w-full h-full"
                 src={`https://www.youtube.com/embed/${youtubeEmbed}`}
@@ -111,17 +111,17 @@ const gallery = Array.isArray(item?.gallery_images) ? item.gallery_images : [];
 
         {displayDetails && (
           <div
-            class="prose max-w-none text-[#2F2F2F] text-sm sm:text-base leading-relaxed py-4 border-t border-purple-100"
+            class="article-content max-w-none text-[#2F2F2F] text-sm sm:text-base leading-relaxed py-2"
             set:html={displayDetails}
           />
         )}
 
         {gallery.length > 0 && (
-          <div class="space-y-4 pt-6 border-t border-purple-100">
+          <div class="space-y-4 pt-4">
             <h3 class="text-sm font-extrabold text-[#633583] uppercase">Photo Gallery</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {gallery.map((imgUrl, idx) => (
-                <div class="rounded-2xl overflow-hidden border border-purple-100 shadow-sm">
+                <div class="rounded-sm overflow-hidden shadow-sm">
                   <img
                     src={resolveMediaUrl(imgUrl)}
                     alt={`Gallery ${idx + 1}`}
@@ -130,6 +130,34 @@ const gallery = Array.isArray(item?.gallery_images) ? item.gallery_images : [];
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {item.map_coords && (
+          <div class="space-y-3 pt-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-extrabold text-[#633583] uppercase tracking-wider">
+                📍 {language === 'en' ? 'Location Map' : 'พิกัดสถานที่'}: <span class="font-semibold text-[#2F2F2F] normal-case">{item.map_coords}</span>
+              </h3>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.map_coords)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs font-extrabold text-[#8D56EC] hover:underline"
+              >
+                {language === 'en' ? 'Open in Google Maps ↗' : 'เปิดใน Google Maps ↗'}
+              </a>
+            </div>
+            <div class="rounded-2xl overflow-hidden shadow-md border border-purple-100 h-72 sm:h-80 w-full">
+              <iframe
+                class="w-full h-full"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(item.map_coords)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                frameborder="0"
+                allowfullscreen
+              ></iframe>
             </div>
           </div>
         )}

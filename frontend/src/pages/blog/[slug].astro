@@ -61,7 +61,7 @@ const isEvent = item?.template_style === 'event';
       href={isEvent ? '/event' : '/blog'}
       class="inline-flex items-center gap-2 text-xs font-extrabold text-[#633583] hover:text-[#8D56EC] transition mb-8"
     >
-      <span>← {isEvent ? 'กลับหน้า EVENT' : t('blog_back')}</span>
+      <span>{isEvent ? (language === 'en' ? '← Back to EVENT' : '← กลับหน้า EVENT') : t('blog_back')}</span>
     </a>
 
     {!item ? (
@@ -74,7 +74,7 @@ const isEvent = item?.template_style === 'event';
         </a>
       </div>
     ) : (
-      <article class="glass-card rounded-3xl p-6 sm:p-10 space-y-8">
+      <article class="space-y-8">
         <div class="space-y-4">
           <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
             <span
@@ -94,30 +94,30 @@ const isEvent = item?.template_style === 'event';
           </h1>
 
           {displaySummary && (
-            <p class="text-sm sm:text-base text-slate-600 leading-relaxed border-l-4 border-[#8D56EC] pl-4 py-1 bg-purple-50/50 rounded-r-xl">
+            <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
               {displaySummary}
             </p>
           )}
 
           {hasTags && (
-            <div class="pt-2 flex flex-wrap gap-2 text-xs">
+            <div class="pt-1 flex flex-wrap gap-2 text-xs">
               {tagsMeta.objective && (
                 <span class="px-3 py-1 rounded-full bg-purple-100 text-[#633583] font-bold">
-                  🏷️ แบรนด์: {tagsMeta.objective}
+                  🏷️ {language === 'en' ? 'Brand:' : 'แบรนด์:'} {tagsMeta.objective}
                 </span>
               )}
               {tagsMeta.service && (
                 <span class="px-3 py-1 rounded-full bg-purple-100 text-[#633583] font-bold">
-                  🚀 บริการ: {tagsMeta.service}
+                  🚀 {language === 'en' ? 'Service:' : 'บริการ:'} {tagsMeta.service}
                 </span>
               )}
               {tagsMeta.platform && (
-                <span class="px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-[#8D56EC] font-semibold">
+                <span class="px-3 py-1 rounded-full bg-purple-50 text-[#8D56EC] font-semibold">
                   📱 {tagsMeta.platform}
                 </span>
               )}
               {tagsMeta.industry && (
-                <span class="px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-slate-700">
+                <span class="px-3 py-1 rounded-full bg-purple-50 text-slate-700">
                   🏢 {tagsMeta.industry}
                 </span>
               )}
@@ -126,7 +126,7 @@ const isEvent = item?.template_style === 'event';
         </div>
 
         {item.cover_image && (
-          <div class="rounded-2xl overflow-hidden shadow-lg border border-purple-100">
+          <div class="rounded-xl overflow-hidden">
             <img
               src={resolveMediaUrl(item.cover_image)}
               alt={displayTitle}
@@ -138,7 +138,7 @@ const isEvent = item?.template_style === 'event';
         {youtubeEmbed && (
           <div class="space-y-3 pt-2">
             <h3 class="text-sm font-extrabold text-[#633583] uppercase tracking-wider">Video Feature</h3>
-            <div class="aspect-video rounded-2xl overflow-hidden border border-purple-200 shadow-lg">
+            <div class="aspect-video rounded-xl overflow-hidden shadow">
               <iframe
                 class="w-full h-full"
                 src={`https://www.youtube.com/embed/${youtubeEmbed}`}
@@ -152,42 +152,51 @@ const isEvent = item?.template_style === 'event';
         )}
 
         <div
-          class="prose max-w-none text-[#2F2F2F] text-sm sm:text-base leading-relaxed py-6 border-t border-purple-100"
+          class="article-content max-w-none text-[#2F2F2F] text-sm sm:text-base leading-relaxed py-2"
           set:html={displayContent}
         />
 
         {item.map_coords && (
-          <div class="space-y-3 pt-6 border-t border-purple-100">
-            <h3 class="text-sm font-extrabold text-[#633583] uppercase tracking-wider">
-              📍 พิกัดสถานที่
-            </h3>
-            <div class="p-4 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-between">
-              <span class="text-xs text-[#2F2F2F] font-mono">{item.map_coords}</span>
+          <div class="space-y-3 pt-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-extrabold text-[#633583] uppercase tracking-wider">
+                📍 {language === 'en' ? 'Location Map' : 'พิกัดสถานที่'}: <span class="font-semibold text-[#2F2F2F] normal-case">{item.map_coords}</span>
+              </h3>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.map_coords)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-xs font-extrabold text-[#8D56EC] hover:underline"
               >
-                เปิดใน Google Maps ↗
+                {language === 'en' ? 'Open in Google Maps ↗' : 'เปิดใน Google Maps ↗'}
               </a>
+            </div>
+            <div class="rounded-2xl overflow-hidden shadow-md border border-purple-100 h-72 sm:h-80 w-full">
+              <iframe
+                class="w-full h-full"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(item.map_coords)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                frameborder="0"
+                allowfullscreen
+              ></iframe>
             </div>
           </div>
         )}
 
-        <div class="pt-6 border-t border-purple-100 flex items-center justify-between">
+        <div class="pt-6 flex items-center justify-between">
           <a
             href={isEvent ? '/event' : '/blog'}
             class="inline-flex items-center gap-2 text-xs font-extrabold text-[#633583] hover:text-[#8D56EC] transition"
           >
-            <span>← {isEvent ? 'กลับหน้า EVENT' : t('blog_back')}</span>
+            <span>{isEvent ? (language === 'en' ? '← Back to EVENT' : '← กลับหน้า EVENT') : t('blog_back')}</span>
           </a>
           <button
             type="button"
             id="btn-copy-article-link"
             class="px-4 py-1.5 rounded-full ltt-btn-gradient text-xs font-bold text-white shadow transition"
           >
-            คัดลอกลิงก์บทความ
+            {language === 'en' ? 'Copy Article Link' : 'คัดลอกลิงก์บทความ'}
           </button>
         </div>
       </article>

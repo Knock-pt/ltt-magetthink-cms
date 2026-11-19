@@ -10,12 +10,18 @@ const blogArticles = allArticles.filter((a) => a.template_style !== 'event');
 const displayArticles = blogArticles.length > 0 ? blogArticles : allArticles;
 ---
 
-<BaseLayout title="BLOG — บทความการตลาดและเทรนด์ดิจิทัล" language={language} t={t}>
+<BaseLayout
+  title={language === 'en' ? 'BLOG — Digital Marketing Trends & Insights' : 'BLOG — บทความการตลาดและเทรนด์ดิจิทัล'}
+  language={language}
+  t={t}
+>
   <section class="ltt-hero-bg py-14 text-center">
     <div class="max-w-4xl mx-auto px-4 space-y-2">
       <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Our Latest Articles &amp; Blog</h1>
       <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
-        อัปเดตเทรนด์การตลาดดิจิทัล กลยุทธ์คอนเทนต์ และอินไซต์สำหรับแบรนด์ของคุณ
+        {language === 'en'
+          ? 'Latest digital marketing trends, content strategies, and growth insights for your brand'
+          : 'อัปเดตเทรนด์การตลาดดิจิทัล กลยุทธ์คอนเทนต์ และอินไซต์สำหรับแบรนด์ของคุณ'}
       </p>
     </div>
   </section>

@@ -6,12 +6,18 @@ setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 ---
 
-<BaseLayout title="ABOUT US — เกี่ยวกับ LTT Ma getThink" language={language} t={t}>
+<BaseLayout
+  title={language === 'en' ? 'ABOUT US — LTT Ma getThink One Stop Marketing Agency' : 'ABOUT US — เกี่ยวกับ LTT Ma getThink'}
+  language={language}
+  t={t}
+>
   <section class="ltt-hero-bg py-14 text-center">
     <div class="max-w-4xl mx-auto px-4 space-y-2">
       <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">About Us</h1>
       <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
-        LTT Ma getThink — ONE STOP SERVICE เพื่อแบรนด์ของคุณ
+        {language === 'en'
+          ? 'LTT Ma getThink — ONE STOP SERVICE for Your Brand'
+          : 'LTT Ma getThink — ONE STOP SERVICE เพื่อแบรนด์ของคุณ'}
       </p>
     </div>
   </section>
@@ -28,34 +34,56 @@ const { language, t } = getLanguageContext(Astro);
 
       <div class="lg:col-span-7 space-y-5">
         <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">
-          ทำไมต้องเลือก LTT Ma getThink ?
+          {language === 'en' ? 'Why Choose LTT Ma getThink ?' : 'ทำไมต้องเลือก LTT Ma getThink ?'}
         </h2>
-        <p class="text-base font-bold text-[#633583]">คุณเคยประสบปัญหาเหล่านี้หรือไม่?</p>
+        <p class="text-base font-bold text-[#633583]">
+          {language === 'en' ? 'Have you ever faced these challenges?' : 'คุณเคยประสบปัญหาเหล่านี้หรือไม่?'}
+        </p>
         <ul class="space-y-3 text-sm sm:text-base text-[#3d3d3d]">
           <li class="flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-            <span>มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร</span>
+            <span>
+              {language === 'en'
+                ? 'Want to promote your brand online, but do not know where to start?'
+                : 'มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร'}
+            </span>
           </li>
           <li class="flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-            <span>ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา</span>
+            <span>
+              {language === 'en'
+                ? 'Need standout photography and creative design, but lack a dedicated professional team?'
+                : 'ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา'}
+            </span>
           </li>
           <li class="flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-            <span>ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง</span>
+            <span>
+              {language === 'en'
+                ? 'Do not have enough time to plan, manage, and execute digital marketing by yourself?'
+                : 'ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง'}
+            </span>
           </li>
           <li class="flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
-            <span>อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ</span>
+            <span>
+              {language === 'en'
+                ? 'Looking for the right Influencers or KOLs who genuinely match your brand identity and reach your target audience accurately?'
+                : 'อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ'}
+            </span>
           </li>
         </ul>
 
         <div class="pt-3 space-y-2">
           <p class="text-lg sm:text-xl font-extrabold text-[#633583]">
-            LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!
+            {language === 'en'
+              ? 'LTT Ma getThink is here to consult, manage, and solve all these marketing challenges for you!'
+              : 'LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!'}
           </p>
           <p class="text-base sm:text-lg font-extrabold ltt-heading-gradient">
-            "เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"
+            {language === 'en'
+              ? '"Because great marketing is the heart of building a successful brand."'
+              : '"เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"'}
           </p>
         </div>
       </div>

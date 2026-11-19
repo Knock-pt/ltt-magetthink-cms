@@ -5,8 +5,10 @@ const year = new Date().getFullYear();
 const phone = settings.phone || '0960429083';
 const email = settings.email || 'contact@lttmagetthink.co';
 const address =
-  settings.address ||
-  'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
+  language === 'en'
+    ? 'LTT Ma getThink Co., Ltd. 65/73 Moo 6, Lam Luk Ka, Pathum Thani 12150, Thailand'
+    : settings.address ||
+      'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
 ---
 
 <footer class="ltt-footer-bg text-white pt-16 pb-10 relative overflow-hidden">
@@ -27,7 +29,9 @@ const address =
           </div>
         </div>
         <p class="text-sm text-[#32154b] font-semibold leading-relaxed">
-          รับดูแลการตลาดออนไลน์ รับผลิตคอนเทนต์รีวิว รับถ่ายภาพสินค้า ครบจบที่
+          {language === 'en'
+            ? 'Online Marketing Management, Review Content Production, and Commercial Photography — All in One Stop at '
+            : 'รับดูแลการตลาดออนไลน์ รับผลิตคอนเทนต์รีวิว รับถ่ายภาพสินค้า ครบจบที่ '}
           <span class="font-extrabold text-[#431d63]">“LTT Ma getThink”</span>
         </p>
         <div class="flex justify-center lg:justify-start">
@@ -62,7 +66,7 @@ const address =
             {language === 'en' ? 'Contact Channels' : 'ช่องทางติดต่อ'}
           </h4>
           <p><strong>Location :</strong> {address}</p>
-          <p><strong>เบอร์โทร :</strong> <a href={`tel:${phone}`} class="underline">{phone}</a></p>
+          <p><strong>{language === 'en' ? 'Phone :' : 'เบอร์โทร :'}</strong> <a href={`tel:${phone}`} class="underline">{phone}</a></p>
           <p><strong>Email :</strong> <a href={`mailto:${email}`} class="underline">{email}</a></p>
         </div>
       </div>
@@ -79,14 +83,14 @@ const address =
                 type="text"
                 name="full_name"
                 required
-                placeholder="ชื่อ-นามสกุล *"
+                placeholder={language === 'en' ? 'Full Name *' : 'ชื่อ-นามสกุล *'}
                 class="w-full border border-purple-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#8D56EC]"
               />
               <input
                 type="tel"
                 name="phone"
                 required
-                placeholder="เบอร์โทรศัพท์ *"
+                placeholder={language === 'en' ? 'Phone Number *' : 'เบอร์โทรศัพท์ *'}
                 class="w-full border border-purple-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#8D56EC]"
               />
             </div>
@@ -94,12 +98,14 @@ const address =
               type="email"
               name="email"
               required
-              placeholder="อีเมล หรือ ชื่อเพจ/เว็บไซต์ *"
+              placeholder={language === 'en' ? 'Email or Brand / Page URL *' : 'อีเมล หรือ ชื่อเพจ/เว็บไซต์ *'}
               class="w-full border border-purple-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#8D56EC]"
             />
             <div class="grid grid-cols-2 gap-2.5">
               <div>
-                <label class="block text-[11px] font-bold text-[#633583] mb-1">งบประมาณรายเดือน *</label>
+                <label class="block text-[11px] font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Monthly Budget *' : 'งบประมาณรายเดือน *'}
+                </label>
                 <select name="budget_range" class="w-full border border-purple-200 rounded-xl px-2.5 py-2 bg-white">
                   <option value="< THB 10,000">&lt; THB 10,000</option>
                   <option value="THB 10,000-30,000">THB 10,000-30,000</option>
@@ -120,7 +126,7 @@ const address =
             <textarea
               name="message"
               rows="2"
-              placeholder="รายละเอียดเพิ่มเติม..."
+              placeholder={language === 'en' ? 'Additional details...' : 'รายละเอียดเพิ่มเติม...'}
               class="w-full border border-purple-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#8D56EC]"
             ></textarea>
             <button

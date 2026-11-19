@@ -9,15 +9,25 @@ const settings = await getSiteSettings(Astro);
 
 const phone = settings.phone || '0960429083';
 const email = settings.email || 'contact@lttmagetthink.co';
-const address = settings.address || 'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
+const address =
+  language === 'en'
+    ? 'LTT Ma getThink Co., Ltd. 65/73 Moo 6, Lam Luk Ka, Pathum Thani 12150, Thailand'
+    : settings.address || 'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
 ---
 
-<BaseLayout title="CONTACT US — ติดต่อทีมงาน LTT Ma getThink" language={language} t={t} settings={settings}>
+<BaseLayout
+  title={language === 'en' ? 'CONTACT US — Consult LTT Ma getThink Team' : 'CONTACT US — ติดต่อทีมงาน LTT Ma getThink'}
+  language={language}
+  t={t}
+  settings={settings}
+>
   <section class="ltt-hero-bg py-14 text-center">
     <div class="max-w-4xl mx-auto px-4 space-y-2">
       <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Contact Us</h1>
       <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
-        ปรึกษาแนวทางการตลาด ขอใบเสนอราคา หรือนัดหมายถ่ายภาพและรีวิวสินค้า
+        {language === 'en'
+          ? 'Consult our marketing strategy team, request a quotation, or book a photography & review production'
+          : 'ปรึกษาแนวทางการตลาด ขอใบเสนอราคา หรือนัดหมายถ่ายภาพและรีวิวสินค้า'}
       </p>
     </div>
   </section>
@@ -38,39 +48,51 @@ const address = settings.address || 'บริษัท แอล ที ที 
         </div>
 
         <div class="glass-card p-6 rounded-3xl space-y-3 text-xs sm:text-sm">
-          <p><strong class="text-[#633583]">ที่อยู่:</strong> {address}</p>
-          <p><strong class="text-[#633583]">เบอร์โทรศัพท์:</strong> <a href={`tel:${phone}`} class="text-[#8D56EC] font-bold">{phone}</a></p>
-          <p><strong class="text-[#633583]">อีเมล:</strong> {email}</p>
+          <p><strong class="text-[#633583]">{language === 'en' ? 'Address:' : 'ที่อยู่:'}</strong> {address}</p>
+          <p><strong class="text-[#633583]">{language === 'en' ? 'Phone:' : 'เบอร์โทรศัพท์:'}</strong> <a href={`tel:${phone}`} class="text-[#8D56EC] font-bold">{phone}</a></p>
+          <p><strong class="text-[#633583]">{language === 'en' ? 'Email:' : 'อีเมล:'}</strong> {email}</p>
         </div>
       </div>
 
       <div class="lg:col-span-7">
         <div class="glass-card p-8 sm:p-10 rounded-3xl">
-          <h2 class="text-2xl font-extrabold text-[#633583] mb-6">ส่งข้อความติดต่อ &amp; ขอใบเสนอราคา</h2>
+          <h2 class="text-2xl font-extrabold text-[#633583] mb-6">
+            {language === 'en' ? 'Send an Inquiry & Request a Quotation' : 'ส่งข้อความติดต่อ & ขอใบเสนอราคา'}
+          </h2>
           <form id="page-contact-form" class="space-y-4 text-xs sm:text-sm">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-[#633583] mb-1">ชื่อ-นามสกุล *</label>
+                <label class="block font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Full Name *' : 'ชื่อ-นามสกุล *'}
+                </label>
                 <input type="text" name="full_name" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
               </div>
               <div>
-                <label class="block font-bold text-[#633583] mb-1">เบอร์โทรศัพท์ *</label>
+                <label class="block font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Phone Number *' : 'เบอร์โทรศัพท์ *'}
+                </label>
                 <input type="tel" name="phone" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
               </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-[#633583] mb-1">อีเมล *</label>
+                <label class="block font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Email *' : 'อีเมล *'}
+                </label>
                 <input type="email" name="email" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
               </div>
               <div>
-                <label class="block font-bold text-[#633583] mb-1">ชื่อแบรนด์ / เว็บไซต์ / เพจ</label>
+                <label class="block font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Brand / Website / Page Name' : 'ชื่อแบรนด์ / เว็บไซต์ / เพจ'}
+                </label>
                 <input type="text" name="company" class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
               </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-[#633583] mb-1">งบประมาณรายเดือน *</label>
+                <label class="block font-bold text-[#633583] mb-1">
+                  {language === 'en' ? 'Monthly Budget *' : 'งบประมาณรายเดือน *'}
+                </label>
                 <select name="budget_range" class="w-full border border-purple-200 rounded-xl px-4 py-2.5 bg-white">
                   <option value="< THB 10,000">&lt; THB 10,000</option>
                   <option value="THB 10,000-30,000">THB 10,000-30,000</option>
@@ -89,7 +111,9 @@ const address = settings.address || 'บริษัท แอล ที ที 
               </div>
             </div>
             <div>
-              <label class="block font-bold text-[#633583] mb-1">รายละเอียดโปรเจกต์ *</label>
+              <label class="block font-bold text-[#633583] mb-1">
+                {language === 'en' ? 'Project Details *' : 'รายละเอียดโปรเจกต์ *'}
+              </label>
               <textarea name="message" required rows="4" class="w-full border border-purple-200 rounded-xl p-4 focus:outline-none focus:border-[#8D56EC]"></textarea>
             </div>
             <button type="submit" id="page-contact-btn" class="w-full py-3.5 rounded-full ltt-btn-gradient text-white font-bold shadow-lg transition">

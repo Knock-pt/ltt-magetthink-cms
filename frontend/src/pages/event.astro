@@ -10,12 +10,18 @@ const eventArticles = allArticles.filter((a) => a.template_style === 'event');
 const displayArticles = eventArticles.length > 0 ? eventArticles : allArticles;
 ---
 
-<BaseLayout title="EVENT — ข่าวสารและงานอีเวนต์ล่าสุด" language={language} t={t}>
+<BaseLayout
+  title={language === 'en' ? 'EVENT — Latest Events & PR Highlights' : 'EVENT — ข่าวสารและงานอีเวนต์ล่าสุด'}
+  language={language}
+  t={t}
+>
   <section class="ltt-hero-bg py-14 text-center">
     <div class="max-w-4xl mx-auto px-4 space-y-2">
       <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Latest Events &amp; PR Highlights</h1>
       <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
-        รวมภาพบรรยากาศงานอีเวนต์ งานประกาศรางวัล และข่าวสารประชาสัมพันธ์จาก LTT Ma getThink
+        {language === 'en'
+          ? 'Event highlights, award ceremonies, and PR announcements from LTT Ma getThink'
+          : 'รวมภาพบรรยากาศงานอีเวนต์ งานประกาศรางวัล และข่าวสารประชาสัมพันธ์จาก LTT Ma getThink'}
       </p>
     </div>
   </section>

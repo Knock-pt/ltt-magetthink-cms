@@ -17,6 +17,73 @@
     .editor-btn { padding: 0.375rem; border-radius: 0.375rem; color: #cbd5e1; transition: all 0.2s; }
     .editor-btn:hover { background-color: #f1f5f9; color: #0f172a; }
     [contenteditable]:empty:before { content: attr(placeholder); color: #94a3b8; pointer-events: none; }
+
+    /* Rich Editor Content Typography & List Styles (Overriding Tailwind Preflight reset) */
+    #editor_content_th h1, #editor_content_en h1, #preview-container h1 { font-size: 1.875rem; font-weight: 800; line-height: 1.3; margin: 1.25rem 0 0.75rem; color: #4A1D6E; }
+    #editor_content_th h2, #editor_content_en h2, #preview-container h2 { font-size: 1.5rem; font-weight: 800; line-height: 1.35; margin: 1.1rem 0 0.6rem; color: #4A1D6E; }
+    #editor_content_th h3, #editor_content_en h3, #preview-container h3 { font-size: 1.25rem; font-weight: 700; line-height: 1.4; margin: 1rem 0 0.5rem; color: #5b2582; }
+    #editor_content_th h4, #editor_content_en h4, #preview-container h4 { font-size: 1.1rem; font-weight: 700; line-height: 1.45; margin: 0.85rem 0 0.4rem; color: #633583; }
+    #editor_content_th p, #editor_content_en p { margin: 0.65rem 0; line-height: 1.75; }
+    #editor_content_th blockquote, #editor_content_en blockquote, #preview-container blockquote {
+      border-left: 4px solid #8D56EC;
+      background: #faf5ff;
+      color: #4A1D6E;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 0.5rem 0.5rem 0;
+      font-style: italic;
+    }
+
+    #editor_content_th ul, #editor_content_en ul, #preview-container ul {
+      list-style-type: disc;
+      padding-left: 1.75rem;
+      margin: 0.75rem 0;
+    }
+    #editor_content_th ul[data-bullet="circle"], #editor_content_en ul[data-bullet="circle"], #preview-container ul[data-bullet="circle"] {
+      list-style-type: circle;
+    }
+    #editor_content_th ul[data-bullet="square"], #editor_content_en ul[data-bullet="square"], #preview-container ul[data-bullet="square"] {
+      list-style-type: square;
+    }
+    #editor_content_th ul[data-bullet="check"], #editor_content_en ul[data-bullet="check"], #preview-container ul[data-bullet="check"] {
+      list-style-type: '✓  ';
+    }
+    #editor_content_th ol, #editor_content_en ol, #preview-container ol {
+      list-style-type: decimal;
+      padding-left: 1.75rem;
+      margin: 0.75rem 0;
+    }
+    #editor_content_th ol[data-bullet="lower-alpha"], #editor_content_en ol[data-bullet="lower-alpha"], #preview-container ol[data-bullet="lower-alpha"] {
+      list-style-type: lower-alpha;
+    }
+    #editor_content_th ol[data-bullet="lower-roman"], #editor_content_en ol[data-bullet="lower-roman"], #preview-container ol[data-bullet="lower-roman"] {
+      list-style-type: lower-roman;
+    }
+    #editor_content_th li, #editor_content_en li, #preview-container li {
+      margin: 0.3rem 0;
+      line-height: 1.7;
+    }
+
+    /* Interactive Figure & Photo Grid inside Editor */
+    #editor_content_th figure, #editor_content_en figure,
+    #editor_content_th .ltt-photo-grid, #editor_content_en .ltt-photo-grid {
+      position: relative;
+      border: 2px solid transparent;
+      border-radius: 0.5rem;
+      padding: 0.25rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #editor_content_th figure:hover, #editor_content_en figure:hover,
+    #editor_content_th .ltt-photo-grid:hover, #editor_content_en .ltt-photo-grid:hover,
+    #editor_content_th .ltt-selected-block, #editor_content_en .ltt-selected-block {
+      border-color: #8D56EC;
+      background-color: rgba(141, 86, 236, 0.03);
+    }
+    #editor_content_th figcaption:empty:before, #editor_content_en figcaption:empty:before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+      font-style: italic;
+    }
   </style>
 </head>
 <body class="h-full flex overflow-hidden">
@@ -69,11 +136,11 @@
         <h2 id="currentTabTitle" class="text-sm font-bold text-white capitalize">Dashboard ภาพรวม</h2>
       </div>
       <div class="flex items-center gap-2.5">
-        <button type="button" onclick="openRichEditor('article')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-xs font-bold text-white shadow-lg shadow-teal-500/20 transition">
+        <button type="button" onclick="openRichEditor('article')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition" style="background: linear-gradient(163deg, #F952FC 18%, #8D56EC 77%);">
           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
           <span>เขียนบทความ / อีเวนต์</span>
         </button>
-        <button type="button" onclick="openRichEditor('portfolio')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white shadow-lg shadow-purple-500/20 transition">
+        <button type="button" onclick="openRichEditor('portfolio')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#633583] hover:bg-[#4A1D6E] text-xs font-bold text-white shadow-lg shadow-purple-500/20 transition">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>เพิ่มผลงาน Portfolio</span>
         </button>
@@ -390,73 +457,129 @@
     </main>
   </div>
 
-  <!-- ==================== RICH CONTENT EDITOR MODAL (README.ME Style Adapted for Marketing Agency) ==================== -->
+  <!-- ==================== RICH CONTENT EDITOR MODAL (Royal Purple LTT Ma getThink Theme) ==================== -->
   <div id="modal-rich-editor" class="fixed inset-0 z-50 items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm hidden overflow-y-auto">
-    <div class="bg-[#ebebeb] text-slate-800 rounded-2xl w-full max-w-5xl my-4 shadow-2xl flex flex-col overflow-hidden max-h-[95vh]">
+    <div class="bg-[#f4f1f8] text-slate-800 rounded-2xl w-full max-w-5xl my-4 shadow-2xl flex flex-col overflow-hidden max-h-[95vh]">
       
-      <!-- Top Agency Studio Bar (Inspired by README.ME top bar) -->
-      <div class="bg-[#00897b] text-white px-6 py-3 flex items-center justify-between shrink-0">
+      <!-- Top Agency Studio Bar (Purple LTT Ma getThink Theme) -->
+      <div class="bg-[#633583] text-white px-6 py-3 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
           <div class="font-black text-lg tracking-wide leading-none">
             LTT STUDIO
-            <span class="block text-[10px] font-normal text-teal-100 mt-0.5">Marketing &amp; Content Publishing</span>
+            <span class="block text-[10px] font-normal text-purple-200 mt-0.5">Marketing &amp; Content Publishing</span>
           </div>
         </div>
 
         <!-- Language Switcher & AI Translate inside Studio Header -->
         <div class="flex items-center gap-2">
-          <div class="flex bg-teal-900/40 p-1 rounded-full border border-teal-400/30">
-            <button type="button" onclick="switchEditorLang('th')" id="tab-lang-th" class="px-3 py-1 rounded-full text-xs font-bold bg-white text-teal-800">🇹🇭 ภาษาไทย</button>
-            <button type="button" onclick="switchEditorLang('en')" id="tab-lang-en" class="px-3 py-1 rounded-full text-xs font-medium text-teal-100 hover:text-white">🇬🇧 English</button>
+          <div class="flex bg-[#4A1D6E]/60 p-1 rounded-full border border-purple-400/30">
+            <button type="button" onclick="switchEditorLang('th')" id="tab-lang-th" class="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#633583]">🇹🇭 ภาษาไทย</button>
+            <button type="button" onclick="switchEditorLang('en')" id="tab-lang-en" class="px-3 py-1 rounded-full text-xs font-medium text-purple-200 hover:text-white">🇬🇧 English</button>
           </div>
           <button type="button" onclick="runAiTranslate()" id="btn-ai-translate" class="px-3.5 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold flex items-center gap-1.5 transition shadow">
             <span>🤖 AI แปลภาษาอังกฤษ</span>
           </button>
-          <button type="button" onclick="closeRichEditor()" class="ml-2 w-7 h-7 rounded-full bg-teal-900/40 hover:bg-teal-900/70 text-white flex items-center justify-center text-sm">✕</button>
+          <button type="button" onclick="closeRichEditor()" class="ml-2 w-7 h-7 rounded-full bg-[#4A1D6E]/60 hover:bg-[#4A1D6E] text-white flex items-center justify-center text-sm">✕</button>
         </div>
       </div>
 
-      <!-- Second White Formatting Toolbar Row (Exact layout of Image 1) -->
-      <div class="bg-white border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-sm">
-        <!-- Left Bordered Formatting Button Strip -->
-        <div class="inline-flex items-center border border-slate-200 rounded-md divide-x divide-slate-200 bg-white text-slate-700">
-          <button type="button" onclick="execCmd('undo')" title="ย้อนกลับ (Undo)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">↩</button>
-          <button type="button" onclick="execCmd('redo')" title="ทำซ้ำ (Redo)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">↪</button>
-          <button type="button" onclick="execCmd('formatBlock', '<p>')" title="ย่อหน้าปกติ (Paragraph)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs font-serif">¶</button>
-          <button type="button" onclick="toggleHeading()" title="หัวข้อใหญ่ (Heading H2/H3)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs font-bold">A↕</button>
-          <button type="button" onclick="execCmd('bold')" title="ตัวหนา (Bold)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs font-bold">B</button>
-          <button type="button" onclick="execCmd('italic')" title="ตัวเอียง (Italic)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs italic">I</button>
-          <button type="button" onclick="execCmd('strikeThrough')" title="ขีดฆ่า (Strikethrough)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs line-through">S</button>
-          <button type="button" onclick="execCmd('insertUnorderedList')" title="รายการจุด (Bullet List)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">⋮≡</button>
-          <button type="button" onclick="execCmd('insertOrderedList')" title="รายการตัวเลข (Numbered List)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">1.≡</button>
-          <button type="button" onclick="insertLinkPrompt()" title="แทรกลิงก์ (Insert Link)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">🔗</button>
-          <button type="button" onclick="execCmd('insertHorizontalRule')" title="เส้นคั่น (Divider)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">—</button>
-          <label title="แทรกรูปภาพในเนื้อหา (Upload to R2)" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs cursor-pointer inline-flex items-center">
-            🖼️
-            <input type="file" accept="image/*" class="hidden" onchange="uploadAndInsertImage(this)">
-          </label>
-          <button type="button" onclick="promptInsertVideo()" title="แทรกวิดีโอ YouTube" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">▶️</button>
-          <button type="button" onclick="promptInsertMap()" title="แทรกพิกัดแผนที่ Google Maps" class="px-2.5 py-1.5 hover:bg-slate-100 text-xs">📍</button>
+      <!-- Second White Formatting Toolbar Row (With Heading, Font Size, Bullet Styles, Indent, Image + Caption, Multi-Image Grid) -->
+      <div class="bg-white border-b border-purple-100 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2.5 shrink-0 shadow-sm">
+        <!-- Left Formatting Controls -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Undo / Redo -->
+          <div class="inline-flex items-center border border-slate-200 rounded-md divide-x divide-slate-200 bg-white text-slate-700">
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('undo')" title="ย้อนกลับ (Undo)" class="px-2 py-1.5 hover:bg-purple-50 text-xs">↩</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('redo')" title="ทำซ้ำ (Redo)" class="px-2 py-1.5 hover:bg-purple-50 text-xs">↪</button>
+          </div>
+
+          <!-- ¶ Heading Dropdown -->
+          <select id="toolbar_heading_select" onchange="applyHeadingFormat(this.value); this.value='';" title="เลือกรูปแบบหัวข้อ (Heading / Paragraph)" class="border border-slate-200 rounded-md px-2 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:border-[#8D56EC] focus:outline-none focus:border-[#8D56EC] cursor-pointer">
+            <option value="">¶ หัวข้อ (Heading) ▾</option>
+            <option value="p">¶ ย่อหน้าปกติ (Paragraph)</option>
+            <option value="h1">H1 หัวข้อใหญ่พิเศษ (Heading 1)</option>
+            <option value="h2">H2 หัวข้อหลัก (Heading 2)</option>
+            <option value="h3">H3 หัวข้อรอง (Heading 3)</option>
+            <option value="h4">H4 หัวข้อย่อย (Heading 4)</option>
+            <option value="blockquote">❝ กล่องคำพูดเน้นข้อความ (Quote)</option>
+          </select>
+
+          <!-- A↕ Font Size Dropdown -->
+          <select id="toolbar_fontsize_select" onchange="applyFontSize(this.value); this.value='';" title="เลือกขนาดตัวอักษร (Font Size)" class="border border-slate-200 rounded-md px-2 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:border-[#8D56EC] focus:outline-none focus:border-[#8D56EC] cursor-pointer">
+            <option value="">A↕ ขนาดอักษร ▾</option>
+            <option value="12px">12px (เล็ก)</option>
+            <option value="14px">14px (ปกติ)</option>
+            <option value="16px">16px (กลาง - แนะนำ)</option>
+            <option value="18px">18px (ใหญ่)</option>
+            <option value="22px">22px (หัวข้อรอง)</option>
+            <option value="28px">28px (พาดหัวใหญ่)</option>
+          </select>
+
+          <!-- Text Style B / I / U / S -->
+          <div class="inline-flex items-center border border-slate-200 rounded-md divide-x divide-slate-200 bg-white text-slate-700">
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('bold')" title="ตัวหนา (Bold)" class="px-2.5 py-1.5 hover:bg-purple-50 text-xs font-bold">B</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('italic')" title="ตัวเอียง (Italic)" class="px-2.5 py-1.5 hover:bg-purple-50 text-xs italic">I</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('underline')" title="ขีดเส้นใต้ (Underline)" class="px-2.5 py-1.5 hover:bg-purple-50 text-xs underline">U</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('strikeThrough')" title="ขีดฆ่า (Strikethrough)" class="px-2.5 py-1.5 hover:bg-purple-50 text-xs line-through">S</button>
+          </div>
+
+          <!-- Bullet & Numbered List Style Dropdown -->
+          <select id="toolbar_bullet_select" onchange="applyListStyle(this.value); this.value='';" title="เลือกรูปแบบรายการ Bullet & ตัวเลข" class="border border-slate-200 rounded-md px-2 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:border-[#8D56EC] focus:outline-none focus:border-[#8D56EC] cursor-pointer">
+            <option value="">• รูปแบบ Bullet ▾</option>
+            <option value="disc">• จุดทึบมาตรฐาน (Disc)</option>
+            <option value="circle">○ จุดวงกลมโปร่ง (Circle)</option>
+            <option value="square">■ สี่เหลี่ยมทึบ (Square)</option>
+            <option value="check">✓ เครื่องหมายถูก (Checkmark)</option>
+            <option value="decimal">1. ลำดับตัวเลข (1, 2, 3)</option>
+            <option value="lower-alpha">a. ลำดับตัวอักษร (a, b, c)</option>
+            <option value="lower-roman">i. ลำดับเลขโรมัน (i, ii, iii)</option>
+          </select>
+
+          <!-- Paragraph Indent & Alignment Dropdown -->
+          <select id="toolbar_indent_select" onchange="applyIndentOrAlign(this.value); this.value='';" title="ตั้งค่าย่อหน้าและการจัดวางข้อความ" class="border border-slate-200 rounded-md px-2 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:border-[#8D56EC] focus:outline-none focus:border-[#8D56EC] cursor-pointer">
+            <option value="">⇥ ย่อหน้า/จัดวาง ▾</option>
+            <option value="first-line">⇥ ย่อหน้าบรรทัดแรก (First-line Indent)</option>
+            <option value="indent">⇥ เยื้องย่อหน้าไปทางขวา (Indent)</option>
+            <option value="outdent">⇤ ลดการเยื้องย่อหน้า (Outdent)</option>
+            <option value="left">⬅ ชิดซ้าย (Align Left)</option>
+            <option value="center">↔ กึ่งกลาง (Align Center)</option>
+            <option value="right">➡ ชิดขวา (Align Right)</option>
+          </select>
+
+          <!-- Media & Insert Tools: Single Image + Caption, Multi-Image Photo Grid, Link, Video, Map -->
+          <div class="inline-flex items-center border border-purple-200 rounded-md divide-x divide-purple-200 bg-purple-50/50 text-slate-700">
+            <label title="แทรกรูปภาพเดี่ยวพร้อมคำบรรยายใต้ภาพ (Caption) ตรงบรรทัดเคอร์เซอร์" class="px-2.5 py-1.5 hover:bg-purple-100 text-xs font-semibold text-[#633583] cursor-pointer inline-flex items-center gap-1">
+              <span>🖼️ รูป+Caption</span>
+              <input type="file" accept="image/*" class="hidden" onchange="uploadAndInsertImage(this)">
+            </label>
+            <label title="เลือกรูปหลายใบพร้อมกันเพื่อเรียงเป็นตาราง 2 หรือ 3 คอลัมน์เหมือนในเว็บ Ref" class="px-2.5 py-1.5 hover:bg-purple-100 text-xs font-semibold text-[#633583] cursor-pointer inline-flex items-center gap-1">
+              <span>⊞ เรียงหลายรูป (Grid)</span>
+              <input type="file" accept="image/*" multiple class="hidden" onchange="uploadAndInsertPhotoGrid(this)">
+            </label>
+            <button type="button" onmousedown="event.preventDefault()" onclick="insertLinkPrompt()" title="แทรกลิงก์ (Insert Link)" class="px-2 py-1.5 hover:bg-purple-100 text-xs">🔗</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="promptInsertVideo()" title="แทรกวิดีโอ YouTube" class="px-2 py-1.5 hover:bg-purple-100 text-xs">▶️</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="promptInsertMap()" title="แทรกพิกัดแผนที่ Google Maps" class="px-2 py-1.5 hover:bg-purple-100 text-xs">📍</button>
+          </div>
         </div>
 
-        <!-- Right Status, Preview & Save Pills (Exact match to Image 1) -->
-        <div class="flex items-center gap-3">
-          <select id="editor_status" class="text-xs bg-white border border-slate-200 rounded-md px-3 py-1.5 font-medium text-slate-700 focus:outline-none">
+        <!-- Right Status, Preview & Save Pills (Purple Theme) -->
+        <div class="flex items-center gap-2.5">
+          <select id="editor_status" class="text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none focus:border-[#8D56EC]">
             <option value="published">เผยแพร่ทันที</option>
             <option value="draft">ฉบับร่าง</option>
           </select>
-          <button type="button" onclick="previewEditorContent()" class="px-5 py-1.5 rounded-full border-2 border-[#00897b] text-[#00897b] hover:bg-teal-50 text-xs font-bold transition">
+          <button type="button" onclick="previewEditorContent()" class="px-4 py-1.5 rounded-full border-2 border-[#633583] text-[#633583] hover:bg-purple-50 text-xs font-bold transition">
             Preview
           </button>
-          <button type="button" onclick="handleSaveRichEditor()" class="px-6 py-1.5 rounded-full border-2 border-[#00897b] bg-[#00897b] hover:bg-[#00796b] text-white text-xs font-bold transition shadow-sm">
+          <button type="button" onclick="handleSaveRichEditor()" class="px-5 py-1.5 rounded-full text-white text-xs font-bold transition shadow-md hover:opacity-95" style="background: linear-gradient(163deg, #F952FC 18%, #8D56EC 77%);">
             บันทึก
           </button>
         </div>
       </div>
 
-      <!-- Editor Body Form (Centered White Sheet on Gray Canvas like README.ME) -->
-      <div class="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#ebebeb]">
-        <div class="max-w-3xl mx-auto bg-white border border-slate-200/90 rounded-md shadow-sm p-6 sm:p-10 space-y-6">
+      <!-- Editor Body Form (Centered White Sheet on Soft Lavender Canvas) -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f4f1f8]">
+        <div class="max-w-3xl mx-auto bg-white border border-purple-200/80 rounded-xl shadow-sm p-6 sm:p-10 space-y-6">
           <input type="hidden" id="editor_target_type" value="article">
           <input type="hidden" id="editor_item_id" value="">
 
@@ -466,7 +589,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1.5">หมวดหมู่หน้าเว็บ *</label>
-                <select id="editor_template_style" class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-[#00897b]">
+                <select id="editor_template_style" class="w-full bg-purple-50/40 border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-[#8D56EC]">
                   <option value="blog">📰 BLOG (บทความการตลาด &amp; เทรนด์)</option>
                   <option value="event">🎉 EVENT (ข่าวสารงานอีเวนต์ &amp; กิจกรรม)</option>
                   <option value="case-study">💼 PORTFOLIO (ผลงาน Digital Marketing)</option>
@@ -475,26 +598,26 @@
               </div>
               <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-slate-600 mb-1.5">หัวข้อบทความ / ชื่อแคมเปญผลงาน *</label>
-                <input type="text" id="editor_title_th" placeholder="เช่น TAT Connex Creator Awards 2025 หรือ Content ที่มาแรง..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#00897b]">
+                <input type="text" id="editor_title_th" placeholder="เช่น TAT Connex Creator Awards 2025 หรือ Content ที่มาแรง..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#8D56EC]">
               </div>
             </div>
 
             <!-- 2. Marketing Agency Tag Boxes (README.ME 2-Column Label-Input Style) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">แบรนด์/ลูกค้า:</span>
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">แบรนด์/ลูกค้า:</span>
                 <input type="text" id="tag_objective" placeholder="ททท. TAT, HKTDC, Sindhorn Kempinski ..." class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">บริการหลัก:</span>
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">บริการหลัก:</span>
                 <input type="text" id="tag_service" placeholder="Digital Marketing, Influencer, Photography ..." class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">แพลตฟอร์ม:</span>
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">แพลตฟอร์ม:</span>
                 <input type="text" id="tag_platform" placeholder="Facebook, TikTok, Instagram, Line OA ..." class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">กลุ่มธุรกิจ:</span>
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3.5 py-2.5 border-r border-slate-300 font-semibold w-28 shrink-0">กลุ่มธุรกิจ:</span>
                 <input type="text" id="tag_industry" placeholder="Hotel &amp; Resort, Food &amp; Beverage, Lifestyle ..." class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
               <input type="hidden" id="tag_target" value="">
@@ -505,18 +628,18 @@
             <!-- 3. ภาพปก (Cover Image Dropzone matching README.ME Illustration) -->
             <div>
               <label class="block text-base font-bold text-slate-700 mb-2">ภาพปก</label>
-              <div id="dropzone_cover" class="border-2 border-dashed border-slate-300 rounded-md h-64 flex flex-col items-center justify-center text-center bg-white hover:border-[#00897b] transition cursor-pointer relative p-4" onclick="document.getElementById('input_cover_file').click()">
+              <div id="dropzone_cover" class="border-2 border-dashed border-purple-300 rounded-md h-64 flex flex-col items-center justify-center text-center bg-white hover:border-[#8D56EC] transition cursor-pointer relative p-4" onclick="document.getElementById('input_cover_file').click()">
                 <input type="file" id="input_cover_file" accept="image/*" class="hidden" onchange="uploadCoverImage(this)">
                 <div id="cover_placeholder" class="space-y-3 pointer-events-none">
-                  <!-- Stacked Photos + Cloud Upload SVG matching Image 1 -->
-                  <svg class="w-24 h-20 mx-auto text-slate-400" viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="12" y="24" width="32" height="24" rx="2" transform="rotate(-12 12 24)" stroke="#cbd5e1" stroke-width="2" fill="#f8fafc"/>
-                    <path d="M16 40L24 33L31 38L37 32L42 38" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
-                    <rect x="44" y="10" width="32" height="24" rx="2" stroke="#cbd5e1" stroke-width="2" fill="#f8fafc"/>
-                    <path d="M48 28L56 20L64 26L72 21" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
-                    <rect x="80" y="18" width="32" height="24" rx="2" transform="rotate(14 80 18)" stroke="#cbd5e1" stroke-width="2" fill="#f8fafc"/>
-                    <path d="M81 36L90 31L97 38L104 34" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M46 68H74C79.5228 68 84 63.5228 84 58C84 52.7902 80.0125 48.5112 74.9163 48.0427C73.4437 40.6258 66.9041 35 59 35C50.1634 35 43 42.1634 43 51C43 51.3471 43.0111 51.6916 43.0329 52.0332C39.6052 53.4793 37.2 56.8759 37.2 60.8C37.2 64.7765 40.8235 68 46 68Z" fill="#94a3b8"/>
+                  <!-- Stacked Photos + Cloud Upload SVG -->
+                  <svg class="w-24 h-20 mx-auto text-purple-300" viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="12" y="24" width="32" height="24" rx="2" transform="rotate(-12 12 24)" stroke="#c084fc" stroke-width="2" fill="#faf5ff"/>
+                    <path d="M16 40L24 33L31 38L37 32L42 38" stroke="#c084fc" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="44" y="10" width="32" height="24" rx="2" stroke="#c084fc" stroke-width="2" fill="#faf5ff"/>
+                    <path d="M48 28L56 20L64 26L72 21" stroke="#c084fc" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="80" y="18" width="32" height="24" rx="2" transform="rotate(14 80 18)" stroke="#c084fc" stroke-width="2" fill="#faf5ff"/>
+                    <path d="M81 36L90 31L97 38L104 34" stroke="#c084fc" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M46 68H74C79.5228 68 84 63.5228 84 58C84 52.7902 80.0125 48.5112 74.9163 48.0427C73.4437 40.6258 66.9041 35 59 35C50.1634 35 43 42.1634 43 51C43 51.3471 43.0111 51.6916 43.0329 52.0332C39.6052 53.4793 37.2 56.8759 37.2 60.8C37.2 64.7765 40.8235 68 46 68Z" fill="#8D56EC"/>
                     <path d="M60 46L51 56H56.5V65H63.5V56H69L60 46Z" fill="white"/>
                   </svg>
                   <p class="text-xs font-semibold text-slate-500">คลิกหรือลากรูปภาพหน้าปกมาวางที่นี่ (อัปโหลดตรงขึ้น Cloudflare R2)</p>
@@ -524,19 +647,19 @@
 
                 <!-- Upload Progress Indicator Bar -->
                 <div id="cover_progress_wrap" class="hidden w-full max-w-xs mx-auto py-3 space-y-2 pointer-events-none">
-                  <div class="flex items-center justify-between text-xs font-bold text-[#00897b]">
+                  <div class="flex items-center justify-between text-xs font-bold text-[#633583]">
                     <span id="cover_progress_label">กำลังอัปโหลดไปยัง Cloudflare R2...</span>
                     <span id="cover_progress_pct">0%</span>
                   </div>
-                  <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                    <div id="cover_progress_bar" class="bg-[#00897b] h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+                  <div class="w-full bg-purple-100 rounded-full h-2 overflow-hidden">
+                    <div id="cover_progress_bar" class="bg-[#8D56EC] h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                   </div>
                 </div>
 
                 <div id="cover_preview_box" class="hidden w-full h-full flex flex-col items-center justify-center">
                   <img id="cover_preview_img" src="" class="max-h-48 mx-auto rounded-md object-cover shadow" alt="Cover Preview">
                   <div class="mt-2 flex items-center justify-center gap-3">
-                    <span class="text-[11px] font-bold text-emerald-600">✓ อัปโหลดภาพปกเรียบร้อย</span>
+                    <span class="text-[11px] font-bold text-[#633583]">✓ อัปโหลดภาพปกเรียบร้อย</span>
                     <button type="button" onclick="event.stopPropagation(); removeCoverImage();" class="text-xs text-rose-500 font-semibold hover:underline">เปลี่ยนภาพปก</button>
                   </div>
                 </div>
@@ -547,56 +670,74 @@
               </p>
             </div>
 
-            <!-- 4. วันที่จัดงาน / วันที่เผยแพร่ (Matching README.ME Date Row with Calendar Block) -->
+            <!-- 4. วันที่จัดงาน / วันที่เผยแพร่ -->
             <div>
               <label class="block text-base font-bold text-slate-700 mb-2">วันที่เผยแพร่ / วันที่จัดแคมเปญ</label>
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white">
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white focus-within:border-[#8D56EC]">
                 <input type="date" id="editor_travel_date" class="flex-1 px-4 py-2.5 text-xs text-slate-800 focus:outline-none">
-                <span class="bg-[#f3f4f6] border-l border-slate-300 px-3.5 flex items-center justify-center text-slate-600">📅</span>
+                <span class="bg-purple-50 border-l border-slate-300 px-3.5 flex items-center justify-center text-[#633583]">📅</span>
               </div>
             </div>
 
             <!-- Optional Media Links (YouTube & Map) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white text-xs">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3 py-2 border-r border-slate-300 font-semibold shrink-0">▶️ YouTube:</span>
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white text-xs focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3 py-2 border-r border-slate-300 font-semibold shrink-0">▶️ YouTube:</span>
                 <input type="text" id="editor_video_url" placeholder="https://www.youtube.com/watch?v=..." class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
-              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white text-xs">
-                <span class="bg-[#f3f4f6] text-slate-600 px-3 py-2 border-r border-slate-300 font-semibold shrink-0">📍 พิกัดแผนที่:</span>
-                <input type="text" id="editor_map_coords" placeholder="เช่น EM WONDER Emsphere หรือ 13.73, 100.56" class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
+              <div class="flex border border-slate-300 rounded-md overflow-hidden bg-white text-xs focus-within:border-[#8D56EC]">
+                <span class="bg-purple-50 text-[#633583] px-3 py-2 border-r border-slate-300 font-semibold shrink-0">📍 พิกัดแผนที่:</span>
+                <input type="text" id="editor_map_coords" placeholder="เช่น EM WONDER Emsphere หรือ 13.73, 100.56 (เรนเดอร์แผนที่บนเว็บอัตโนมัติ)" class="flex-1 px-3 py-2 text-slate-800 focus:outline-none">
               </div>
             </div>
 
             <!-- 5. คำโปรยย่อ (Summary) -->
             <div>
               <label class="block text-sm font-bold text-slate-700 mb-1.5">คำโปรยย่อ (แสดงที่การ์ดหน้าแรกและหน้ารวมบทความ)</label>
-              <textarea rows="2" id="editor_summary_th" placeholder="สรุปไฮไลท์สั้นๆ 1-2 ประโยคเพื่อดึงดูดผู้อ่าน..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#66afe9]"></textarea>
+              <textarea rows="2" id="editor_summary_th" placeholder="สรุปไฮไลท์สั้นๆ 1-2 ประโยคเพื่อดึงดูดผู้อ่าน..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#8D56EC]"></textarea>
             </div>
 
-            <!-- 6. เนื้อหาหลัก (Rich Content Area matching README.ME blue focus box) -->
+            <!-- 6. เนื้อหาหลัก (Rich Content Area with Block Move & Caption Toolbar) -->
             <div>
-              <label class="block text-base font-bold text-slate-700 mb-2">เนื้อหา</label>
-              <div id="editor_content_th" contenteditable="true" placeholder="พิมพ์เนื้อหาของบทความ/รีวิว และลากรูปภาพมาวางในช่องนี้ได้เลย..." class="min-h-[320px] bg-white border border-[#66afe9] shadow-[0_0_6px_rgba(102,175,233,0.45)] rounded-md p-4 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <label class="block text-base font-bold text-slate-700">เนื้อหา</label>
+                <span class="text-[11px] text-[#633583] bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
+                  💡 คลิกที่รูปภาพหรือตารางรูปในเนื้อหา เพื่อเลื่อนขึ้น-ลงแทรกระหว่างบรรทัด หรือพิมพ์ Caption ใต้รูป
+                </span>
+              </div>
+
+              <!-- Contextual Image / Grid Mover Bar (Appears when an image or photo grid is clicked) -->
+              <div id="editor_block_toolbar" class="hidden mb-2 p-2 rounded-lg bg-[#633583] text-white text-xs flex flex-wrap items-center justify-between gap-2 shadow">
+                <span class="font-bold flex items-center gap-1.5">✨ จัดการบล็อกรูปภาพที่เลือก:</span>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onclick="moveSelectedEditorBlock('up')" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">⬆️ เลื่อนขึ้นแทรกบรรทัดบน</button>
+                  <button type="button" onclick="moveSelectedEditorBlock('down')" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">⬇️ เลื่อนลงแทรกบรรทัดล่าง</button>
+                  <button type="button" onclick="editSelectedBlockCaption()" class="px-2.5 py-1 rounded bg-amber-400 text-slate-900 hover:bg-amber-300 font-bold">✏️ เขียน/แก้ไข Caption ใต้รูป</button>
+                  <button type="button" onclick="insertParagraphAfterSelectedBlock()" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">↵ แทรกบรรทัดข้อความต่อท้าย</button>
+                  <button type="button" onclick="deleteSelectedEditorBlock()" class="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-400 font-bold">🗑️ ลบบล็อกรูป</button>
+                </div>
+              </div>
+
+              <div id="editor_content_th" contenteditable="true" placeholder="พิมพ์เนื้อหาของบทความ/รีวิว กดปุ่ม 🖼️ รูป+Caption หรือ ⊞ เรียงหลายรูป (Grid) ด้านบนเพื่อแทรกรูปตรงบรรทัดที่ต้องการ..." class="min-h-[360px] bg-white border-2 border-[#8D56EC] shadow-[0_0_8px_rgba(141,86,236,0.25)] rounded-md p-5 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
             </div>
           </div>
 
           <!-- ENGLISH FIELDS (Bilingual) -->
           <div id="editor-fields-en" class="space-y-6 hidden">
-            <div class="p-3 rounded-md bg-teal-50 border border-teal-200 text-xs text-teal-800">
+            <div class="p-3 rounded-md bg-purple-50 border border-purple-200 text-xs text-[#633583]">
               ℹ️ ข้อมูลภาษาอังกฤษสำหรับแสดงผลเมื่อผู้เข้าชมเลือกธงภาษาอังกฤษ (🇬🇧 EN) บนหน้าเว็บไซต์ (สามารถกดปุ่ม <b>🤖 AI แปลภาษาอังกฤษ</b> ด้านบนเพื่อแปลจากภาษาไทยอัตโนมัติ)
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Title (English)</label>
-              <input type="text" id="editor_title_en" placeholder="Article / Campaign Title in English..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-sm text-slate-800 focus:outline-none">
+              <input type="text" id="editor_title_en" placeholder="Article / Campaign Title in English..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-[#8D56EC]">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Summary (English)</label>
-              <textarea rows="2" id="editor_summary_en" placeholder="Short overview in English..." class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-800 focus:outline-none"></textarea>
+              <textarea rows="2" id="editor_summary_en" placeholder="Short overview in English..." class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#8D56EC]"></textarea>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Content (English)</label>
-              <div id="editor_content_en" contenteditable="true" placeholder="Write or paste English content here..." class="min-h-[320px] bg-white border border-[#66afe9] rounded-md p-4 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
+              <div id="editor_content_en" contenteditable="true" placeholder="Write or paste English content here..." class="min-h-[360px] bg-white border-2 border-[#8D56EC] rounded-md p-5 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
             </div>
           </div>
         </div>
@@ -1195,37 +1336,298 @@
       if (lang === 'th') {
         thSec.classList.remove('hidden');
         enSec.classList.add('hidden');
-        thBtn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-white text-teal-800';
-        enBtn.className = 'px-3 py-1 rounded-full text-xs font-medium text-teal-100 hover:text-white';
+        thBtn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-white text-[#633583]';
+        enBtn.className = 'px-3 py-1 rounded-full text-xs font-medium text-purple-200 hover:text-white';
       } else {
         thSec.classList.add('hidden');
         enSec.classList.remove('hidden');
-        thBtn.className = 'px-3 py-1 rounded-full text-xs font-medium text-teal-100 hover:text-white';
-        enBtn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-white text-teal-800';
+        thBtn.className = 'px-3 py-1 rounded-full text-xs font-medium text-purple-200 hover:text-white';
+        enBtn.className = 'px-3 py-1 rounded-full text-xs font-bold bg-white text-[#633583]';
+      }
+      clearSelectedEditorBlock();
+    }
+
+    // -------------------------------------------------------------
+    // Rich Editor Selection Tracking & Formatting Helpers
+    // -------------------------------------------------------------
+    let savedEditorRange = null;
+    let selectedEditorBlock = null;
+
+    function getActiveEditorEl() {
+      return appState.editorLang === 'en'
+        ? document.getElementById('editor_content_en')
+        : document.getElementById('editor_content_th');
+    }
+
+    function saveEditorSelection() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      const editorEl = getActiveEditorEl();
+      if (editorEl && editorEl.contains(range.commonAncestorContainer)) {
+        savedEditorRange = range.cloneRange();
+      }
+    }
+
+    function restoreEditorSelection() {
+      const editorEl = getActiveEditorEl();
+      if (!editorEl) return;
+      editorEl.focus();
+      if (savedEditorRange && editorEl.contains(savedEditorRange.commonAncestorContainer)) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedEditorRange);
       }
     }
 
     function execCmd(command, val) {
+      restoreEditorSelection();
       document.execCommand(command, false, val || null);
+      saveEditorSelection();
     }
 
-    function toggleHeading() {
-      const format = document.queryCommandValue('formatBlock');
-      if (format === 'h2') {
-        document.execCommand('formatBlock', false, '<h3>');
-      } else if (format === 'h3') {
-        document.execCommand('formatBlock', false, '<p>');
+    function applyHeadingFormat(tag) {
+      if (!tag) return;
+      restoreEditorSelection();
+      document.execCommand('formatBlock', false, '<' + tag + '>');
+      saveEditorSelection();
+    }
+
+    function applyFontSize(sizePx) {
+      if (!sizePx) return;
+      restoreEditorSelection();
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+
+      if (!range.collapsed) {
+        document.execCommand('fontSize', false, '7');
+        const editorEl = getActiveEditorEl();
+        const fonts = editorEl.querySelectorAll('font[size="7"]');
+        fonts.forEach(function(f) {
+          const span = document.createElement('span');
+          span.style.fontSize = sizePx;
+          span.innerHTML = f.innerHTML;
+          f.parentNode.replaceChild(span, f);
+        });
       } else {
-        document.execCommand('formatBlock', false, '<h2>');
+        let node = range.startContainer;
+        if (node.nodeType === 3) node = node.parentElement;
+        const editorEl = getActiveEditorEl();
+        while (node && node !== editorEl && !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'LI', 'BLOCKQUOTE'].includes(node.tagName)) {
+          node = node.parentElement;
+        }
+        if (node && node !== editorEl) {
+          node.style.fontSize = sizePx;
+        } else {
+          document.execCommand('insertHTML', false, '<p style="font-size:' + sizePx + ';"><br></p>');
+        }
+      }
+      saveEditorSelection();
+    }
+
+    function applyListStyle(styleType) {
+      if (!styleType) return;
+      restoreEditorSelection();
+      const isOrdered = ['decimal', 'lower-alpha', 'lower-roman'].includes(styleType);
+      const editorEl = getActiveEditorEl();
+
+      let sel = window.getSelection();
+      let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+      if (node && node.nodeType === 3) node = node.parentElement;
+
+      let existingList = null;
+      let curr = node;
+      while (curr && curr !== editorEl) {
+        if (curr.tagName === 'UL' || curr.tagName === 'OL') {
+          existingList = curr;
+          break;
+        }
+        curr = curr.parentElement;
+      }
+
+      const targetTag = isOrdered ? 'OL' : 'UL';
+      if (!existingList || existingList.tagName !== targetTag) {
+        document.execCommand(isOrdered ? 'insertOrderedList' : 'insertUnorderedList', false, null);
+        sel = window.getSelection();
+        node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).commonAncestorContainer : null;
+        if (node && node.nodeType === 3) node = node.parentElement;
+        curr = node;
+        existingList = null;
+        while (curr && curr !== editorEl) {
+          if (curr.tagName === 'UL' || curr.tagName === 'OL') {
+            existingList = curr;
+            break;
+          }
+          curr = curr.parentElement;
+        }
+      }
+
+      if (!existingList) {
+        const listHtml = isOrdered
+          ? '<ol data-bullet="' + styleType + '" style="list-style-type:' + styleType + '; padding-left:1.75rem; margin:0.75rem 0;"><li>รายการที่ 1</li></ol><p><br></p>'
+          : '<ul data-bullet="' + styleType + '" style="list-style-type:' + (styleType === 'check' ? "'✓  '" : styleType) + '; padding-left:1.75rem; margin:0.75rem 0;"><li>รายการที่ 1</li></ul><p><br></p>';
+        document.execCommand('insertHTML', false, listHtml);
+      } else {
+        existingList.setAttribute('data-bullet', styleType);
+        existingList.style.listStyleType = styleType === 'check' ? "'✓  '" : styleType;
+        existingList.style.paddingLeft = '1.75rem';
+      }
+      saveEditorSelection();
+    }
+
+    function applyIndentOrAlign(action) {
+      if (!action) return;
+      restoreEditorSelection();
+      const editorEl = getActiveEditorEl();
+
+      if (action === 'left') {
+        document.execCommand('justifyLeft', false, null);
+      } else if (action === 'center') {
+        document.execCommand('justifyCenter', false, null);
+      } else if (action === 'right') {
+        document.execCommand('justifyRight', false, null);
+      } else {
+        const sel = window.getSelection();
+        let node = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).startContainer : null;
+        if (node && node.nodeType === 3) node = node.parentElement;
+        while (node && node !== editorEl && !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'LI', 'BLOCKQUOTE'].includes(node.tagName)) {
+          node = node.parentElement;
+        }
+        if (!node || node === editorEl) {
+          document.execCommand('formatBlock', false, '<p>');
+          const sel2 = window.getSelection();
+          node = sel2 && sel2.rangeCount > 0 ? sel2.getRangeAt(0).startContainer : null;
+          if (node && node.nodeType === 3) node = node.parentElement;
+        }
+        if (node && node !== editorEl) {
+          if (action === 'first-line') {
+            node.style.textIndent = node.style.textIndent === '2.5rem' ? '0px' : '2.5rem';
+          } else if (action === 'indent') {
+            const cur = parseFloat(node.style.paddingLeft || '0') || 0;
+            node.style.paddingLeft = (cur + 24) + 'px';
+          } else if (action === 'outdent') {
+            const cur = parseFloat(node.style.paddingLeft || '0') || 0;
+            node.style.paddingLeft = Math.max(0, cur - 24) + 'px';
+            node.style.textIndent = '0px';
+          }
+        }
+      }
+      saveEditorSelection();
+    }
+
+    // -------------------------------------------------------------
+    // Image / Photo Grid Block Mover & Caption Controls
+    // -------------------------------------------------------------
+    function selectEditorBlock(blockEl) {
+      clearSelectedEditorBlock();
+      selectedEditorBlock = blockEl;
+      if (selectedEditorBlock) {
+        selectedEditorBlock.classList.add('ltt-selected-block');
+        const bar = document.getElementById('editor_block_toolbar');
+        if (bar) bar.classList.remove('hidden');
       }
     }
 
+    function clearSelectedEditorBlock() {
+      if (selectedEditorBlock) {
+        selectedEditorBlock.classList.remove('ltt-selected-block');
+      }
+      selectedEditorBlock = null;
+      const bar = document.getElementById('editor_block_toolbar');
+      if (bar) bar.classList.add('hidden');
+    }
+
+    function moveSelectedEditorBlock(direction) {
+      if (!selectedEditorBlock || !selectedEditorBlock.parentNode) return;
+      const parent = selectedEditorBlock.parentNode;
+      if (direction === 'up') {
+        const prev = selectedEditorBlock.previousElementSibling;
+        if (prev) {
+          parent.insertBefore(selectedEditorBlock, prev);
+          selectedEditorBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          const emptyP = document.createElement('p');
+          emptyP.innerHTML = '<br>';
+          parent.insertBefore(emptyP, selectedEditorBlock);
+        }
+      } else if (direction === 'down') {
+        const next = selectedEditorBlock.nextElementSibling;
+        if (next) {
+          parent.insertBefore(next, selectedEditorBlock);
+          selectedEditorBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          const emptyP = document.createElement('p');
+          emptyP.innerHTML = '<br>';
+          parent.appendChild(emptyP);
+        }
+      }
+    }
+
+    function editSelectedBlockCaption() {
+      if (!selectedEditorBlock) return;
+      let cap = selectedEditorBlock.querySelector('figcaption');
+      if (!cap) {
+        cap = document.createElement('figcaption');
+        cap.className = 'text-xs text-center text-slate-500 mt-2 italic';
+        cap.setAttribute('data-placeholder', 'คลิกพิมพ์คำบรรยายใต้ภาพ (Caption)...');
+        selectedEditorBlock.appendChild(cap);
+      }
+      const currentText = cap.innerText || '';
+      const nextText = prompt('ระบุคำบรรยายใต้รูปภาพ (Caption):', currentText);
+      if (nextText !== null) {
+        cap.innerText = nextText;
+      }
+    }
+
+    function insertParagraphAfterSelectedBlock() {
+      if (!selectedEditorBlock || !selectedEditorBlock.parentNode) return;
+      const p = document.createElement('p');
+      p.innerHTML = 'พิมพ์ข้อความบรรทัดใหม่ที่นี่...';
+      if (selectedEditorBlock.nextSibling) {
+        selectedEditorBlock.parentNode.insertBefore(p, selectedEditorBlock.nextSibling);
+      } else {
+        selectedEditorBlock.parentNode.appendChild(p);
+      }
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      clearSelectedEditorBlock();
+    }
+
+    function deleteSelectedEditorBlock() {
+      if (!selectedEditorBlock) return;
+      if (!confirm('ต้องการลบบล็อกรูปภาพนี้ออกจากเนื้อหาใช่หรือไม่?')) return;
+      selectedEditorBlock.remove();
+      clearSelectedEditorBlock();
+    }
+
+    function insertHtmlAtEditorCursor(html) {
+      const editorEl = getActiveEditorEl();
+      if (!editorEl) return;
+      restoreEditorSelection();
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && editorEl.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        document.execCommand('insertHTML', false, html);
+      } else {
+        editorEl.insertAdjacentHTML('beforeend', html);
+      }
+      saveEditorSelection();
+    }
+
     function insertLinkPrompt() {
+      saveEditorSelection();
       const url = prompt('ระบุ URL ลิงก์:', 'https://');
-      if (url) execCmd('createLink', url);
+      if (url) {
+        restoreEditorSelection();
+        execCmd('createLink', url);
+      }
     }
 
     function promptInsertVideo() {
+      saveEditorSelection();
       const video = prompt('ใส่ YouTube Link หรือ Video URL:');
       if (!video) return;
       document.getElementById('editor_video_url').value = video;
@@ -1239,18 +1641,17 @@
         }
       }
       if (embedHtml) {
-        document.getElementById('editor_content_th').focus();
-        execCmd('insertHTML', embedHtml);
+        insertHtmlAtEditorCursor(embedHtml);
       } else {
         alert('บันทึกลิงก์วิดีโอไว้ที่ช่อง YouTube Video เรียบร้อย');
       }
     }
 
     function promptInsertMap() {
-      const coords = prompt('ระบุพิกัด ละติจูด,ลองจิจูด (เช่น 13.7563, 100.5018) หรือ Embed Iframe:');
+      const coords = prompt('ระบุชื่อสถานที่ หรือ พิกัด ละติจูด,ลองจิจูด (เช่น EM WONDER Emsphere หรือ 13.7308, 100.5696):', document.getElementById('editor_map_coords').value || '');
       if (!coords) return;
       document.getElementById('editor_map_coords').value = coords;
-      alert('บันทึกพิกัดแผนที่เรียบร้อย');
+      alert('✓ บันทึกพิกัดแผนที่เรียบร้อย ระบบจะเรนเดอร์แผนที่ Google Maps บนหน้าบทความให้อัตโนมัติ');
     }
 
     // -------------------------------------------------------------
@@ -1350,10 +1751,13 @@
     function uploadAndInsertImage(input) {
       const file = input.files && input.files[0];
       if (file) insertImageIntoContent(file);
+      input.value = '';
     }
 
     function insertImageIntoContent(file) {
       if (!file) return;
+      saveEditorSelection();
+      const captionText = prompt('พิมพ์คำบรรยายใต้รูปภาพ (Caption) (เว้นว่างไว้แล้วคลิกพิมพ์ภายหลังได้):', '') || '';
       showEditorUploadPill('กำลังอัปโหลดภาพลงเนื้อหา... 0%');
 
       uploadFileWithProgress(file, {
@@ -1364,16 +1768,68 @@
           showEditorUploadPill('✓ อัปโหลดภาพสำเร็จ!');
           setTimeout(hideEditorUploadPill, 1200);
 
-          const imgHtml = '<figure class="my-4"><img src="' + fileUrl + '" class="rounded-2xl max-w-full mx-auto shadow" alt=""><figcaption class="text-xs text-center text-slate-400 mt-1.5"></figcaption></figure><p><br></p>';
-          const target = appState.editorLang === 'en' ? document.getElementById('editor_content_en') : document.getElementById('editor_content_th');
-          target.focus();
-          execCmd('insertHTML', imgHtml);
+          const imgHtml = '<figure class="ltt-figure my-5">' +
+            '<img src="' + fileUrl + '" class="w-full rounded-lg object-cover shadow-sm" alt="' + escapeHtml(captionText) + '">' +
+            '<figcaption class="text-xs text-center text-slate-500 mt-2 italic" data-placeholder="คลิกพิมพ์คำบรรยายใต้ภาพ (Caption)...">' + escapeHtml(captionText) + '</figcaption>' +
+          '</figure><p><br></p>';
+          insertHtmlAtEditorCursor(imgHtml);
         },
         onError: function(err) {
           hideEditorUploadPill();
           alert('อัปโหลดภาพลงบทความล้มเหลว: ' + err);
         }
       });
+    }
+
+    async function uploadAndInsertPhotoGrid(input) {
+      const files = input.files ? Array.from(input.files) : [];
+      if (files.length === 0) return;
+      saveEditorSelection();
+
+      const colsChoice = prompt('ต้องการเรียงรูปเป็นกี่คอลัมน์? (พิมพ์ 3 สำหรับ 3 คอลัมน์เหมือนในรูป Ref หรือพิมพ์ 2 สำหรับ 2 คอลัมน์):', files.length >= 3 ? '3' : '2');
+      const cols = colsChoice === '2' ? 2 : 3;
+      const gridClass = cols === 2
+        ? 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 gap-4 my-6'
+        : 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-6';
+
+      const uploadedUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        showEditorUploadPill('กำลังอัปโหลดชุดรูปภาพ (' + (i + 1) + '/' + files.length + ')...');
+        try {
+          const url = await new Promise(function(resolve, reject) {
+            uploadFileWithProgress(f, {
+              onProgress: function(pct) {
+                showEditorUploadPill('กำลังอัปโหลดรูปที่ ' + (i + 1) + '/' + files.length + ' (' + pct + '%)...');
+              },
+              onSuccess: function(u) { resolve(u); },
+              onError: function(err) { reject(new Error(err)); }
+            });
+          });
+          uploadedUrls.push(url);
+        } catch (err) {
+          alert('อัปโหลดรูปที่ ' + (i + 1) + ' ล้มเหลว: ' + err.message);
+        }
+      }
+
+      input.value = '';
+      if (uploadedUrls.length === 0) {
+        hideEditorUploadPill();
+        return;
+      }
+
+      showEditorUploadPill('✓ แทรกตารางรูปภาพ ' + uploadedUrls.length + ' รูปสำเร็จ!');
+      setTimeout(hideEditorUploadPill, 1400);
+
+      const cellsHtml = uploadedUrls.map(function(u) {
+        return '<figure class="m-0">' +
+          '<img src="' + u + '" class="w-full h-56 object-cover rounded-sm shadow-sm" alt="">' +
+          '<figcaption class="text-[11px] text-center text-slate-500 mt-1 italic" data-placeholder="คำบรรยายใต้ภาพ (ถ้ามี)..."></figcaption>' +
+        '</figure>';
+      }).join('');
+
+      const gridHtml = '<div class="' + gridClass + '">' + cellsHtml + '</div><p><br></p>';
+      insertHtmlAtEditorCursor(gridHtml);
     }
 
     function showEditorUploadPill(text) {
@@ -1556,14 +2012,14 @@
           coverDrop.addEventListener(evt, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            coverDrop.classList.add('border-teal-500', 'bg-teal-50/50');
+            coverDrop.classList.add('border-[#8D56EC]', 'bg-purple-50/50');
           });
         });
         ['dragleave', 'drop'].forEach(function(evt) {
           coverDrop.addEventListener(evt, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            coverDrop.classList.remove('border-teal-500', 'bg-teal-50/50');
+            coverDrop.classList.remove('border-[#8D56EC]', 'bg-purple-50/50');
           });
         });
         coverDrop.addEventListener('drop', function(e) {
@@ -1572,27 +2028,52 @@
         });
       }
 
-      // 4. Content Area Image Drop
+      // 4. Content Area Image Drop & Selection / Block Click Listeners
       ['editor_content_th', 'editor_content_en'].forEach(function(id) {
         const el = document.getElementById(id);
         if (!el) return;
+        ['keyup', 'mouseup', 'focus'].forEach(function(evt) {
+          el.addEventListener(evt, saveEditorSelection);
+        });
+        el.addEventListener('click', function(e) {
+          saveEditorSelection();
+          let target = e.target;
+          let block = null;
+          while (target && target !== el) {
+            if (target.tagName === 'FIGURE' || (target.classList && target.classList.contains('ltt-photo-grid'))) {
+              block = target;
+              if (target.parentElement && target.parentElement.classList && target.parentElement.classList.contains('ltt-photo-grid')) {
+                block = target.parentElement;
+              }
+              break;
+            }
+            target = target.parentElement;
+          }
+          if (block) {
+            selectEditorBlock(block);
+          } else {
+            clearSelectedEditorBlock();
+          }
+        });
         ['dragenter', 'dragover'].forEach(function(evt) {
           el.addEventListener(evt, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            el.classList.add('ring-2', 'ring-teal-500');
+            el.classList.add('ring-2', 'ring-[#8D56EC]');
           });
         });
         ['dragleave', 'drop'].forEach(function(evt) {
           el.addEventListener(evt, function(e) {
             e.preventDefault();
             e.stopPropagation();
-            el.classList.remove('ring-2', 'ring-teal-500');
+            el.classList.remove('ring-2', 'ring-[#8D56EC]');
           });
         });
         el.addEventListener('drop', function(e) {
           const files = e.dataTransfer.files;
-          if (files && files[0] && files[0].type.startsWith('image/')) {
+          if (files && files.length > 1) {
+            uploadAndInsertPhotoGrid({ files: files, value: '' });
+          } else if (files && files[0] && files[0].type.startsWith('image/')) {
             insertImageIntoContent(files[0]);
           }
         });
@@ -1637,17 +2118,24 @@
     }
 
     function previewEditorContent() {
-      const title = document.getElementById('editor_title_th').value || 'หัวข้อตัวอย่าง';
-      const summary = document.getElementById('editor_summary_th').value || '';
-      const content = document.getElementById('editor_content_th').innerHTML || '';
+      clearSelectedEditorBlock();
+      const isEn = appState.editorLang === 'en';
+      const title = (isEn ? document.getElementById('editor_title_en').value : document.getElementById('editor_title_th').value) || document.getElementById('editor_title_th').value || 'หัวข้อตัวอย่าง';
+      const summary = (isEn ? document.getElementById('editor_summary_en').value : document.getElementById('editor_summary_th').value) || '';
+      const content = (isEn ? document.getElementById('editor_content_en').innerHTML : document.getElementById('editor_content_th').innerHTML) || '';
       const cover = document.getElementById('editor_cover_url').value;
+      const coords = document.getElementById('editor_map_coords').value;
+      const mapHtml = coords
+        ? '<div class="mt-6 space-y-2"><div class="text-xs font-bold text-[#633583]">📍 พิกัดสถานที่: ' + escapeHtml(coords) + '</div><div class="rounded-xl overflow-hidden border border-purple-200 h-64"><iframe class="w-full h-full" src="https://maps.google.com/maps?q=' + encodeURIComponent(coords) + '&t=&z=15&ie=UTF8&iwloc=&output=embed" frameborder="0" loading="lazy"></iframe></div></div>'
+        : '';
 
       const container = document.getElementById('preview-container');
-      container.innerHTML = '<div class="space-y-6 max-w-4xl mx-auto">' +
-        (cover ? '<img src="' + cover + '" class="w-full h-64 object-cover rounded-2xl shadow" alt="">' : '') +
-        '<h1 class="text-3xl font-extrabold text-white">' + escapeHtml(title) + '</h1>' +
-        (summary ? '<p class="text-base text-slate-300 border-l-2 border-teal-500 pl-4 py-1">' + escapeHtml(summary) + '</p>' : '') +
-        '<div class="prose prose-invert max-w-none text-slate-300 leading-relaxed">' + content + '</div>' +
+      container.innerHTML = '<div class="bg-white text-slate-800 rounded-xl p-6 sm:p-10 space-y-6 max-w-4xl mx-auto">' +
+        '<h1 class="text-2xl sm:text-3xl font-extrabold text-[#4A1D6E]">' + escapeHtml(title) + '</h1>' +
+        (cover ? '<img src="' + cover + '" class="w-full max-h-96 object-cover rounded-xl shadow-sm" alt="">' : '') +
+        (summary ? '<p class="text-base text-[#633583] font-medium">' + escapeHtml(summary) + '</p>' : '') +
+        '<div class="max-w-none text-slate-700 leading-relaxed space-y-4">' + content + '</div>' +
+        mapHtml +
       '</div>';
 
       document.getElementById('modal-preview').classList.remove('hidden');
@@ -1660,6 +2148,7 @@
     }
 
     async function handleSaveRichEditor() {
+      clearSelectedEditorBlock();
       const type = document.getElementById('editor_target_type').value;
       const id = document.getElementById('editor_item_id').value;
       const titleTh = document.getElementById('editor_title_th').value;

@@ -27,7 +27,13 @@ function parseServiceRow(s) {
   } catch {
     bullets = s.bullet_points ? s.bullet_points.split('\n').filter(Boolean) : [];
   }
-  return { ...s, bullet_points: bullets };
+  let bulletsEn = [];
+  try {
+    bulletsEn = JSON.parse(s.bullet_points_en || '[]');
+  } catch {
+    bulletsEn = s.bullet_points_en ? s.bullet_points_en.split('\n').filter(Boolean) : [];
+  }
+  return { ...s, bullet_points: bullets, bullet_points_en: bulletsEn };
 }
 
 /**
