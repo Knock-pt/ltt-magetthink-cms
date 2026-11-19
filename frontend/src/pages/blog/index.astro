@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLanguageContext, setPublicCacheHeaders } from '../../lib/i18n.js';
+import { getArticles, resolveMediaUrl } from '../../lib/api.js';
+
+setPublicCacheHeaders(Astro, 60, 300);
+const { language, t } = getLanguageContext(Astro);
+const articles = await getArticles(Astro);
+---
+
+<BaseLayout title={t('blog_title')} description={t('blog_subtitle')} language={language} t={t}>
+  <section class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">INSIGHTS &amp; TRENDS</span>
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">
+          {t('blog_title')}
+        </h1>
+        <p class="text-sm text-slate-400 mt-4">
+          {t('blog_subtitle')}
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {articles.map((art) => {
+          const title = language === 'en' && art.title_en ? art.title_en : art.title;
+          const summary = language === 'en' && art.summary_en ? art.summary_en : art.summary;
+          const linkHref = `/blog/${art.slug || art.id}`;
+          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString(
+            language === 'en' ? 'en-US' : 'th-TH'
+          );
+
+          return (
+            <div class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group border border-slate-800/80 hover:border-slate-700 transition">
+              <div>
+                {art.cover_image && (
+                  <a href={linkHref} class="h-60 overflow-hidden block">
+                    <img
+                      src={resolveMediaUrl(art.cover_image)}
+                      alt={title}
+                      loading="lazy"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                  </a>
+                )}
+                <div class="p-8">
+                  <div class="flex items-center gap-4 text-xs text-slate-400 mb-3">
+                    <span>{dateStr}</span>
+                    <span>•</span>
+                    <span>{art.author || 'LTT Team'}</span>
+                  </div>
+                  <h2 class="font-bold text-lg text-white group-hover:text-blue-400 transition mb-3">
+                    <a href={linkHref}>{title}</a>
+                  </h2>
+                  <p class="text-xs sm:text-sm text-slate-400 leading-relaxed line-clamp-3">{summary}</p>
+                </div>
+              </div>
+
+              <div class="p-8 pt-0 flex justify-end">
+                <a
+                  href={linkHref}
+                  class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 transition"
+                >
+                  <span>{t('blog_read_more')}</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,98 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { getNavigation, getSiteSettings, resolveMediaUrl } from '../lib/api.js';
+
+const {
+  title,
+  description,
+  ogImage,
+  language = 'th',
+  t,
+  settings: passedSettings,
+  menus: passedMenus,
+} = Astro.props;
+
+const [settings, menus] = await Promise.all([
+  passedSettings ? Promise.resolve(passedSettings) : getSiteSettings(Astro),
+  passedMenus ? Promise.resolve(passedMenus) : getNavigation(Astro),
+]);
+
+const siteTitle = settings.site_title || 'LTT Ma getThink — One-Stop Marketing & Creative Agency';
+const metaTitle = title ? `${title} | LTT Ma getThink` : siteTitle;
+const metaDesc =
+  description ||
+  settings.site_description ||
+  'บริการการตลาดดิจิทัล ถ่ายภาพสถาปัตยกรรม และโปรดักชันวิดีโอครบวงจร สำหรับโรงแรม รีสอร์ท อสังหาฯ และ F&B';
+const metaOgImage = resolveMediaUrl(ogImage || settings.og_image || '');
+const currentPath = Astro.url.pathname;
+const canonicalUrl = Astro.url.href;
+const googleVerify = settings.google_verification || '';
+const gtmId = settings.gtm_id || '';
+const ga4Id = settings.ga4_id || '';
+const fbPixelId = settings.fb_pixel_id || '';
+---
+
+<!DOCTYPE html>
+<html lang={language} class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{metaTitle}</title>
+    <meta name="description" content={metaDesc} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph / Social Share -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDesc} />
+    {metaOgImage && <meta property="og:image" content={metaOgImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    {metaOgImage && <meta name="twitter:image" content={metaOgImage} />}
+
+    {googleVerify && <meta name="google-site-verification" content={googleVerify} />}
+
+    <!-- Google Fonts: Plus Jakarta Sans + Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    {gtmId && (
+      <script is:inline define:vars={{ gtmId }}>
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',gtmId);
+      </script>
+    )}
+    {ga4Id && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}></script>
+        <script is:inline define:vars={{ ga4Id }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', ga4Id);
+        </script>
+      </>
+    )}
+    {fbPixelId && (
+      <script is:inline define:vars={{ fbPixelId }}>
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', fbPixelId);
+        fbq('track', 'PageView');
+      </script>
+    )}
+  </head>
+  <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <Navbar menus={menus} language={language} t={t} currentPath={currentPath} />
+    <main class="flex-1 flex flex-col">
+      <slot />
+    </main>
+    <Footer language={language} t={t} settings={settings} />
+  </body>
+</html>

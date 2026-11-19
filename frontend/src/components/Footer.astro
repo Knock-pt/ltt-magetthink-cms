@@ -1,0 +1,89 @@
+---
+const { language = 'th', t, settings = {} } = Astro.props;
+const year = new Date().getFullYear();
+
+const companyName = settings.company_name || 'LTT Ma getThink';
+const phone = settings.phone || '096-042-9083';
+const email = settings.email || 'contact@lttmagetthink.co';
+const lineOa = settings.line_oa || '@lttmagetthink';
+---
+
+<footer class="border-t border-slate-800/80 bg-slate-950 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg text-white">
+            L
+          </div>
+          <span class="font-bold text-white text-base">{companyName}</span>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          {t('footer_desc')}
+        </p>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-xs text-white uppercase tracking-wider mb-3">
+          {t('footer_nav')}
+        </h4>
+        <ul class="space-y-2 text-xs text-slate-400">
+          <li><a href="/" class="hover:text-blue-400 transition">{t('nav_home')}</a></li>
+          <li><a href="/our-service" class="hover:text-blue-400 transition">{t('nav_services')}</a></li>
+          <li><a href="/portfolio" class="hover:text-blue-400 transition">{t('nav_portfolio')}</a></li>
+          <li><a href="/about-us" class="hover:text-blue-400 transition">{t('nav_about')}</a></li>
+          <li><a href="/blog" class="hover:text-blue-400 transition">{t('nav_blog')}</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-xs text-white uppercase tracking-wider mb-3">
+          {t('footer_services')}
+        </h4>
+        <ul class="space-y-2 text-xs text-slate-400">
+          <li>Digital Marketing &amp; Social Media</li>
+          <li>Commercial Photography &amp; Videography</li>
+          <li>Creative Content &amp; Short Video Production</li>
+          <li>Influencer &amp; KOL Campaign Matching</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-xs text-white uppercase tracking-wider mb-3">
+          {t('footer_contact')}
+        </h4>
+        <p class="text-xs text-slate-400 mb-1">
+          {language === 'en' ? 'Phone' : 'โทร'}: {phone}
+        </p>
+        <p class="text-xs text-slate-400 mb-1">
+          {language === 'en' ? 'Email' : 'อีเมล'}: {email}
+        </p>
+        <p class="text-xs text-slate-400">LINE OA: {lineOa}</p>
+
+        {(settings.social_facebook || settings.social_instagram || settings.social_tiktok || settings.social_youtube) && (
+          <div class="flex flex-wrap gap-2 mt-3">
+            {settings.social_facebook && (
+              <a href={settings.social_facebook} target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">Facebook</a>
+            )}
+            {settings.social_instagram && (
+              <a href={settings.social_instagram} target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">Instagram</a>
+            )}
+            {settings.social_tiktok && (
+              <a href={settings.social_tiktok} target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">TikTok</a>
+            )}
+            {settings.social_youtube && (
+              <a href={settings.social_youtube} target="_blank" rel="noopener noreferrer" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">YouTube</a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div class="border-t border-slate-900 pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
+      <p>© {year} LTT Ma getThink Co., Ltd. {t('footer_rights')}</p>
+      <div class="flex items-center gap-4">
+        <a href="/contact-us" class="hover:text-slate-400">{t('nav_contact')}</a>
+      </div>
+    </div>
+  </div>
+</footer>

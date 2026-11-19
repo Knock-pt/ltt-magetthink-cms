@@ -1,6 +1,13 @@
-name = "ltt-frontend-pages"
+name = "ltt-website"
 compatibility_date = "2024-11-01"
-pages_build_output_dir = "out"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
-[vars]
-BACKEND_API_URL = "https://ltt-backend.thunchanok-raj.workers.dev/api/public"
+[[d1_databases]]
+binding = "DB"
+database_name = "ltt-cms-db"
+database_id = "25a6adb5-f265-4ca5-9586-029643474fe7"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "ltt-cms-bucket"
