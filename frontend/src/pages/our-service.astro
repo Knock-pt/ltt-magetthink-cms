@@ -1,77 +1,214 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getLanguageContext, setPublicCacheHeaders } from '../lib/i18n.js';
-import { getServices, resolveMediaUrl } from '../lib/api.js';
+import { getServices } from '../lib/api.js';
 
 setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 const services = await getServices(Astro);
 ---
 
-<BaseLayout title={t('services_title')} description={t('services_subtitle')} language={language} t={t}>
-  <section class="py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">SERVICES &amp; SOLUTIONS</span>
-        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">
-          {t('services_title')}
-        </h1>
-        <p class="text-sm text-slate-400 mt-4 leading-relaxed">
-          {t('services_subtitle')}
+<BaseLayout title="SERVICE — บริการการตลาดออนไลน์ รีวิว และถ่ายภาพ" language={language} t={t}>
+  <!-- Hero Banner -->
+  <section class="ltt-hero-bg py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-6 space-y-4">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-[#5b2d82]">SERVICE</h1>
+        <div class="space-y-1 text-xl sm:text-2xl font-extrabold text-[#2F2F2F]">
+          <p>Digital Marketing</p>
+          <p>Influencer Marketing</p>
+          <p>Photography</p>
+        </div>
+        <p class="text-sm text-[#3a284e] font-medium leading-relaxed">
+          เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ เราพร้อมช่วยยกระดับแบรนด์ให้โดดเด่นและแตกต่างในหลากหลายธุรกิจ
         </p>
       </div>
+      <div class="lg:col-span-6 flex justify-center">
+        <img
+          src="https://lttmagetthink.co/wp-content/uploads/2025/01/bannerservice-1-1024x619.png"
+          alt="LTT Services"
+          class="w-full max-w-lg h-auto object-contain drop-shadow-xl"
+        />
+      </div>
+    </div>
+  </section>
 
-      <div class="space-y-12">
-        {services.map((svc, idx) => {
-          const title = language === 'en' && svc.title_en ? svc.title_en : svc.title;
-          const subtitle = language === 'en' && svc.subtitle_en ? svc.subtitle_en : svc.subtitle;
-          const description = language === 'en' && svc.description_en ? svc.description_en : svc.description;
-          const bullets = Array.isArray(svc.bullet_points) ? svc.bullet_points : [];
+  <!-- 3 Service Overview Cards -->
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="glass-card rounded-3xl p-8 text-center space-y-3">
+        <img src="https://lttmagetthink.co/wp-content/uploads/2024/12/bullhorn.png" alt="Digital Marketing" class="h-16 mx-auto object-contain" />
+        <h2 class="text-xl font-extrabold text-[#633583]">Digital Marketing</h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          รับดูแลการตลาดออนไลน์ เพจ Facebook Instagram และ Line OA วางแพลน คิดคอนเทนต์ ออกแบบภาพกราฟิกโฆษณา Video และ Reels
+        </p>
+      </div>
+      <div class="glass-card rounded-3xl p-8 text-center space-y-3">
+        <img src="https://lttmagetthink.co/wp-content/uploads/2025/02/influencer-2.png" alt="Influencer Marketing" class="h-16 mx-auto object-contain" />
+        <h2 class="text-xl font-extrabold text-[#633583]">Influencer Marketing</h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          รับผลิตคอนเทนต์รีวิว บ้าน คอนโด ที่พัก โรงแรม อสังหาริมทรัพย์ ร้านอาหาร คาเฟ่ อาหาร เครื่องดื่ม สินค้า อื่น ๆ
+        </p>
+      </div>
+      <div class="glass-card rounded-3xl p-8 text-center space-y-3">
+        <img src="https://lttmagetthink.co/wp-content/uploads/2024/12/take-a-photo.png" alt="Photography" class="h-16 mx-auto object-contain" />
+        <h2 class="text-xl font-extrabold text-[#633583]">Photography</h2>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          รับถ่ายภาพสินค้า ร้านอาหาร อาหาร เครื่องดื่ม ขนมหวาน ผลิตภัณฑ์ Interior Exterior (โรงแรม รีสอร์ท คอนโด หอพัก บ้านเช่า)
+        </p>
+      </div>
+    </div>
+  </section>
 
-          return (
-            <div class="glass-card p-8 sm:p-10 rounded-3xl border border-slate-800/80">
-              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                <div class="flex-1 max-w-2xl">
-                  <span class="text-xs font-bold text-blue-400 uppercase">Service 0{idx + 1}</span>
-                  <h2 class="text-xl sm:text-2xl font-bold text-white mt-1 mb-2">{title}</h2>
-                  {subtitle && <p class="text-xs sm:text-sm text-blue-300 font-medium mb-3">{subtitle}</p>}
-                  <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">{description}</p>
+  <!-- 1. DIGITAL MARKETING DETAIL & PACKAGES -->
+  <section class="py-16 bg-[#f9f6ff]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div class="lg:col-span-5 flex justify-center">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2025/01/Revised-1024x1024.png"
+            alt="Digital Marketing"
+            loading="lazy"
+            class="w-full max-w-md h-auto object-contain"
+          />
+        </div>
+        <div class="lg:col-span-7 space-y-4">
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">DIGITAL MARKETING</h2>
+          <p class="text-lg font-extrabold text-[#633583]">รับดูแลการตลาดออนไลน์</p>
+          <p class="text-sm text-slate-600">
+            ดูแลเพจ Facebook Instagram และ Line OA วางแพลน คิดคอนเทนต์ ออกแบบภาพกราฟิกโฆษณา Video และ Reels
+          </p>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-700">
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>วิเคราะห์การตลาด (Marketing Analysis):</strong> เข้าใจกลุ่มเป้าหมายและวางแนวทางการโปรโมทที่เหมาะสมเพื่อเพิ่มโอกาสในการเข้าถึงลูกค้า</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>วางแผนเนื้อหา (Content Planner):</strong> วางแผนคอนเทนต์ที่สอดคล้องกับภาพลักษณ์แบรนด์และตอบโจทย์เป้าหมายทางการตลาด</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>ผลิตและออกแบบ (Creative Content):</strong> สร้างสรรค์เนื้อหาที่น่าสนใจ โดดเด่น และมีเอกลักษณ์เฉพาะตัว</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>ออกแบบภาพกราฟิกโฆษณา:</strong> ออกแบบภาพกราฟิกสื่อสารแบรนด์ที่น่าดึงดูด</span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-                  {bullets.length > 0 && (
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {bullets.map((bp) => (
-                        <div class="flex items-center gap-2 text-xs text-slate-300">
-                          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m9 11 3 3L22 4" />
-                          </svg>
-                          <span>{bp}</span>
-                        </div>
-                      ))}
+      <!-- Packages from Backend CMS services table -->
+      <div class="space-y-8">
+        <p class="text-center text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#8D56EC]">
+          CHOOSE THE RIGHT DIGITAL MARKETING PACKAGE FOR YOUR BUSINESS
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {services.map((pkg, idx) => {
+            const title = language === 'en' && pkg.title_en ? pkg.title_en : pkg.title;
+            const bullets = Array.isArray(pkg.bullet_points) ? pkg.bullet_points : [];
+            const isPopular = idx === 1;
+
+            return (
+              <div
+                class={`rounded-3xl p-8 flex flex-col justify-between ${
+                  isPopular
+                    ? 'bg-gradient-to-b from-[#633583] to-[#4a2466] text-white shadow-2xl scale-[1.02]'
+                    : 'bg-white text-[#2F2F2F] border-2 border-purple-200 shadow-lg'
+                }`}
+              >
+                <div>
+                  <div class="mb-6 pb-4 border-b border-current/15 flex items-center justify-between">
+                    <div>
+                      <h3 class={`text-3xl font-black ${isPopular ? 'text-white' : 'text-[#633583]'}`}>{title}</h3>
+                      <span class={`text-xs font-semibold ${isPopular ? 'text-purple-200' : 'text-slate-500'}`}>Services</span>
                     </div>
-                  )}
+                  </div>
+                  <ul class="space-y-3 text-xs sm:text-sm">
+                    {bullets.map((bp) => (
+                      <li class="flex items-start gap-2.5">
+                        <span class={`font-bold shrink-0 ${isPopular ? 'text-[#FFE65A]' : 'text-[#00C853]'}`}>✓</span>
+                        <span>{bp}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-
-                <div class="lg:w-80 shrink-0 flex flex-col gap-4 items-center">
-                  {svc.image_url && (
-                    <div class="w-full h-44 rounded-2xl overflow-hidden border border-slate-800 shadow">
-                      <img src={resolveMediaUrl(svc.image_url)} alt={title} loading="lazy" class="w-full h-full object-cover" />
-                    </div>
-                  )}
+                <div class="mt-8 pt-4">
                   <a
-                    href="/contact-us"
-                    class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition"
+                    href="https://lin.ee/mDp0CMk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="w-full py-3 rounded-full ltt-btn-gradient text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center"
                   >
-                    <span>{t('nav_cta')}</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                    </svg>
+                    ขอราคาแพกเกจ
                   </a>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. INFLUENCER MARKETING & PHOTOGRAPHY -->
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div class="lg:col-span-7 space-y-4">
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">INFLUENCER MARKETING</h2>
+          <p class="text-lg font-extrabold text-[#633583]">รับผลิตคอนเทนต์รีวิว โดย Influencer หรือ KOL ที่เหมาะสม</p>
+          <p class="text-sm text-slate-600">
+            รับผลิตคอนเทนต์รีวิว บ้าน คอนโด ที่พัก โรงแรม อสังหาริมทรัพย์ ร้านอาหาร คาเฟ่ อาหาร เครื่องดื่ม สินค้า อื่น ๆ
+          </p>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-700">
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>สร้างความน่าเชื่อถือ:</strong> โปรโมทแบรนด์ด้วย Influencer หรือ KOL ที่เหมาะสม</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>คัดสรร Influencer หรือ KOL ที่ตรงกับแบรนด์:</strong> เลือก Influencer ที่สอดคล้องกับภาพลักษณ์แบรนด์และเข้าถึงกลุ่มเป้าหมายได้อย่างมีประสิทธิภาพ</span>
+            </li>
+          </ul>
+          <p class="text-base font-extrabold text-[#633583] pt-2">
+            "กลุ่มเป้าหมายเข้าถึงแบรนด์ของคุณ" • "สร้างภาพจำที่โดดเด่น"
+          </p>
+        </div>
+        <div class="lg:col-span-5 flex justify-center">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2025/01/14-e1737708207170-1024x837.png"
+            alt="Influencer Marketing"
+            loading="lazy"
+            class="w-full max-w-md h-auto object-contain"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pt-8 border-t border-purple-100">
+        <div class="lg:col-span-5 flex justify-center">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2025/01/15-e1737710644628-1024x850.png"
+            alt="Photography"
+            loading="lazy"
+            class="w-full max-w-md h-auto object-contain"
+          />
+        </div>
+        <div class="lg:col-span-7 space-y-4">
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">PHOTOGRAPHY</h2>
+          <p class="text-lg font-extrabold text-[#633583]">รับถ่ายภาพสินค้า &amp; สถานที่</p>
+          <p class="text-sm text-slate-600">
+            ถ่ายภาพสินค้า ร้านอาหาร อาหาร เครื่องดื่ม ขนมหวาน ผลิตภัณฑ์ Interior Exterior (โรงแรม รีสอร์ท คอนโด หอพัก บ้านเช่า)
+          </p>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-700">
+            <li class="flex items-start gap-2.5">
+              <span class="text-[#8D56EC] font-bold">✓</span>
+              <span><strong>บริการถ่ายภาพ Production Shooting:</strong> ผลิตสื่อภาพนิ่งระดับมืออาชีพ เพื่อเพิ่มความน่าสนใจและยอดจอง/ยอดขายให้กับแบรนด์</span>
+            </li>
+          </ul>
+          <p class="text-base font-extrabold text-[#633583] pt-2">"ภาพถ่ายและดีไซน์ที่สวย โดดเด่น"</p>
+        </div>
       </div>
     </div>
   </section>

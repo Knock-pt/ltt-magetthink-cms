@@ -7,240 +7,139 @@ setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 const settings = await getSiteSettings(Astro);
 
-const phone = settings.phone || '096-042-9083 (คุณธัญชนก)';
-const workingHours = settings.working_hours || (language === 'en' ? 'Mon - Sat 09:00 - 18:00' : 'จันทร์ - เสาร์ 09:00 - 18:00');
+const phone = settings.phone || '0960429083';
 const email = settings.email || 'contact@lttmagetthink.co';
-const address = settings.address || 'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 หมู่ 6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
+const address = settings.address || 'บริษัท แอล ที ที มา เกท ธิงค์ จำกัด 65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
 ---
 
-<BaseLayout title={t('contact_title')} description={t('contact_subtitle')} language={language} t={t} settings={settings}>
-  <section class="py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('contact_badge')}</span>
-        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">{t('contact_title')}</h1>
-        <p class="text-sm text-slate-400 mt-4 leading-relaxed">{t('contact_subtitle')}</p>
-      </div>
+<BaseLayout title="CONTACT US — ติดต่อทีมงาน LTT Ma getThink" language={language} t={t} settings={settings}>
+  <section class="ltt-hero-bg py-14 text-center">
+    <div class="max-w-4xl mx-auto px-4 space-y-2">
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Contact Us</h1>
+      <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
+        ปรึกษาแนวทางการตลาด ขอใบเสนอราคา หรือนัดหมายถ่ายภาพและรีวิวสินค้า
+      </p>
+    </div>
+  </section>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <!-- Contact Info -->
-        <div class="lg:col-span-5 space-y-6">
-          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
-            <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold text-white text-sm">{t('contact_phone')}</h3>
-              <p class="text-xs text-slate-400 mt-1">{phone}</p>
-              <p class="text-[11px] text-blue-400 mt-0.5">{workingHours}</p>
-            </div>
-          </div>
-
-          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
-            <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect width="20" height="16" x="2" y="4" rx="2" /><path stroke-linecap="round" stroke-linejoin="round" d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold text-white text-sm">{t('contact_email')}</h3>
-              <p class="text-xs text-slate-400 mt-1">{email}</p>
-              <p class="text-[11px] text-blue-400 mt-0.5">{language === 'en' ? 'Response within 24 hrs' : 'ตอบกลับภายใน 24 ชม.'}</p>
-            </div>
-          </div>
-
-          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
-            <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold text-white text-sm">{t('contact_address')}</h3>
-              <p class="text-xs text-slate-400 mt-1 leading-relaxed">{address}</p>
-            </div>
+  <section class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div class="lg:col-span-5 space-y-6">
+        <div class="glass-card rounded-3xl p-6 text-center space-y-3">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2024/12/Photo-profile-scaled.jpg"
+            alt="Thunchanok Jarungkiattikajorn"
+            class="w-32 h-32 rounded-full mx-auto object-cover border-4 border-[#C6A6FF] shadow-md"
+          />
+          <div>
+            <h3 class="font-extrabold text-base text-[#2F2F2F]">Thunchanok Jarungkiattikajorn</h3>
+            <p class="text-xs font-bold text-[#8D56EC] uppercase">Founder</p>
           </div>
         </div>
 
-        <!-- Form -->
-        <div class="lg:col-span-7">
-          <div class="glass-card p-8 sm:p-10 rounded-3xl border border-slate-800">
-            <div id="contact-success" class="hidden py-16 text-center space-y-4">
-              <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m9 11 3 3L22 4" />
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold text-white">{t('contact_form_success_title')}</h3>
-              <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">{t('contact_form_success_desc')}</p>
-              <button
-                type="button"
-                id="btn-contact-reset"
-                class="px-6 py-2.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
-              >
-                {language === 'en' ? 'Send Another Message' : 'ส่งข้อความใหม่อีกครั้ง'}
-              </button>
-            </div>
+        <div class="glass-card p-6 rounded-3xl space-y-3 text-xs sm:text-sm">
+          <p><strong class="text-[#633583]">ที่อยู่:</strong> {address}</p>
+          <p><strong class="text-[#633583]">เบอร์โทรศัพท์:</strong> <a href={`tel:${phone}`} class="text-[#8D56EC] font-bold">{phone}</a></p>
+          <p><strong class="text-[#633583]">อีเมล:</strong> {email}</p>
+        </div>
+      </div>
 
-            <form id="contact-form" class="space-y-6">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_name')}</label>
-                  <input
-                    type="text"
-                    name="full_name"
-                    required
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                    placeholder={language === 'en' ? 'e.g. Somchai Jaidee' : 'เช่น คุณสมชาย ใจดี'}
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_phone')}</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    required
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                    placeholder="081-234-5678"
-                  />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_email')}</label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                    placeholder="contact@yourcompany.com"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_company')}</label>
-                  <input
-                    type="text"
-                    name="company"
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                    placeholder="e.g. Cross Pattaya Resort"
-                  />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_service')}</label>
-                  <select
-                    name="service_interested"
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                  >
-                    <option value="Digital Marketing & Social Media">Digital Marketing &amp; Social Media</option>
-                    <option value="Commercial Photography">Commercial Photography</option>
-                    <option value="Creative Content & Video Production">Creative Content &amp; Video Production</option>
-                    <option value="Influencer & KOL Matching">Influencer &amp; KOL Matching</option>
-                    <option value="Other">บริการอื่นๆ (Other)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_budget')}</label>
-                  <select
-                    name="budget_range"
-                    class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                  >
-                    <option value="30,000 - 50,000 THB">30,000 - 50,000 THB</option>
-                    <option value="50,000 - 100,000 THB" selected>50,000 - 100,000 THB</option>
-                    <option value="100,000 - 300,000 THB">100,000 - 300,000 THB</option>
-                    <option value="300,000+ THB">300,000+ THB</option>
-                  </select>
-                </div>
-              </div>
-
+      <div class="lg:col-span-7">
+        <div class="glass-card p-8 sm:p-10 rounded-3xl">
+          <h2 class="text-2xl font-extrabold text-[#633583] mb-6">ส่งข้อความติดต่อ &amp; ขอใบเสนอราคา</h2>
+          <form id="page-contact-form" class="space-y-4 text-xs sm:text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-medium text-slate-400 mb-2">{t('contact_form_message')}</label>
-                <textarea
-                  name="message"
-                  required
-                  rows="4"
-                  class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-xs text-white focus:outline-none focus:border-blue-500 transition"
-                  placeholder={language === 'en' ? 'Tell us about your project, goals, or timeline...' : 'ระบุรายละเอียดโปรเจกต์ วัตถุประสงค์ หรือวันที่ต้องการเริ่มงาน...'}
-                ></textarea>
+                <label class="block font-bold text-[#633583] mb-1">ชื่อ-นามสกุล *</label>
+                <input type="text" name="full_name" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
               </div>
-
-              <button
-                type="submit"
-                id="btn-contact-submit"
-                class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m22 2-7 20-4-9-9-4Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M22 2 11 13" />
-                </svg>
-                <span id="btn-contact-label">{t('contact_form_submit')}</span>
-              </button>
-            </form>
-          </div>
+              <div>
+                <label class="block font-bold text-[#633583] mb-1">เบอร์โทรศัพท์ *</label>
+                <input type="tel" name="phone" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-[#633583] mb-1">อีเมล *</label>
+                <input type="email" name="email" required class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
+              </div>
+              <div>
+                <label class="block font-bold text-[#633583] mb-1">ชื่อแบรนด์ / เว็บไซต์ / เพจ</label>
+                <input type="text" name="company" class="w-full border border-purple-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8D56EC]" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-[#633583] mb-1">งบประมาณรายเดือน *</label>
+                <select name="budget_range" class="w-full border border-purple-200 rounded-xl px-4 py-2.5 bg-white">
+                  <option value="< THB 10,000">&lt; THB 10,000</option>
+                  <option value="THB 10,000-30,000">THB 10,000-30,000</option>
+                  <option value="THB 30,000-50,000" selected>THB 30,000-50,000</option>
+                  <option value="THB 50,000-100,000">THB 50,000-100,000</option>
+                  <option value="> THB 100,000">&gt; THB 100,000</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-[#633583] mb-1">Services *</label>
+                <select name="service_interested" class="w-full border border-purple-200 rounded-xl px-4 py-2.5 bg-white">
+                  <option value="Digital Marketing">Digital Marketing</option>
+                  <option value="Influencer Marketing">Influencer Marketing</option>
+                  <option value="Photography Service">Photography Service</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-[#633583] mb-1">รายละเอียดโปรเจกต์ *</label>
+              <textarea name="message" required rows="4" class="w-full border border-purple-200 rounded-xl p-4 focus:outline-none focus:border-[#8D56EC]"></textarea>
+            </div>
+            <button type="submit" id="page-contact-btn" class="w-full py-3.5 rounded-full ltt-btn-gradient text-white font-bold shadow-lg transition">
+              Send Message
+            </button>
+          </form>
         </div>
       </div>
     </div>
   </section>
 </BaseLayout>
 
-<script is:inline define:vars={{ apiEndpoint: '/api/inquiries', submitText: t('contact_form_submit'), submittingText: t('contact_form_submitting') }}>
+<script is:inline>
   (function () {
-    const form = document.getElementById('contact-form');
-    const successBox = document.getElementById('contact-success');
-    const submitBtn = document.getElementById('btn-contact-submit');
-    const submitLabel = document.getElementById('btn-contact-label');
-    const resetBtn = document.getElementById('btn-contact-reset');
-
-    if (form) {
+    const form = document.getElementById('page-contact-form');
+    const btn = document.getElementById('page-contact-btn');
+    if (form && btn) {
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        submitBtn.disabled = true;
-        submitLabel.textContent = submittingText;
-
+        btn.disabled = true;
+        btn.textContent = 'กำลังส่งข้อมูล...';
         const fd = new FormData(form);
-        const payload = {
-          full_name: fd.get('full_name'),
-          email: fd.get('email'),
-          phone: fd.get('phone'),
-          company: fd.get('company') || '',
-          service_interested: fd.get('service_interested'),
-          budget_range: fd.get('budget_range'),
-          message: fd.get('message'),
-          source_page: '/contact-us',
-        };
-
         try {
-          const res = await fetch(apiEndpoint, {
+          const res = await fetch('/api/inquiries', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+              full_name: fd.get('full_name'),
+              phone: fd.get('phone'),
+              email: fd.get('email'),
+              company: fd.get('company') || '',
+              budget_range: fd.get('budget_range'),
+              service_interested: fd.get('service_interested'),
+              message: fd.get('message'),
+              source_page: '/contact-us',
+            }),
           });
           const data = await res.json();
           if (data.success) {
-            form.classList.add('hidden');
-            successBox.classList.remove('hidden');
+            alert('ขอบคุณสำหรับข้อความ! ทีมงานได้รับข้อมูลของคุณเรียบร้อยแล้ว และจะติดต่อกลับโดยเร็วที่สุด');
+            form.reset();
           } else {
             alert(data.error || 'กรุณากรอกข้อมูลให้ครบถ้วน');
           }
-        } catch (err) {
-          alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+        } catch {
+          alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
         } finally {
-          submitBtn.disabled = false;
-          submitLabel.textContent = submitText;
+          btn.disabled = false;
+          btn.textContent = 'Send Message';
         }
-      });
-    }
-
-    if (resetBtn) {
-      resetBtn.addEventListener('click', function () {
-        form.reset();
-        successBox.classList.add('hidden');
-        form.classList.remove('hidden');
       });
     }
   })();

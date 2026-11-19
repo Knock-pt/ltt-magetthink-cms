@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getLanguageContext, setPublicCacheHeaders } from '../lib/i18n.js';
+import { getArticles, resolveMediaUrl } from '../lib/api.js';
+
+setPublicCacheHeaders(Astro, 60, 300);
+const { language, t } = getLanguageContext(Astro);
+const allArticles = await getArticles(Astro);
+const eventArticles = allArticles.filter((a) => a.template_style === 'event');
+const displayArticles = eventArticles.length > 0 ? eventArticles : allArticles;
+---
+
+<BaseLayout title="EVENT — ข่าวสารและงานอีเวนต์ล่าสุด" language={language} t={t}>
+  <section class="ltt-hero-bg py-14 text-center">
+    <div class="max-w-4xl mx-auto px-4 space-y-2">
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Latest Events &amp; PR Highlights</h1>
+      <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
+        รวมภาพบรรยากาศงานอีเวนต์ งานประกาศรางวัล และข่าวสารประชาสัมพันธ์จาก LTT Ma getThink
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {displayArticles.map((art) => {
+          const title = language === 'en' && art.title_en ? art.title_en : art.title;
+          const summary = language === 'en' && art.summary_en ? art.summary_en : art.summary;
+          const linkHref = `/blog/${art.slug || art.id}`;
+          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          return (
+            <article class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:-translate-y-1 transition duration-300">
+              <div>
+                {art.cover_image && (
+                  <a href={linkHref} class="h-56 overflow-hidden block relative">
+                    <img
+                      src={resolveMediaUrl(art.cover_image)}
+                      alt={title}
+                      loading="lazy"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <span class="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#F952FC] text-white text-[10px] font-extrabold uppercase">
+                      EVENT
+                    </span>
+                  </a>
+                )}
+                <div class="p-6 space-y-2.5">
+                  <span class="text-xs text-slate-400 font-medium block">{dateStr}</span>
+                  <h2 class="font-extrabold text-base text-[#2F2F2F] group-hover:text-[#8D56EC] transition">
+                    <a href={linkHref}>{title}</a>
+                  </h2>
+                  <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">{summary}</p>
+                </div>
+              </div>
+
+              <div class="px-6 pb-6 pt-3 border-t border-purple-100">
+                <a href={linkHref} class="text-xs font-extrabold text-[#8D56EC] hover:text-[#633583]">
+                  Read More →
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

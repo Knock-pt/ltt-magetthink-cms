@@ -5,69 +5,65 @@ import { getArticles, resolveMediaUrl } from '../../lib/api.js';
 
 setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
-const articles = await getArticles(Astro);
+const allArticles = await getArticles(Astro);
+const blogArticles = allArticles.filter((a) => a.template_style !== 'event');
+const displayArticles = blogArticles.length > 0 ? blogArticles : allArticles;
 ---
 
-<BaseLayout title={t('blog_title')} description={t('blog_subtitle')} language={language} t={t}>
-  <section class="py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">INSIGHTS &amp; TRENDS</span>
-        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">
-          {t('blog_title')}
-        </h1>
-        <p class="text-sm text-slate-400 mt-4">
-          {t('blog_subtitle')}
-        </p>
-      </div>
+<BaseLayout title="BLOG — บทความการตลาดและเทรนด์ดิจิทัล" language={language} t={t}>
+  <section class="ltt-hero-bg py-14 text-center">
+    <div class="max-w-4xl mx-auto px-4 space-y-2">
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">Our Latest Articles &amp; Blog</h1>
+      <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
+        อัปเดตเทรนด์การตลาดดิจิทัล กลยุทธ์คอนเทนต์ และอินไซต์สำหรับแบรนด์ของคุณ
+      </p>
+    </div>
+  </section>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {articles.map((art) => {
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {displayArticles.map((art) => {
           const title = language === 'en' && art.title_en ? art.title_en : art.title;
           const summary = language === 'en' && art.summary_en ? art.summary_en : art.summary;
           const linkHref = `/blog/${art.slug || art.id}`;
-          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString(
-            language === 'en' ? 'en-US' : 'th-TH'
-          );
+          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
 
           return (
-            <div class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group border border-slate-800/80 hover:border-slate-700 transition">
+            <article class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:-translate-y-1 transition duration-300">
               <div>
                 {art.cover_image && (
-                  <a href={linkHref} class="h-60 overflow-hidden block">
+                  <a href={linkHref} class="h-56 overflow-hidden block relative">
                     <img
                       src={resolveMediaUrl(art.cover_image)}
                       alt={title}
                       loading="lazy"
                       class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     />
+                    <span class="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#633583] text-white text-[10px] font-extrabold uppercase">
+                      BLOG
+                    </span>
                   </a>
                 )}
-                <div class="p-8">
-                  <div class="flex items-center gap-4 text-xs text-slate-400 mb-3">
-                    <span>{dateStr}</span>
-                    <span>•</span>
-                    <span>{art.author || 'LTT Team'}</span>
-                  </div>
-                  <h2 class="font-bold text-lg text-white group-hover:text-blue-400 transition mb-3">
+                <div class="p-6 space-y-2.5">
+                  <span class="text-xs text-slate-400 font-medium block">{dateStr}</span>
+                  <h2 class="font-extrabold text-base text-[#2F2F2F] group-hover:text-[#8D56EC] transition">
                     <a href={linkHref}>{title}</a>
                   </h2>
-                  <p class="text-xs sm:text-sm text-slate-400 leading-relaxed line-clamp-3">{summary}</p>
+                  <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">{summary}</p>
                 </div>
               </div>
 
-              <div class="p-8 pt-0 flex justify-end">
-                <a
-                  href={linkHref}
-                  class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 transition"
-                >
-                  <span>{t('blog_read_more')}</span>
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                  </svg>
+              <div class="px-6 pb-6 pt-3 border-t border-purple-100">
+                <a href={linkHref} class="text-xs font-extrabold text-[#8D56EC] hover:text-[#633583]">
+                  Read More →
                 </a>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

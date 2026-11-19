@@ -6,97 +6,375 @@ import { getHomePageBundle, resolveMediaUrl } from '../lib/api.js';
 setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 
-const { settings, menus, services, portfolios, articles, clientLogos } = await getHomePageBundle(Astro);
-
-const heroBadge =
-  language === 'en'
-    ? settings.hero_badge_en || t('hero_badge')
-    : settings.hero_badge || t('hero_badge');
-const heroHeadline =
-  language === 'en'
-    ? settings.hero_headline_en || t('hero_title')
-    : settings.hero_headline || t('hero_title');
-const heroSubheadline =
-  language === 'en'
-    ? settings.hero_subheadline_en || t('hero_subtitle')
-    : settings.hero_subheadline || t('hero_subtitle');
+const { settings, services, portfolios, articles, clientLogos } = await getHomePageBundle(Astro);
+const phone = settings.phone || '0960429083';
+const email = settings.email || 'contact@lttmagetthink.co';
+const address = settings.address || '65/73 ม.6 ต.ลำลูกกา อ.ลำลูกกา จ.ปทุมธานี 12150';
 ---
 
-<BaseLayout language={language} t={t} settings={settings} menus={menus}>
-  <!-- Hero Section -->
-  <section class="relative pt-24 pb-20 md:pt-36 md:pb-32 overflow-hidden">
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.18),rgba(255,255,255,0))]"></div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-6">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
-        </svg>
-        <span>{heroBadge}</span>
-      </div>
+<BaseLayout language={language} t={t} settings={settings}>
+  <!-- ==================== 1. HERO SECTION (1:1 Match with Image 2 & lttmagetthink.co) ==================== -->
+  <section class="ltt-hero-bg relative overflow-hidden pt-10 pb-16 md:pt-14 md:pb-24 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
+        <!-- Left Hero Text & Lead Box -->
+        <div class="lg:col-span-6 space-y-5">
+          <div class="space-y-1.5 sm:space-y-2">
+            <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+              {language === 'en' ? 'Online Marketing Management' : 'รับดูแลการตลาดออนไลน์'}
+            </h1>
+            <h2 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+              {language === 'en' ? 'Review Content Production' : 'รับผลิตคอนเทนต์รีวิว'}
+            </h2>
+            <h2 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82] tracking-tight leading-snug">
+              {language === 'en' ? 'Product & Hotel Photography' : 'รับถ่ายภาพสินค้า'}
+            </h2>
+          </div>
 
-      <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
-        {heroHeadline}
-      </h1>
+          <div class="pt-1 space-y-1">
+            <p class="text-xl sm:text-2xl font-bold text-[#2F2F2F]">LTT Ma getThink</p>
+            <p class="text-xs sm:text-sm text-[#3a284e] font-medium leading-relaxed">
+              {language === 'en'
+                ? 'We provide ONE STOP SERVICE for your brand, elevating your business to stand out across every industry.'
+                : 'เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ'}
+              <br />
+              {language === 'en'
+                ? 'Full-service strategy, influencer reviews, and commercial photography.'
+                : 'เราพร้อมช่วยยกระดับแบรนด์ให้โดดเด่นและแตกต่างในหลากหลายธุรกิจ'}
+            </p>
+          </div>
 
-      <p class="mt-6 text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-        {heroSubheadline}
-      </p>
+          <!-- White Pill Strategy Lead Box (Exact match to Image 2) -->
+          <form id="hero-strategy-form" class="bg-white rounded-full p-1.5 pl-5 shadow-md flex items-center max-w-md border border-white/80">
+            <input
+              type="text"
+              id="hero-website-input"
+              required
+              placeholder={language === 'en' ? 'Enter your website or page URL' : 'ใส่เว็บไซต์หรือเพจธุรกิจ'}
+              class="flex-1 bg-transparent text-xs sm:text-sm text-[#2F2F2F] placeholder-slate-400 focus:outline-none pr-2"
+            />
+            <button
+              type="submit"
+              id="hero-strategy-btn"
+              class="px-5 py-2.5 rounded-full ltt-btn-gradient text-white font-bold text-xs sm:text-sm shadow transition shrink-0"
+            >
+              {language === 'en' ? 'Get Free Strategy' : 'รับแผนกลยุทธ์ฟรี'}
+            </button>
+          </form>
 
-      <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a
-          href="/contact-us"
-          class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 transition flex items-center justify-center gap-2"
-        >
-          <span>{t('hero_contact')}</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-          </svg>
-        </a>
-        <a
-          href="/portfolio"
-          class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs sm:text-sm border border-slate-800 transition"
-        >
-          {t('hero_explore')}
-        </a>
-      </div>
+          <!-- Two Action Pill Buttons Below (Exact match to Image 2) -->
+          <div class="flex flex-wrap items-center gap-3 pt-1">
+            <a
+              href={`tel:${phone}`}
+              class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full ltt-btn-gradient text-white font-bold text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5"
+            >
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.01l-2.2 2.2z"/>
+              </svg>
+              <span>{language === 'en' ? 'Call Now' : 'โทรตอนนี้'}</span>
+            </a>
 
-      <!-- Stats Bar -->
-      <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-        <div class="glass-card p-5 rounded-2xl">
-          <div class="text-2xl sm:text-3xl font-extrabold text-white">{settings.stat_projects || '150+'}</div>
-          <div class="text-xs text-slate-400 mt-1">{language === 'en' ? 'Completed Projects' : 'โปรเจกต์สำเร็จ'}</div>
+            <a
+              href="https://line.me/R/ti/p/@186fsabj"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#633583] border border-[#633583] hover:bg-purple-50 font-bold text-xs sm:text-sm shadow-sm transition transform hover:-translate-y-0.5"
+            >
+              <span class="w-4 h-4 rounded-full bg-[#633583] text-white text-[8px] font-black flex items-center justify-center">L</span>
+              <span>{language === 'en' ? 'Chat via LINE' : 'แชทผ่านไลน์'}</span>
+            </a>
+          </div>
         </div>
-        <div class="glass-card p-5 rounded-2xl">
-          <div class="text-2xl sm:text-3xl font-extrabold text-white">{settings.stat_brands || '80+'}</div>
-          <div class="text-xs text-slate-400 mt-1">{language === 'en' ? 'Trusted Brands' : 'แบรนด์ชั้นนำไว้วางใจ'}</div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl">
-          <div class="text-2xl sm:text-3xl font-extrabold text-white">{settings.stat_views || '25M+'}</div>
-          <div class="text-xs text-slate-400 mt-1">{language === 'en' ? 'Organic Views' : 'ยอด Organic Video Views'}</div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl">
-          <div class="text-2xl sm:text-3xl font-extrabold text-emerald-400">{settings.stat_retention || '96%'}</div>
-          <div class="text-xs text-slate-400 mt-1">{language === 'en' ? 'Client Satisfaction' : 'ลูกค้าพึงพอใจและต่อสัญญา'}</div>
+
+        <!-- Right Hero Orbit Diagram (Official High-Res Asset from lttmagetthink.co) -->
+        <div class="lg:col-span-6 flex justify-center">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2025/01/Head1-Revised-1024x932.png"
+            alt="LTT Ma getThink One Stop Marketing Service"
+            class="w-full max-w-lg lg:max-w-xl h-auto object-contain drop-shadow-xl"
+          />
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Client Logos Bar -->
+  <!-- ==================== 2. ABOUT US SECTION (1:1 Match with Image 2 & lttmagetthink.co) ==================== -->
+  <section id="about-us" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <!-- Left Illustration -->
+        <div class="lg:col-span-5 flex justify-center">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/2025/01/Head2-e1737689526649-1024x906.png"
+            alt="About LTT Ma getThink"
+            loading="lazy"
+            class="w-full max-w-md h-auto object-contain"
+          />
+        </div>
+
+        <!-- Right Copy -->
+        <div class="lg:col-span-7 space-y-5">
+          <h2 class="text-4xl sm:text-5xl font-extrabold ltt-heading-gradient inline-block">
+            About Us
+          </h2>
+          <div class="space-y-1">
+            <p class="text-lg font-bold text-[#633583]">
+              {language === 'en' ? 'Why Choose ?' : 'ทำไมต้องเลือก ?'}
+            </p>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-[#2F2F2F]">LTT Ma getThink</h3>
+          </div>
+
+          <p class="text-base font-bold text-[#633583]">
+            {language === 'en' ? 'Have you ever faced these challenges?' : 'คุณเคยประสบปัญหาเหล่านี้หรือไม่?'}
+          </p>
+
+          <ul class="space-y-3 text-sm sm:text-base text-[#3d3d3d]">
+            <li class="flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+              <span>มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+              <span>ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+              <span>ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+              <span>อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ</span>
+            </li>
+          </ul>
+
+          <div class="pt-3 space-y-2">
+            <p class="text-lg sm:text-xl font-extrabold text-[#633583]">
+              LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!
+            </p>
+            <p class="text-base sm:text-lg font-extrabold ltt-heading-gradient">
+              "เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. SERVICES & PACKAGES SECTION ==================== -->
+  <section class="py-20 bg-[#f9f6ff]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <!-- 3 Core Pillars -->
+      <div class="text-center space-y-3">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-[#633583]">
+          บริการจาก <span class="ltt-heading-gradient">LTT Ma getThink</span>
+        </h2>
+        <p class="text-sm text-slate-600 max-w-2xl mx-auto">
+          เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ พร้อมช่วยยกระดับแบรนด์ให้โดดเด่นและแตกต่างในหลากหลายธุรกิจ
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <a href="/our-service" class="glass-card rounded-3xl p-8 text-center space-y-4 hover:-translate-y-1 transition duration-300">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/elementor/thumbs/influencer-marketing-r0gwcasaogf1qb11hokc6l1lfl0pjae5lsmhqyp8yo.png"
+            alt="Influencer Marketing"
+            loading="lazy"
+            class="h-44 mx-auto object-contain"
+          />
+          <h3 class="text-xl font-extrabold text-[#633583]">Influencer Marketing</h3>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            รับผลิตคอนเทนต์รีวิว บ้าน คอนโด ที่พัก โรงแรม อสังหาริมทรัพย์ ร้านอาหาร คาเฟ่ อาหาร เครื่องดื่ม สินค้า อื่น ๆ
+          </p>
+        </a>
+
+        <a href="/our-service" class="glass-card rounded-3xl p-8 text-center space-y-4 hover:-translate-y-1 transition duration-300">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/elementor/thumbs/digital-marketing-revised-r0gwchd60ao1zkrhf9eq61dtla4a1649yp6w3wfhr4.png"
+            alt="Digital Marketing"
+            loading="lazy"
+            class="h-44 mx-auto object-contain"
+          />
+          <h3 class="text-xl font-extrabold text-[#633583]">Digital Marketing</h3>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            รับดูแลการตลาดออนไลน์ เพจ Facebook Instagram และ Line OA วางแพลน คิดคอนเทนต์ ออกแบบภาพกราฟิกโฆษณา Video และ Reels
+          </p>
+        </a>
+
+        <a href="/our-service" class="glass-card rounded-3xl p-8 text-center space-y-4 hover:-translate-y-1 transition duration-300">
+          <img
+            src="https://lttmagetthink.co/wp-content/uploads/elementor/thumbs/photography-1-r0gwcsn8ab3huwb3lea8zyjcpwkoljd2090pv7yrog.png"
+            alt="Photography"
+            loading="lazy"
+            class="h-44 mx-auto object-contain"
+          />
+          <h3 class="text-xl font-extrabold text-[#633583]">Photography</h3>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            รับถ่ายภาพสินค้า ร้านอาหาร อาหาร เครื่องดื่ม ขนมหวาน ผลิตภัณฑ์ Interior Exterior (โรงแรม รีสอร์ท คอนโด หอพัก บ้านเช่า)
+          </p>
+        </a>
+      </div>
+
+      <!-- Packages Pricing (Connected dynamically to Backend D1 services table!) -->
+      <div class="space-y-10 pt-4">
+        <div class="text-center space-y-2">
+          <p class="text-xs sm:text-sm font-extrabold tracking-widest uppercase text-[#8D56EC]">
+            CHOOSE THE RIGHT DIGITAL MARKETING PACKAGE FOR YOUR BUSINESS
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {services.map((pkg, idx) => {
+            const title = language === 'en' && pkg.title_en ? pkg.title_en : pkg.title;
+            const bullets = Array.isArray(pkg.bullet_points) ? pkg.bullet_points : [];
+            const isPopular = idx === 1;
+
+            return (
+              <div
+                class={`rounded-3xl p-8 flex flex-col justify-between transition duration-300 ${
+                  isPopular
+                    ? 'bg-gradient-to-b from-[#633583] to-[#4a2466] text-white shadow-2xl scale-[1.02]'
+                    : 'bg-white text-[#2F2F2F] border-2 border-purple-200 shadow-lg'
+                }`}
+              >
+                <div>
+                  <div class="flex items-center justify-between mb-6 pb-4 border-b border-current/15">
+                    <div>
+                      <h3 class={`text-3xl font-black ${isPopular ? 'text-white' : 'text-[#633583]'}`}>
+                        {title}
+                      </h3>
+                      <span class={`text-xs font-semibold ${isPopular ? 'text-purple-200' : 'text-slate-500'}`}>
+                        Services
+                      </span>
+                    </div>
+                    {isPopular && (
+                      <span class="px-3 py-1 rounded-full bg-[#F952FC] text-white text-[10px] font-extrabold uppercase">
+                        Recommended
+                      </span>
+                    )}
+                  </div>
+
+                  <ul class="space-y-3 text-xs sm:text-sm">
+                    {bullets.map((bp) => (
+                      <li class="flex items-start gap-2.5">
+                        <span class={`font-bold shrink-0 ${isPopular ? 'text-[#FFE65A]' : 'text-[#00C853]'}`}>✓</span>
+                        <span>{bp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div class="mt-8 pt-4">
+                  <a
+                    href="https://lin.ee/mDp0CMk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="w-full py-3 rounded-full ltt-btn-gradient text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition"
+                  >
+                    <span>ขอราคาแพกเกจ</span>
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. OUR LATEST ARTICLES & BLOG (Connected to Backend D1 articles) ==================== -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">
+            Our Latest Articles &amp; Blog
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            อัปเดตข่าวสาร งานอีเวนต์ และเทรนด์การตลาดดิจิทัลล่าสุดจากทีมงาน LTT Ma getThink
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="/blog" class="px-4 py-2 rounded-full bg-purple-100 text-[#633583] hover:bg-purple-200 text-xs font-bold transition">
+            ดู BLOG ทั้งหมด
+          </a>
+          <a href="/event" class="px-4 py-2 rounded-full ltt-btn-gradient text-white text-xs font-bold shadow transition">
+            ดู EVENT ทั้งหมด
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {articles.slice(0, 3).map((art) => {
+          const title = language === 'en' && art.title_en ? art.title_en : art.title;
+          const summary = language === 'en' && art.summary_en ? art.summary_en : art.summary;
+          const linkHref = `/blog/${art.slug || art.id}`;
+          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          const isEvent = art.template_style === 'event';
+
+          return (
+            <article class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:-translate-y-1 transition duration-300">
+              <div>
+                {art.cover_image && (
+                  <a href={linkHref} class="h-52 overflow-hidden block relative">
+                    <img
+                      src={resolveMediaUrl(art.cover_image)}
+                      alt={title}
+                      loading="lazy"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <span
+                      class={`absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase text-white shadow ${
+                        isEvent ? 'bg-[#F952FC]' : 'bg-[#633583]'
+                      }`}
+                    >
+                      {isEvent ? 'EVENT' : 'BLOG'}
+                    </span>
+                  </a>
+                )}
+                <div class="p-6 space-y-3">
+                  <span class="text-xs text-slate-400 font-medium block">{dateStr}</span>
+                  <h3 class="font-extrabold text-base text-[#2F2F2F] group-hover:text-[#8D56EC] transition line-clamp-2">
+                    <a href={linkHref}>{title}</a>
+                  </h3>
+                  <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">{summary}</p>
+                </div>
+              </div>
+
+              <div class="px-6 pb-6 pt-3 border-t border-purple-100 flex items-center justify-between">
+                <a
+                  href={linkHref}
+                  class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#8D56EC] hover:text-[#633583] transition"
+                >
+                  <span>Read More</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5. CLIENT LOGOS (If any in D1) ==================== -->
   {clientLogos.length > 0 && (
-    <section class="py-12 border-t border-slate-900 bg-slate-950/80">
+    <section class="py-12 bg-[#f9f6ff] border-t border-purple-100">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p class="text-center text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">
+        <p class="text-center text-xs font-extrabold text-[#633583] uppercase tracking-widest mb-8">
           {t('trusted_by')}
         </p>
-        <div class="flex flex-wrap items-center justify-center gap-8 sm:gap-12 opacity-80">
+        <div class="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
           {clientLogos.map((logo) => (
-            <div class="h-10 sm:h-12 flex items-center justify-center grayscale hover:grayscale-0 transition duration-300">
+            <div class="h-12 flex items-center justify-center bg-white px-5 py-2 rounded-2xl shadow-sm border border-purple-100">
               <img
                 src={resolveMediaUrl(logo.logo_url)}
                 alt={logo.name}
                 loading="lazy"
-                class="max-h-10 sm:max-h-12 w-auto object-contain"
+                class="max-h-9 w-auto object-contain"
               />
             </div>
           ))}
@@ -105,163 +383,130 @@ const heroSubheadline =
     </section>
   )}
 
-  <!-- Services Preview -->
-  <section class="py-20 border-t border-slate-900 bg-slate-950/60">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-2xl mx-auto mb-14">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">
-          {language === 'en' ? 'OUR SERVICES' : 'บริการของเรา'}
-        </span>
-        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-2">{t('services_title')}</h2>
-        <p class="text-xs sm:text-sm text-slate-400 mt-3">{t('services_subtitle')}</p>
+  <!-- ==================== 6. CONTACT US & FOUNDER SECTION (Matches lttmagetthink.co) ==================== -->
+  <section id="contact-us" class="py-20 bg-white border-t border-purple-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-extrabold ltt-heading-gradient inline-block">Contact Us</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {services.slice(0, 4).map((s) => {
-          const title = language === 'en' && s.title_en ? s.title_en : s.title;
-          const subtitle = language === 'en' && s.subtitle_en ? s.subtitle_en : s.subtitle || s.description;
-          return (
-            <div class="glass-card p-6 rounded-2xl hover:border-blue-500/50 transition duration-300 flex flex-col justify-between">
-              <div>
-                <div class="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-4">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
-                  </svg>
-                </div>
-                <h3 class="font-bold text-sm text-white mb-2">{title}</h3>
-                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">{subtitle}</p>
-              </div>
-              <div class="mt-6 pt-4 border-t border-slate-800">
-                <a href="/our-service" class="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                  <span>{language === 'en' ? 'Explore details' : 'ดูรายละเอียด'}</span>
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+        <!-- Contact Cards -->
+        <div class="md:col-span-7 space-y-4">
+          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-purple-100 text-[#633583] flex items-center justify-center shrink-0 font-bold">
+              📍
             </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
+            <div>
+              <h3 class="font-extrabold text-sm text-[#633583]">ที่อยู่</h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">{address}</p>
+            </div>
+          </div>
 
-  <!-- Featured Portfolios -->
-  <section class="py-20 border-t border-slate-900">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
-        <div>
-          <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">
-            {language === 'en' ? 'SELECTED PORTFOLIO' : 'ผลงานที่โดดเด่น'}
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-bold text-white mt-2">{t('portfolio_title')}</h2>
+          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-purple-100 text-[#633583] flex items-center justify-center shrink-0 font-bold">
+              ✉️
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm text-[#633583]">อีเมล</h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">{email}</p>
+            </div>
+          </div>
+
+          <div class="glass-card p-6 rounded-3xl flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-purple-100 text-[#633583] flex items-center justify-center shrink-0 font-bold">
+              📞
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm text-[#633583]">เบอร์โทรศัพท์</h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">{phone}</p>
+            </div>
+          </div>
         </div>
-        <a href="/portfolio" class="mt-4 md:mt-0 text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-          <span>{t('portfolio_view_all')}</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-          </svg>
-        </a>
-      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {portfolios.slice(0, 3).map((p) => {
-          const title = language === 'en' && p.title_en ? p.title_en : p.title;
-          const summary = language === 'en' && p.summary_en ? p.summary_en : p.summary;
-          const linkHref = `/portfolio/${p.slug || p.id}`;
-
-          return (
-            <div class="glass-card rounded-2xl overflow-hidden group border border-slate-800/80 hover:border-slate-700 transition">
-              <a href={linkHref} class="h-52 overflow-hidden block">
-                <img
-                  src={resolveMediaUrl(p.cover_image)}
-                  alt={title}
-                  loading="lazy"
-                  class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
+        <!-- Founder Card -->
+        <div class="md:col-span-5">
+          <div class="glass-card rounded-3xl p-8 text-center space-y-4">
+            <img
+              src="https://lttmagetthink.co/wp-content/uploads/2024/12/Photo-profile-scaled.jpg"
+              alt="Thunchanok Jarungkiattikajorn - Founder"
+              loading="lazy"
+              class="w-36 h-36 rounded-full mx-auto object-cover border-4 border-[#C6A6FF] shadow-lg"
+            />
+            <div>
+              <h3 class="font-extrabold text-base text-[#2F2F2F]">Thunchanok Jarungkiattikajorn</h3>
+              <p class="text-xs font-bold text-[#8D56EC] uppercase tracking-wider mt-0.5">Founder</p>
+            </div>
+            <div class="flex items-center justify-center gap-3 pt-2">
+              <a
+                href={`tel:${phone}`}
+                class="px-5 py-2 rounded-full ltt-btn-gradient text-white text-xs font-bold shadow"
+              >
+                📞 โทรติดต่อ
               </a>
-              <div class="p-6">
-                <span class="text-[11px] font-semibold text-blue-400 block mb-1">{p.client_name}</span>
-                <h3 class="font-bold text-sm text-white group-hover:text-blue-400 transition">
-                  <a href={linkHref}>{title}</a>
-                </h3>
-                <p class="text-xs text-slate-400 mt-2 line-clamp-2">{summary}</p>
-                <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
-                  <a href={linkHref} class="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                    <span>{t('portfolio_view_detail')}</span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
+              <a
+                href="https://lin.ee/mDp0CMk"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-5 py-2 rounded-full bg-[#00C853] hover:bg-[#03b048] text-white text-xs font-bold shadow"
+              >
+                💬 LINE
+              </a>
             </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
-
-  <!-- Featured Insights & Articles -->
-  <section class="py-20 border-t border-slate-900 bg-slate-950/40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
-        <div>
-          <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">
-            {language === 'en' ? 'INSIGHTS & TRENDS' : 'บทความ & ข่าวสาร'}
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-bold text-white mt-2">{t('blog_title')}</h2>
+          </div>
         </div>
-        <a href="/blog" class="mt-4 md:mt-0 text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-          <span>{t('blog_view_all')}</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {articles.slice(0, 3).map((art) => {
-          const title = language === 'en' && art.title_en ? art.title_en : art.title;
-          const summary = language === 'en' && art.summary_en ? art.summary_en : art.summary;
-          const linkHref = `/blog/${art.slug || art.id}`;
-          const dateStr = new Date(art.published_at || art.created_at).toLocaleDateString(
-            language === 'en' ? 'en-US' : 'th-TH'
-          );
-
-          return (
-            <div class="glass-card rounded-2xl overflow-hidden group border border-slate-800/80 hover:border-slate-700 transition flex flex-col justify-between">
-              <div>
-                {art.cover_image && (
-                  <a href={linkHref} class="h-48 overflow-hidden block">
-                    <img
-                      src={resolveMediaUrl(art.cover_image)}
-                      alt={title}
-                      loading="lazy"
-                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                  </a>
-                )}
-                <div class="p-6">
-                  <span class="text-[11px] font-semibold text-blue-400 block mb-1">{dateStr}</span>
-                  <h3 class="font-bold text-sm text-white group-hover:text-blue-400 transition">
-                    <a href={linkHref}>{title}</a>
-                  </h3>
-                  <p class="text-xs text-slate-400 mt-2 line-clamp-2">{summary}</p>
-                </div>
-              </div>
-              <div class="p-6 pt-3 border-t border-slate-800/60 mt-2 flex justify-end">
-                <a href={linkHref} class="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                  <span>{t('blog_read_more')}</span>
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<script is:inline>
+  (function () {
+    const heroForm = document.getElementById('hero-strategy-form');
+    const heroInput = document.getElementById('hero-website-input');
+    const heroBtn = document.getElementById('hero-strategy-btn');
+
+    if (heroForm && heroInput && heroBtn) {
+      heroForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const webVal = heroInput.value.trim();
+        if (!webVal) return;
+        const phoneVal = prompt('กรุณาระบุเบอร์โทรศัพท์เพื่อให้ทีมงานติดต่อกลับพร้อมแผนกลยุทธ์ฟรี:', '');
+        if (!phoneVal) return;
+
+        heroBtn.disabled = true;
+        const origText = heroBtn.textContent;
+        heroBtn.textContent = 'กำลังส่ง...';
+
+        try {
+          const res = await fetch('/api/inquiries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              full_name: 'ขอแผนกลยุทธ์ฟรี (' + webVal + ')',
+              email: 'strategy@lead.ltt',
+              phone: phoneVal,
+              company: webVal,
+              service_interested: 'Free Strategy Plan',
+              budget_range: '-',
+              message: 'ลูกค้าขอรับแผนกลยุทธ์ฟรีสำหรับเว็บไซต์/เพจ: ' + webVal,
+              source_page: '/ (Hero Strategy Box)',
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('ขอบคุณครับ! ทีมงานได้รับข้อมูลเพจ/เว็บไซต์ของคุณแล้ว และจะติดต่อกลับพร้อมแผนกลยุทธ์โดยเร็วที่สุด');
+            heroForm.reset();
+          } else {
+            alert(data.error || 'เกิดข้อผิดพลาด');
+          }
+        } catch {
+          alert('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่');
+        } finally {
+          heroBtn.disabled = false;
+          heroBtn.textContent = origText;
+        }
+      });
+    }
+  })();
+</script>

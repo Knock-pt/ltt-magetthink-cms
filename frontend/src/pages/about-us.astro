@@ -4,56 +4,58 @@ import { getLanguageContext, setPublicCacheHeaders } from '../lib/i18n.js';
 
 setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
-const pageTitle = language === 'en' ? 'About Us' : 'เกี่ยวกับเรา';
 ---
 
-<BaseLayout title={pageTitle} language={language} t={t}>
-  <section class="py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">
-          {language === 'en' ? 'ABOUT LTT MA GETTHINK' : 'เกี่ยวกับเรา'}
-        </span>
-        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">
-          {language === 'en' ? 'Who We Are & What We Believe' : 'เกี่ยวกับ LTT Ma getThink'}
-        </h1>
-        <p class="text-sm text-slate-400 mt-4 leading-relaxed">
-          {language === 'en'
-            ? 'We are a premier digital marketing and creative production agency dedicated to accelerating growth for hospitality, lifestyle, and real estate brands.'
-            : 'เราคือทีมผู้เชี่ยวชาญด้านการตลาดดิจิทัลและโปรดักชันที่พร้อมเป็นพาร์ทเนอร์เคียงข้างการเติบโตของแบรนด์คุณ'}
-        </p>
+<BaseLayout title="ABOUT US — เกี่ยวกับ LTT Ma getThink" language={language} t={t}>
+  <section class="ltt-hero-bg py-14 text-center">
+    <div class="max-w-4xl mx-auto px-4 space-y-2">
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-[#5b2d82]">About Us</h1>
+      <p class="text-xs sm:text-sm text-[#3a284e] font-semibold">
+        LTT Ma getThink — ONE STOP SERVICE เพื่อแบรนด์ของคุณ
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <div class="lg:col-span-5 flex justify-center">
+        <img
+          src="https://lttmagetthink.co/wp-content/uploads/2025/01/Head2-e1737689526649-1024x906.png"
+          alt="About LTT Ma getThink"
+          class="w-full max-w-md h-auto object-contain"
+        />
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-        <div class="glass-card p-8 rounded-3xl border border-slate-800/80">
-          <div class="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-4">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-lg text-white mb-2">
-            {language === 'en' ? 'Our Vision' : 'วิสัยทัศน์ (Our Vision)'}
-          </h3>
-          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            {language === 'en'
-              ? "To be Southeast Asia's leading creative marketing partner for the hospitality and lifestyle industries, bridging the art of architectural photography with data-driven digital marketing to create sustainable brand value."
-              : 'มุ่งมั่นที่จะเป็น One-Stop Service Creative Marketing Agency ชั้นนำของประเทศไทย ที่ผสมผสานศาสตร์แห่งภาพถ่ายสถาปัตยกรรมระดับสูงเข้ากับการวางกลยุทธ์การตลาดที่สร้างยอดขายและสร้างมูลค่าแบรนด์อย่างยั่งยืน'}
-          </p>
-        </div>
+      <div class="lg:col-span-7 space-y-5">
+        <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">
+          ทำไมต้องเลือก LTT Ma getThink ?
+        </h2>
+        <p class="text-base font-bold text-[#633583]">คุณเคยประสบปัญหาเหล่านี้หรือไม่?</p>
+        <ul class="space-y-3 text-sm sm:text-base text-[#3d3d3d]">
+          <li class="flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+            <span>มีแบรนด์ที่อยากโปรโมท แต่ไม่รู้จะเริ่มต้นอย่างไร</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+            <span>ต้องการภาพถ่ายและดีไซน์ที่สวย โดดเด่น แต่ไม่มีทีมงานมืออาชีพช่วยดูแลหรือให้คำปรึกษา</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+            <span>ไม่มีเวลาในการจัดการและดูแลการตลาดด้วยตัวเอง</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-purple-100 text-[#8D56EC] font-bold flex items-center justify-center shrink-0 mt-0.5">✓</span>
+            <span>อยากได้ Influencer หรือนักรีวิวที่ตรงกับภาพลักษณ์ของแบรนด์ และสามารถเข้าถึงกลุ่มเป้าหมายได้อย่างแม่นยำ</span>
+          </li>
+        </ul>
 
-        <div class="glass-card p-8 rounded-3xl border border-slate-800/80">
-          <div class="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="8" r="6" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-lg text-white mb-2">
-            {language === 'en' ? 'Our Standards & Craftsmanship' : 'มาตรฐานการทำงาน (Our Standards)'}
-          </h3>
-          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            {language === 'en'
-              ? 'Every deliverable is crafted with cinema-grade equipment and guided by professionals with hands-on hospitality marketing experience, ensuring timely execution and rigorous quality control at every stage.'
-              : 'ทุกชิ้นงานผ่านการคัดสรรอุปกรณ์โปรดักชันคุณภาพสูง ทีมงานที่มีประสบการณ์จริงในธุรกิจโรงแรมและการบริการ พร้อมกระบวนการส่งมอบงานที่รวดเร็ว ตรงเวลา และตรวจสอบคุณภาพทุกขั้นตอน'}
+        <div class="pt-3 space-y-2">
+          <p class="text-lg sm:text-xl font-extrabold text-[#633583]">
+            LTT Ma getThink สามารถช่วยดูแลและให้คำปรึกษาเพื่อให้ปัญหาเหล่านี้หมดไป!
+          </p>
+          <p class="text-base sm:text-lg font-extrabold ltt-heading-gradient">
+            "เพราะการตลาดที่ดี คือหัวใจของการสร้างแบรนด์"
           </p>
         </div>
       </div>

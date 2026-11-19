@@ -7,114 +7,147 @@ setPublicCacheHeaders(Astro, 60, 300);
 const { language, t } = getLanguageContext(Astro);
 const portfolios = await getPortfolios(Astro);
 
-const categories = [
-  { id: 'all', label: language === 'en' ? 'All' : 'ทั้งหมด' },
-  { id: 'hotels-resorts', label: 'Hotels & Resorts' },
-  { id: 'real-estate', label: 'Real Estate' },
-  { id: 'food-beverage', label: 'Food & Beverage' },
+const foodPhotos = [
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/20240525_005855000_iOS-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Sindhorn-Kempinski-Sunday-Brunch-6-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Renaissance-32-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/20241202_122229000_iOS-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Albricias-2-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/swissotel-49-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Medinii-12-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Pathuwan-Princess-34-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Dusit-Princess-26-scaled.jpg',
+];
+
+const hotelPhotos = [
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/The-Politan-Aqua-63--scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Aspire-Erawan-Prime-21-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Millennium-Hilton-Bangkok-38-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Maldives-Beach-Resort-3-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Pathuwan-Princess-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Cross-Pattaya-Oceanphere-29.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Centre-Point-Prime-Hotel-Pattaya_-14-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Rachabura-7-scaled.jpg',
+  'https://lttmagetthink.co/wp-content/uploads/2025/01/Pavilion-Samui-8-scaled.jpg',
 ];
 ---
 
-<BaseLayout title={t('portfolio_title')} description={t('portfolio_subtitle')} language={language} t={t}>
-  <section class="py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-12">
-        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">PORTFOLIO SHOWCASE</span>
-        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mt-3">
-          {t('portfolio_title')}
-        </h1>
-        <p class="text-sm text-slate-400 mt-4">
-          {t('portfolio_subtitle')}
+<BaseLayout title="PORTFOLIO — ผลงานที่ผ่านมา" language={language} t={t}>
+  <!-- Hero Banner -->
+  <section class="ltt-hero-bg py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-6 space-y-3">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-[#5b2d82]">PORTFOLIO</h1>
+        <div class="space-y-1 text-xl sm:text-2xl font-extrabold text-[#2F2F2F]">
+          <p>รับดูแลการตลาดออนไลน์</p>
+          <p>รับผลิตคอนเทนต์รีวิว</p>
+          <p>รับถ่ายภาพสินค้า</p>
+        </div>
+        <p class="text-sm text-[#3a284e] font-medium">
+          LTT Ma getThink เราให้บริการ ONE STOP SERVICE เพื่อแบรนด์ของคุณ
         </p>
+      </div>
+      <div class="lg:col-span-6 flex justify-center">
+        <img
+          src="https://lttmagetthink.co/wp-content/uploads/2025/01/banner_port-1-1024x600.png"
+          alt="LTT Portfolio"
+          class="w-full max-w-lg h-auto object-contain drop-shadow-xl"
+        />
+      </div>
+    </div>
+  </section>
 
-        <!-- Filter Pills -->
-        <div class="flex flex-wrap items-center justify-center gap-2 mt-8" id="portfolio-filters">
-          {categories.map((c, i) => (
-            <button
-              type="button"
-              data-filter={c.id}
-              class={`px-4 py-2 rounded-full text-xs font-semibold transition ${
-                i === 0
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              {c.label}
-            </button>
+  <!-- 1. DYNAMIC CASE STUDIES FROM CMS D1 -->
+  {portfolios.length > 0 && (
+    <section class="py-16 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="text-center space-y-2">
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">FEATURED CASE STUDIES</h2>
+          <p class="text-xs sm:text-sm text-slate-500">คลิกที่การ์ดผลงานเพื่อดูรายละเอียดและแกลเลอรีของแต่ละโปรเจกต์</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {portfolios.map((item) => {
+            const title = language === 'en' && item.title_en ? item.title_en : item.title;
+            const summary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
+            const linkHref = `/portfolio/${item.slug || item.id}`;
+
+            return (
+              <div class="glass-card rounded-3xl overflow-hidden group flex flex-col justify-between hover:-translate-y-1 transition duration-300">
+                <div>
+                  <a href={linkHref} class="h-60 overflow-hidden relative block">
+                    <img
+                      src={resolveMediaUrl(item.cover_image)}
+                      alt={title}
+                      loading="lazy"
+                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <span class="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#633583] text-white text-[10px] font-bold">
+                      {item.category_slug}
+                    </span>
+                  </a>
+                  <div class="p-6">
+                    <span class="text-xs font-bold text-[#8D56EC]">{item.client_name}</span>
+                    <h3 class="font-extrabold text-base text-[#2F2F2F] mt-1 group-hover:text-[#8D56EC] transition">
+                      <a href={linkHref}>{title}</a>
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-2 line-clamp-2">{summary}</p>
+                  </div>
+                </div>
+                <div class="px-6 pb-6 pt-3 border-t border-purple-100">
+                  <a href={linkHref} class="text-xs font-extrabold text-[#8D56EC] hover:text-[#633583]">
+                    {t('portfolio_view_detail')} →
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 2. DIGITAL MARKETING PROFILE SHOWCASE (From lttmagetthink.co) -->
+  <section class="py-16 bg-[#f9f6ff]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-center ltt-heading-gradient">DIGITAL MARKETING</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <img src="https://lttmagetthink.co/wp-content/uploads/2026/01/LTT-MagetThink-Profile-2026-2.jpg" alt="Digital Marketing Portfolio 1" loading="lazy" class="rounded-2xl shadow-lg w-full h-auto object-cover" />
+        <img src="https://lttmagetthink.co/wp-content/uploads/2026/01/LTT-MagetThink-Profile-2026-1.jpg" alt="Digital Marketing Portfolio 2" loading="lazy" class="rounded-2xl shadow-lg w-full h-auto object-cover" />
+        <img src="https://lttmagetthink.co/wp-content/uploads/2026/01/LTT-MagetThink-Profile-2026.jpg" alt="Digital Marketing Portfolio 3" loading="lazy" class="rounded-2xl shadow-lg w-full h-auto object-cover" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PHOTOGRAPHY SHOWCASE: FOOD & HOTEL RESORT CONDO -->
+  <section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+      <div class="space-y-6">
+        <div class="text-center">
+          <h2 class="text-3xl sm:text-4xl font-extrabold ltt-heading-gradient">PHOTOGRAPHY</h2>
+          <h3 class="text-2xl font-extrabold text-[#633583] mt-2">Food &amp; Beverage</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {foodPhotos.map((src, i) => (
+            <div class="rounded-2xl overflow-hidden shadow-md border border-purple-100 h-60">
+              <img src={src} alt={`Food Photography ${i + 1}`} loading="lazy" class="w-full h-full object-cover hover:scale-105 transition duration-500" />
+            </div>
           ))}
         </div>
       </div>
 
-      <!-- Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="portfolio-grid">
-        {portfolios.map((item) => {
-          const title = language === 'en' && item.title_en ? item.title_en : item.title;
-          const summary = language === 'en' && item.summary_en ? item.summary_en : item.summary;
-          const linkHref = `/portfolio/${item.slug || item.id}`;
-
-          return (
-            <div
-              data-category={item.category_slug || ''}
-              class="portfolio-card glass-card rounded-3xl overflow-hidden group border border-slate-800/80 flex flex-col hover:border-slate-700 transition"
-            >
-              <a href={linkHref} class="h-64 overflow-hidden relative block">
-                <img
-                  src={resolveMediaUrl(item.cover_image)}
-                  alt={title}
-                  loading="lazy"
-                  class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <div class="absolute top-4 left-4">
-                  <span class="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur border border-slate-700 text-[10px] font-bold text-blue-400">
-                    {item.category_slug}
-                  </span>
-                </div>
-              </a>
-              <div class="p-6 flex-1 flex flex-col justify-between">
-                <div>
-                  <span class="text-xs font-medium text-slate-400">{item.client_name}</span>
-                  <h3 class="font-bold text-base text-white mt-1 group-hover:text-blue-400 transition">
-                    <a href={linkHref}>{title}</a>
-                  </h3>
-                  <p class="text-xs text-slate-400 mt-3 leading-relaxed line-clamp-2">{summary}</p>
-                </div>
-
-                <div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between">
-                  <a
-                    href={linkHref}
-                    class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 transition"
-                  >
-                    <span>{t('portfolio_view_detail')}</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
+      <div class="space-y-6 pt-8 border-t border-purple-100">
+        <div class="text-center">
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-[#633583]">Hotel • Resort • Condo</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {hotelPhotos.map((src, i) => (
+            <div class="rounded-2xl overflow-hidden shadow-md border border-purple-100 h-60">
+              <img src={src} alt={`Hotel Photography ${i + 1}`} loading="lazy" class="w-full h-full object-cover hover:scale-105 transition duration-500" />
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   </section>
 </BaseLayout>
-
-<script is:inline>
-  (function () {
-    const filterButtons = document.querySelectorAll('#portfolio-filters [data-filter]');
-    const cards = document.querySelectorAll('#portfolio-grid .portfolio-card');
-    filterButtons.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        const cat = btn.getAttribute('data-filter');
-        filterButtons.forEach(function (b) {
-          b.className = 'px-4 py-2 rounded-full text-xs font-semibold transition bg-slate-900 border border-slate-800 text-slate-400 hover:text-white';
-        });
-        btn.className = 'px-4 py-2 rounded-full text-xs font-semibold transition bg-blue-600 text-white shadow-lg shadow-blue-500/25';
-        cards.forEach(function (card) {
-          const itemCat = card.getAttribute('data-category');
-          card.classList.toggle('hidden', cat !== 'all' && itemCat !== cat);
-        });
-      });
-    });
-  })();
-</script>

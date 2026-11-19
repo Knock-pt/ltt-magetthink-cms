@@ -20,42 +20,30 @@ function getDb(Astro) {
   return Astro?.locals?.runtime?.env?.DB || null;
 }
 
-/**
- * Single D1 batch round-trip for BaseLayout (site_settings + navigation_menus)
- */
-export async function getLayoutBundle(Astro) {
-  const db = getDb(Astro);
-  if (!db) return { settings: {}, menus: [] };
+function parseServiceRow(s) {
+  let bullets = [];
   try {
-    const [settingsRes, navRes] = await db.batch([
-      db.prepare('SELECT key, value FROM site_settings'),
-      db.prepare('SELECT * FROM navigation_menus WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'),
-    ]);
-    const settings = {};
-    (settingsRes.results || []).forEach((r) => {
-      settings[r.key] = r.value;
-    });
-    return { settings, menus: navRes.results || [] };
+    bullets = JSON.parse(s.bullet_points || '[]');
   } catch {
-    return { settings: {}, menus: [] };
+    bullets = s.bullet_points ? s.bullet_points.split('\n').filter(Boolean) : [];
   }
+  return { ...s, bullet_points: bullets };
 }
 
 /**
- * Single D1 batch round-trip for Homepage (all 6 tables in 1 round-trip!)
+ * Single D1 batch round-trip for Homepage
  */
 export async function getHomePageBundle(Astro) {
   const db = getDb(Astro);
   if (!db) {
-    return { settings: {}, menus: [], services: [], portfolios: [], articles: [], clientLogos: [] };
+    return { settings: {}, services: [], portfolios: [], articles: [], clientLogos: [] };
   }
   try {
-    const [settingsRes, navRes, svcRes, portRes, artRes, logoRes] = await db.batch([
+    const [settingsRes, svcRes, portRes, artRes, logoRes] = await db.batch([
       db.prepare('SELECT key, value FROM site_settings'),
-      db.prepare('SELECT * FROM navigation_menus WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'),
-      db.prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 4'),
-      db.prepare('SELECT * FROM portfolios WHERE is_active = 1 ORDER BY sort_order ASC, id DESC LIMIT 3'),
-      db.prepare('SELECT * FROM articles WHERE status = "published" ORDER BY published_at DESC LIMIT 3'),
+      db.prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 6'),
+      db.prepare('SELECT * FROM portfolios WHERE is_active = 1 ORDER BY sort_order ASC, id DESC LIMIT 6'),
+      db.prepare('SELECT * FROM articles WHERE status = "published" ORDER BY published_at DESC LIMIT 6'),
       db.prepare('SELECT * FROM client_logos WHERE is_active = 1 ORDER BY sort_order ASC'),
     ]);
     const settings = {};
@@ -64,14 +52,13 @@ export async function getHomePageBundle(Astro) {
     });
     return {
       settings,
-      menus: navRes.results || [],
-      services: svcRes.results || [],
+      services: (svcRes.results || []).map(parseServiceRow),
       portfolios: portRes.results || [],
       articles: artRes.results || [],
       clientLogos: logoRes.results || [],
     };
   } catch {
-    return { settings: {}, menus: [], services: [], portfolios: [], articles: [], clientLogos: [] };
+    return { settings: {}, services: [], portfolios: [], articles: [], clientLogos: [] };
   }
 }
 
@@ -90,19 +77,6 @@ export async function getSiteSettings(Astro) {
   }
 }
 
-export async function getNavigation(Astro) {
-  const db = getDb(Astro);
-  if (!db) return [];
-  try {
-    const { results } = await db
-      .prepare('SELECT * FROM navigation_menus WHERE is_active = 1 ORDER BY sort_order ASC, id ASC')
-      .all();
-    return results || [];
-  } catch {
-    return [];
-  }
-}
-
 export async function getServices(Astro) {
   const db = getDb(Astro);
   if (!db) return [];
@@ -110,15 +84,7 @@ export async function getServices(Astro) {
     const { results } = await db
       .prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY sort_order ASC')
       .all();
-    return (results || []).map((s) => {
-      let bullets = [];
-      try {
-        bullets = JSON.parse(s.bullet_points || '[]');
-      } catch {
-        bullets = s.bullet_points ? s.bullet_points.split('\n').filter(Boolean) : [];
-      }
-      return { ...s, bullet_points: bullets };
-    });
+    return (results || []).map(parseServiceRow);
   } catch {
     return [];
   }
