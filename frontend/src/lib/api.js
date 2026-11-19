@@ -209,20 +209,6 @@ export async function getClientLogos(Astro) {
   }
 }
 
-export async function getCustomPageBySlug(Astro, slug) {
-  const db = getDb(Astro);
-  if (!db) return null;
-  try {
-    const item = await db
-      .prepare('SELECT * FROM custom_pages WHERE (slug = ? OR id = ?) AND is_active = 1')
-      .bind(slug, slug)
-      .first();
-    return item || null;
-  } catch {
-    return null;
-  }
-}
-
 export function extractYouTubeId(url) {
   if (!url) return '';
   if (url.includes('youtube.com/watch?v=')) {
