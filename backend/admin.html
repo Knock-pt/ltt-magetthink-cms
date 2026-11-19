@@ -64,25 +64,53 @@
       line-height: 1.7;
     }
 
-    /* Interactive Figure & Photo Grid inside Editor */
+    /* Word-like Direct Drag-and-Drop Line & Image Editor */
+    #editor_content_th img, #editor_content_en img {
+      cursor: grab;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      user-select: none;
+      -webkit-user-drag: element;
+    }
+    #editor_content_th img:hover, #editor_content_en img:hover {
+      outline: 2px solid #8D56EC;
+      outline-offset: 2px;
+    }
+    #editor_content_th img:active, #editor_content_en img:active {
+      cursor: grabbing;
+    }
     #editor_content_th figure, #editor_content_en figure,
     #editor_content_th .ltt-photo-grid, #editor_content_en .ltt-photo-grid {
       position: relative;
-      border: 2px solid transparent;
-      border-radius: 0.5rem;
-      padding: 0.25rem;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      margin: 1rem 0;
     }
-    #editor_content_th figure:hover, #editor_content_en figure:hover,
-    #editor_content_th .ltt-photo-grid:hover, #editor_content_en .ltt-photo-grid:hover,
-    #editor_content_th .ltt-selected-block, #editor_content_en .ltt-selected-block {
-      border-color: #8D56EC;
-      background-color: rgba(141, 86, 236, 0.03);
+    #editor_content_th .ltt-photo-grid figure, #editor_content_en .ltt-photo-grid figure {
+      margin: 0;
+    }
+    #editor_content_th figcaption, #editor_content_en figcaption {
+      cursor: text;
+      min-height: 1.4rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.375rem;
+    }
+    #editor_content_th figcaption:hover, #editor_content_en figcaption:hover,
+    #editor_content_th figcaption:focus, #editor_content_en figcaption:focus {
+      background-color: #faf5ff;
+      outline: 1px dashed #c084fc;
     }
     #editor_content_th figcaption:empty:before, #editor_content_en figcaption:empty:before {
       content: attr(data-placeholder);
       color: #94a3b8;
       font-style: italic;
+    }
+    /* Visual purple insertion line while dragging an image or line */
+    .ltt-drop-before {
+      box-shadow: 0 -3px 0 0 #8D56EC !important;
+    }
+    .ltt-drop-after {
+      box-shadow: 0 3px 0 0 #8D56EC !important;
+    }
+    .ltt-dragging-source {
+      opacity: 0.4;
     }
   </style>
 </head>
@@ -697,28 +725,16 @@
               <textarea rows="2" id="editor_summary_th" placeholder="สรุปไฮไลท์สั้นๆ 1-2 ประโยคเพื่อดึงดูดผู้อ่าน..." class="w-full bg-white border border-slate-300 rounded-md px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#8D56EC]"></textarea>
             </div>
 
-            <!-- 6. เนื้อหาหลัก (Rich Content Area with Block Move & Caption Toolbar) -->
+            <!-- 6. เนื้อหาหลัก (Word-Style Document Area with Direct Image/Line Drag & Drop) -->
             <div>
               <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <label class="block text-base font-bold text-slate-700">เนื้อหา</label>
-                <span class="text-[11px] text-[#633583] bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">
-                  💡 คลิกที่รูปภาพหรือตารางรูปในเนื้อหา เพื่อเลื่อนขึ้น-ลงแทรกระหว่างบรรทัด หรือพิมพ์ Caption ใต้รูป
+                <span class="text-[11px] text-[#633583] bg-purple-50 border border-purple-200 px-3 py-1 rounded-full">
+                  💡 ใช้งานเหมือน Word: ใช้เมาส์ <b>คลิกค้างที่รูปภาพแล้วลากไปวางแทรกบรรทัดไหนก็ได้ทันที</b> และคลิกพิมพ์คำบรรยายใต้รูปได้เลย
                 </span>
               </div>
 
-              <!-- Contextual Image / Grid Mover Bar (Appears when an image or photo grid is clicked) -->
-              <div id="editor_block_toolbar" class="hidden mb-2 p-2 rounded-lg bg-[#633583] text-white text-xs flex flex-wrap items-center justify-between gap-2 shadow">
-                <span class="font-bold flex items-center gap-1.5">✨ จัดการบล็อกรูปภาพที่เลือก:</span>
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <button type="button" onclick="moveSelectedEditorBlock('up')" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">⬆️ เลื่อนขึ้นแทรกบรรทัดบน</button>
-                  <button type="button" onclick="moveSelectedEditorBlock('down')" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">⬇️ เลื่อนลงแทรกบรรทัดล่าง</button>
-                  <button type="button" onclick="editSelectedBlockCaption()" class="px-2.5 py-1 rounded bg-amber-400 text-slate-900 hover:bg-amber-300 font-bold">✏️ เขียน/แก้ไข Caption ใต้รูป</button>
-                  <button type="button" onclick="insertParagraphAfterSelectedBlock()" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 font-semibold">↵ แทรกบรรทัดข้อความต่อท้าย</button>
-                  <button type="button" onclick="deleteSelectedEditorBlock()" class="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-400 font-bold">🗑️ ลบบล็อกรูป</button>
-                </div>
-              </div>
-
-              <div id="editor_content_th" contenteditable="true" placeholder="พิมพ์เนื้อหาของบทความ/รีวิว กดปุ่ม 🖼️ รูป+Caption หรือ ⊞ เรียงหลายรูป (Grid) ด้านบนเพื่อแทรกรูปตรงบรรทัดที่ต้องการ..." class="min-h-[360px] bg-white border-2 border-[#8D56EC] shadow-[0_0_8px_rgba(141,86,236,0.25)] rounded-md p-5 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
+              <div id="editor_content_th" contenteditable="true" placeholder="พิมพ์เนื้อหาเหมือนใน Word ได้เลย... ลากรูปภาพย้ายข้ามบรรทัดได้อิสระ หรือกดปุ่ม 🖼️ รูป+Caption / ⊞ เรียงหลายรูป (Grid) ด้านบน" class="min-h-[380px] bg-white border-2 border-[#8D56EC] shadow-[0_0_8px_rgba(141,86,236,0.25)] rounded-md p-6 text-sm text-slate-800 focus:outline-none overflow-y-auto leading-relaxed"></div>
             </div>
           </div>
 
@@ -1517,91 +1533,57 @@
     }
 
     // -------------------------------------------------------------
-    // Image / Photo Grid Block Mover & Caption Controls
+    // Word-Style Direct Drag-and-Drop Line & Image Reordering
     // -------------------------------------------------------------
-    function selectEditorBlock(blockEl) {
-      clearSelectedEditorBlock();
-      selectedEditorBlock = blockEl;
-      if (selectedEditorBlock) {
-        selectedEditorBlock.classList.add('ltt-selected-block');
-        const bar = document.getElementById('editor_block_toolbar');
-        if (bar) bar.classList.remove('hidden');
+    let draggedEditorLine = null;
+    let currentDropTargetLine = null;
+    let currentDropPosition = null; // 'before' | 'after'
+
+    function getDirectChildLine(editorEl, targetNode) {
+      let curr = targetNode;
+      if (curr && curr.nodeType === 3) curr = curr.parentElement;
+      while (curr && curr.parentElement && curr.parentElement !== editorEl) {
+        curr = curr.parentElement;
       }
+      return (curr && curr.parentElement === editorEl) ? curr : null;
+    }
+
+    function clearDropLineIndicators(editorEl) {
+      if (currentDropTargetLine) {
+        currentDropTargetLine.classList.remove('ltt-drop-before', 'ltt-drop-after');
+      }
+      if (editorEl) {
+        editorEl.querySelectorAll('.ltt-drop-before, .ltt-drop-after, .ltt-dragging-source').forEach(function(n) {
+          n.classList.remove('ltt-drop-before', 'ltt-drop-after', 'ltt-dragging-source');
+        });
+      }
+      currentDropTargetLine = null;
+      currentDropPosition = null;
     }
 
     function clearSelectedEditorBlock() {
-      if (selectedEditorBlock) {
-        selectedEditorBlock.classList.remove('ltt-selected-block');
-      }
-      selectedEditorBlock = null;
-      const bar = document.getElementById('editor_block_toolbar');
-      if (bar) bar.classList.add('hidden');
+      clearDropLineIndicators(document.getElementById('editor_content_th'));
+      clearDropLineIndicators(document.getElementById('editor_content_en'));
     }
 
-    function moveSelectedEditorBlock(direction) {
-      if (!selectedEditorBlock || !selectedEditorBlock.parentNode) return;
-      const parent = selectedEditorBlock.parentNode;
-      if (direction === 'up') {
-        const prev = selectedEditorBlock.previousElementSibling;
-        if (prev) {
-          parent.insertBefore(selectedEditorBlock, prev);
-          selectedEditorBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          const emptyP = document.createElement('p');
-          emptyP.innerHTML = '<br>';
-          parent.insertBefore(emptyP, selectedEditorBlock);
-        }
-      } else if (direction === 'down') {
-        const next = selectedEditorBlock.nextElementSibling;
-        if (next) {
-          parent.insertBefore(next, selectedEditorBlock);
-          selectedEditorBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          const emptyP = document.createElement('p');
-          emptyP.innerHTML = '<br>';
-          parent.appendChild(emptyP);
+    function setCaretAtPoint(editorEl, clientX, clientY) {
+      let range = null;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(clientX, clientY);
+      } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(clientX, clientY);
+        if (pos && pos.offsetNode) {
+          range = document.createRange();
+          range.setStart(pos.offsetNode, pos.offset);
+          range.collapse(true);
         }
       }
-    }
-
-    function editSelectedBlockCaption() {
-      if (!selectedEditorBlock) return;
-      let cap = selectedEditorBlock.querySelector('figcaption');
-      if (!cap) {
-        cap = document.createElement('figcaption');
-        cap.className = 'text-xs text-center text-slate-500 mt-2 italic';
-        cap.setAttribute('data-placeholder', 'คลิกพิมพ์คำบรรยายใต้ภาพ (Caption)...');
-        selectedEditorBlock.appendChild(cap);
+      if (range && editorEl.contains(range.commonAncestorContainer)) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        savedEditorRange = range.cloneRange();
       }
-      const currentText = cap.innerText || '';
-      const nextText = prompt('ระบุคำบรรยายใต้รูปภาพ (Caption):', currentText);
-      if (nextText !== null) {
-        cap.innerText = nextText;
-      }
-    }
-
-    function insertParagraphAfterSelectedBlock() {
-      if (!selectedEditorBlock || !selectedEditorBlock.parentNode) return;
-      const p = document.createElement('p');
-      p.innerHTML = 'พิมพ์ข้อความบรรทัดใหม่ที่นี่...';
-      if (selectedEditorBlock.nextSibling) {
-        selectedEditorBlock.parentNode.insertBefore(p, selectedEditorBlock.nextSibling);
-      } else {
-        selectedEditorBlock.parentNode.appendChild(p);
-      }
-      const range = document.createRange();
-      range.selectNodeContents(p);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      clearSelectedEditorBlock();
-    }
-
-    function deleteSelectedEditorBlock() {
-      if (!selectedEditorBlock) return;
-      if (!confirm('ต้องการลบบล็อกรูปภาพนี้ออกจากเนื้อหาใช่หรือไม่?')) return;
-      selectedEditorBlock.remove();
-      clearSelectedEditorBlock();
     }
 
     function insertHtmlAtEditorCursor(html) {
@@ -1757,7 +1739,6 @@
     function insertImageIntoContent(file) {
       if (!file) return;
       saveEditorSelection();
-      const captionText = prompt('พิมพ์คำบรรยายใต้รูปภาพ (Caption) (เว้นว่างไว้แล้วคลิกพิมพ์ภายหลังได้):', '') || '';
       showEditorUploadPill('กำลังอัปโหลดภาพลงเนื้อหา... 0%');
 
       uploadFileWithProgress(file, {
@@ -1765,12 +1746,12 @@
           showEditorUploadPill('กำลังอัปโหลดภาพลงเนื้อหา... ' + percent + '%');
         },
         onSuccess: function(fileUrl) {
-          showEditorUploadPill('✓ อัปโหลดภาพสำเร็จ!');
-          setTimeout(hideEditorUploadPill, 1200);
+          showEditorUploadPill('✓ อัปโหลดภาพสำเร็จ! ลากรูปเพื่อย้ายบรรทัดได้เลย');
+          setTimeout(hideEditorUploadPill, 1500);
 
-          const imgHtml = '<figure class="ltt-figure my-5">' +
-            '<img src="' + fileUrl + '" class="w-full rounded-lg object-cover shadow-sm" alt="' + escapeHtml(captionText) + '">' +
-            '<figcaption class="text-xs text-center text-slate-500 mt-2 italic" data-placeholder="คลิกพิมพ์คำบรรยายใต้ภาพ (Caption)...">' + escapeHtml(captionText) + '</figcaption>' +
+          const imgHtml = '<figure class="ltt-figure my-4">' +
+            '<img src="' + fileUrl + '" draggable="true" class="w-full rounded-lg object-cover shadow-sm" alt="">' +
+            '<figcaption class="text-xs text-center text-slate-500 mt-1.5 italic" data-placeholder="คลิกที่นี่เพื่อพิมพ์คำบรรยายใต้ภาพ (Caption)..."></figcaption>' +
           '</figure><p><br></p>';
           insertHtmlAtEditorCursor(imgHtml);
         },
@@ -1789,8 +1770,8 @@
       const colsChoice = prompt('ต้องการเรียงรูปเป็นกี่คอลัมน์? (พิมพ์ 3 สำหรับ 3 คอลัมน์เหมือนในรูป Ref หรือพิมพ์ 2 สำหรับ 2 คอลัมน์):', files.length >= 3 ? '3' : '2');
       const cols = colsChoice === '2' ? 2 : 3;
       const gridClass = cols === 2
-        ? 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 gap-4 my-6'
-        : 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-6';
+        ? 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 gap-4 my-5'
+        : 'ltt-photo-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-5';
 
       const uploadedUrls = [];
       for (let i = 0; i < files.length; i++) {
@@ -1823,8 +1804,8 @@
 
       const cellsHtml = uploadedUrls.map(function(u) {
         return '<figure class="m-0">' +
-          '<img src="' + u + '" class="w-full h-56 object-cover rounded-sm shadow-sm" alt="">' +
-          '<figcaption class="text-[11px] text-center text-slate-500 mt-1 italic" data-placeholder="คำบรรยายใต้ภาพ (ถ้ามี)..."></figcaption>' +
+          '<img src="' + u + '" draggable="true" class="w-full h-56 object-cover rounded-sm shadow-sm" alt="">' +
+          '<figcaption class="text-[11px] text-center text-slate-500 mt-1 italic" data-placeholder="คลิกพิมพ์คำบรรยายใต้ภาพ (ถ้ามี)..."></figcaption>' +
         '</figure>';
       }).join('');
 
@@ -2028,53 +2009,104 @@
         });
       }
 
-      // 4. Content Area Image Drop & Selection / Block Click Listeners
+      // 4. Content Area Word-Style Drag & Drop (Both internal image/line move AND external file drop at cursor)
       ['editor_content_th', 'editor_content_en'].forEach(function(id) {
         const el = document.getElementById(id);
         if (!el) return;
+
         ['keyup', 'mouseup', 'focus'].forEach(function(evt) {
           el.addEventListener(evt, saveEditorSelection);
         });
-        el.addEventListener('click', function(e) {
-          saveEditorSelection();
+
+        // Start dragging an image or photo grid line inside the editor
+        el.addEventListener('dragstart', function(e) {
           let target = e.target;
-          let block = null;
-          while (target && target !== el) {
-            if (target.tagName === 'FIGURE' || (target.classList && target.classList.contains('ltt-photo-grid'))) {
-              block = target;
-              if (target.parentElement && target.parentElement.classList && target.parentElement.classList.contains('ltt-photo-grid')) {
-                block = target.parentElement;
+          if (target && target.nodeType === 3) target = target.parentElement;
+          const imgOrBlock = target && (target.tagName === 'IMG' || target.tagName === 'FIGURE' || (target.closest && target.closest('figure, .ltt-photo-grid')));
+          if (imgOrBlock) {
+            const lineEl = getDirectChildLine(el, target);
+            if (lineEl) {
+              draggedEditorLine = lineEl;
+              lineEl.classList.add('ltt-dragging-source');
+              if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                try { e.dataTransfer.setData('text/plain', 'ltt-internal-line-move'); } catch (err) {}
               }
-              break;
             }
-            target = target.parentElement;
-          }
-          if (block) {
-            selectEditorBlock(block);
-          } else {
-            clearSelectedEditorBlock();
           }
         });
-        ['dragenter', 'dragover'].forEach(function(evt) {
-          el.addEventListener(evt, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            el.classList.add('ring-2', 'ring-[#8D56EC]');
-          });
+
+        el.addEventListener('dragend', function() {
+          draggedEditorLine = null;
+          clearDropLineIndicators(el);
         });
-        ['dragleave', 'drop'].forEach(function(evt) {
-          el.addEventListener(evt, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+
+        el.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Internal Word-style line reordering
+          if (draggedEditorLine && el.contains(draggedEditorLine)) {
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            const overEl = document.elementFromPoint(e.clientX, e.clientY);
+            const targetLine = getDirectChildLine(el, overEl);
+
+            if (targetLine && targetLine !== draggedEditorLine) {
+              if (currentDropTargetLine && currentDropTargetLine !== targetLine) {
+                currentDropTargetLine.classList.remove('ltt-drop-before', 'ltt-drop-after');
+              }
+              const rect = targetLine.getBoundingClientRect();
+              const isBefore = e.clientY < (rect.top + rect.height / 2);
+              currentDropTargetLine = targetLine;
+              currentDropPosition = isBefore ? 'before' : 'after';
+              targetLine.classList.toggle('ltt-drop-before', isBefore);
+              targetLine.classList.toggle('ltt-drop-after', !isBefore);
+            }
+            return;
+          }
+
+          // External image file dragged from computer
+          el.classList.add('ring-2', 'ring-[#8D56EC]');
+        });
+
+        el.addEventListener('dragleave', function(e) {
+          if (!el.contains(e.relatedTarget)) {
             el.classList.remove('ring-2', 'ring-[#8D56EC]');
-          });
+          }
         });
+
         el.addEventListener('drop', function(e) {
-          const files = e.dataTransfer.files;
-          if (files && files.length > 1) {
-            uploadAndInsertPhotoGrid({ files: files, value: '' });
-          } else if (files && files[0] && files[0].type.startsWith('image/')) {
-            insertImageIntoContent(files[0]);
+          e.preventDefault();
+          e.stopPropagation();
+          el.classList.remove('ring-2', 'ring-[#8D56EC]');
+
+          // Case A: Internal Word-style line move (Drop image/grid between any lines)
+          if (draggedEditorLine && el.contains(draggedEditorLine)) {
+            if (currentDropTargetLine && currentDropTargetLine !== draggedEditorLine && el.contains(currentDropTargetLine)) {
+              if (currentDropPosition === 'before') {
+                el.insertBefore(draggedEditorLine, currentDropTargetLine);
+              } else {
+                if (currentDropTargetLine.nextSibling) {
+                  el.insertBefore(draggedEditorLine, currentDropTargetLine.nextSibling);
+                } else {
+                  el.appendChild(draggedEditorLine);
+                }
+              }
+            }
+            draggedEditorLine = null;
+            clearDropLineIndicators(el);
+            return;
+          }
+
+          // Case B: External image file(s) dropped from computer -> place caret at exact mouse drop point first!
+          const files = e.dataTransfer && e.dataTransfer.files;
+          if (files && files.length > 0) {
+            setCaretAtPoint(el, e.clientX, e.clientY);
+            if (files.length > 1) {
+              uploadAndInsertPhotoGrid({ files: files, value: '' });
+            } else if (files[0].type.startsWith('image/')) {
+              insertImageIntoContent(files[0]);
+            }
           }
         });
       });
